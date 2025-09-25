@@ -1,7 +1,23 @@
 import { Link } from "react-router-dom";
 import Logo from "../assets/img/shivesh-logo.png";
 import LoginImg from "../assets/img/loginImg.png";
+import { useState } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 export default function Login() {
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
+  const { login, loading, error } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const result = login({ userName, password });
+
+    if (!error) {
+      console.log("Login successful:", result);
+    }
+  };
   return (
     <div className="flex min-h-screen">
       {/* Left Side - Login Form */}
@@ -17,14 +33,15 @@ export default function Login() {
           </div>
 
           {/* Form */}
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 E-mail address
               </label>
               <input
-                type="email"
-                defaultValue="admin@gmail.com"
+                type="text"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
                 className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -35,16 +52,19 @@ export default function Login() {
               </label>
               <input
                 type="password"
-                defaultValue="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
+            {error && <p className="text-red-500 text-sm">{error}</p>}
             <button
               type="submit"
+              disabled={loading}
               className="w-full py-2 bg-primary-dark text-white rounded-lg hover:bg-blue-700 transition"
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 

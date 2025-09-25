@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import AppRoutes from "./routes/appRoutes";
-
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
 
