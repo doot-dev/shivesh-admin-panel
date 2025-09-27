@@ -1,21 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 @import "tailwindcss";
 
 @theme {
-    --color-primary: #3B82F6;
-    --color-primary-dark: #1E3A8A;
-    --color-secondary: #374151;
-    --color-bg: #FFFFFF;
-    --color-bg-alt: #F3F4F6;
-    --color-border: #9CA3AF;
-    --color-success: #16A34A;
-    --color-warning: #F59E0B;
-    --color-error: #DC2626;
-    /* --color-text-primary: #212121;
-    --color-text-secondary: #616161;
-    --color-text-inverse: #FFFFFF; */
+    --color-primary: #1E3A8A;
+    --color-primary-second: #162E6B;
+    --color-primary-bg-alt: #9BB3F4;
+    --color-primary-light: #E5ECFF;
+    --color-bg-alt2: #C8C8C8;
+    --color-stroke-alt: #C8C8C8;
+    --color-disabled: #9CA3AF;
+    --color-table-bg: #FAFAFA;
+    --color-success: #2E7D32;
+    --color-warning: #F9A825;
+    --color-error: #D32F2F;
+    --color-text-primary: #3A3A3A;
+    --color-text-secondary: #757575;
+    --color-text-inverse: #FFFFFF;
+    --color-text-light: #A6A6A6;
+    --font-poppins: 'Poppins', sans-serif;
 }
 
 :root {
-
+    font-family: var(--font-poppins);
 }
 

@@ -12,30 +12,31 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = login({ userName, password });
+    const result = await login({ userName, password });
 
     if (!error) {
       console.log("Login successful:", result);
+
+      navigate('/dashboard');
     }
   };
   return (
     <div className="flex min-h-screen">
-      {/* Left Side - Login Form */}
       <div className="flex w-full md:w-1/2 items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-6 text-left justify-center">
             <img src={Logo} alt="Shivesh Logo" className=" w-50" />
-            <h1 className=" text-2xl md:text-[42px] font-semibold mt-4 text-primary-dark">
+            <h1 className=" text-2xl md:text-[42px] font-semibold mt-4 text-primary tracking-wide leading-11 ">
               Welcome back!
             </h1>
-            <p className="text-2xl text-primary">Please log in to continue</p>
+            <p className="text-2xl text-[#6D8FEF] leading-8 ">Please log in to continue</p>
           </div>
 
           {/* Form */}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className=" text-[18px]  text-text-primary">
                 E-mail address
               </label>
               <input
@@ -47,8 +48,9 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="text-[18px]  text-text-primary">
                 Password
+                
               </label>
               <input
                 type="password"

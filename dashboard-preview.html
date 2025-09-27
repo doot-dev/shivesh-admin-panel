@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        /* Custom styles to match the theme */
+        :root {
+            --color-primary: #3B82F6;
+            --color-primary-dark: #1E3A8A;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sample Dashboard Layout -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 bg-blue-600 rounded"></div>
+                    <span class="text-xl font-bold text-gray-800">SHIVESH</span>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 border-r-2 border-blue-700">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Users</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                    <i data-lucide="package" class="w-4 h-4"></i>
+                    <span>Product</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                    <span>Client</span>
+                </a>
+            </nav>
+            
+            <!-- Logout -->
+            <div class="p-4 border-t border-gray-200">
+                <button class="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg w-full">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>Log out</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Navbar -->
+            <nav class="bg-white border-b border-gray-200 px-6 py-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="h-4 w-4 text-gray-400"></i>
+                            </div>
+                            <input type="text" placeholder="Search..." class="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <button class="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 relative">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            <span class="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        
+                        <div class="flex items-center space-x-2">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Profile" class="h-8 w-8 rounded-full">
+                            <div class="text-left">
+                                <p class="text-sm font-medium text-gray-700">Rokesh Mishra</p>
+                                <p class="text-xs text-gray-500">Admin</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Dashboard Content -->
+            <main class="flex-1 p-6 overflow-y-auto">
+                <!-- Header -->
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Users</h1>
+                    <p class="text-gray-600">View and manage user details</p>
+                </div>
+                
+                <!-- Filters -->
+                <div class="mb-6 bg-white rounded-lg shadow p-4">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="flex gap-3">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="search" class="h-4 w-4 text-gray-400"></i>
+                                </div>
+                                <input type="text" placeholder="Search by name or ID" class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option>Role</option>
+                                <option>Field technician</option>
+                                <option>Manager</option>
+                            </select>
+                            <select class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option>Status</option>
+                                <option>Active</option>
+                                <option>Inactive</option>
+                            </select>
+                        </div>
+                        <button class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                            Add User
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Table -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">01</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Aniket Deshmukh</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Field technician</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">EMP01</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">aniketg123</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">aniket_465</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </button>
+                                            <button class="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50">
+                                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- More rows would go here -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">02</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Aniket Deshmukh</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Field technician</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">EMP01</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">aniketg123</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">aniket_465</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </button>
+                                            <button class="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50">
+                                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="px-6 py-3 bg-white border-t border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2 text-sm text-gray-700">
+                                <span>Showing 1 to 6 of 30 results</span>
+                                <select class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                    <option>10</option>
+                                    <option>25</option>
+                                    <option>50</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">
+                                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                </button>
+                                <button class="px-3 py-1 bg-blue-600 text-white text-sm rounded">1</button>
+                                <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">2</button>
+                                <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">3</button>
+                                <button class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
