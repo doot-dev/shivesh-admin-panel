@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Icon, ICON_NAMES } from '../components/icons';
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,7 +129,7 @@ const Users = () => {
             {/* Search */}
             <div className="relative flex-1 max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
+                <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
               </div>
               <input
                 type="text"
@@ -169,7 +169,7 @@ const Users = () => {
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <Plus size={16} className="mr-2" />
+            <Icon name={ICON_NAMES.PLUS} size={16} className="mr-2" />
             Add User
           </button>
         </div>
@@ -201,19 +201,19 @@ const Users = () => {
                   onClick={() => handleView(user)}
                   className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
                 >
-                  <Eye size={16} />
+                  <Icon name={ICON_NAMES.EYE} size={16} />
                 </button>
                 <button
                   onClick={() => handleEdit(user)}
                   className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
                 >
-                  <Edit size={16} />
+                  <Icon name={ICON_NAMES.EDIT} size={16} />
                 </button>
                 <button
                   onClick={() => handleDelete(user)}
                   className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
                 >
-                  <Trash2 size={16} />
+                  <Icon name={ICON_NAMES.TRASH_2} size={16} />
                 </button>
               </div>
             </div>
@@ -282,21 +282,21 @@ const Users = () => {
                         className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
                         title="View"
                       >
-                        <Eye size={16} />
+                        <Icon name={ICON_NAMES.EYE} size={16} />
                       </button>
                       <button
                         onClick={() => handleEdit(user)}
                         className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
                         title="Edit"
                       >
-                        <Edit size={16} />
+                        <Icon name={ICON_NAMES.EDIT} size={16} />
                       </button>
                       <button
                         onClick={() => handleDelete(user)}
                         className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
                         title="Delete"
                       >
-                        <Trash2 size={16} />
+                        <Icon name={ICON_NAMES.TRASH_2} size={16} />
                       </button>
                     </div>
                   </td>
@@ -326,7 +326,7 @@ const Users = () => {
                 className="px-2 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Previous"
               >
-                <ChevronLeft size={16} />
+                <Icon name={ICON_NAMES.CHEVRON_LEFT} size={16} />
               </button>
               
               <div className="flex items-center space-x-1">
@@ -351,7 +351,7 @@ const Users = () => {
                 className="px-2 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Next"
               >
-                <ChevronRight size={16} />
+                <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} />
               </button>
             </div>
           </div>

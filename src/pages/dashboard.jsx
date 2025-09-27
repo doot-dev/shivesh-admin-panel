@@ -1,4 +1,4 @@
-import { Users, Package, TrendingUp, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
+import { Icon, ICON_NAMES } from '../components/icons';
 
 const Dashboard = () => {
   // Sample statistics
@@ -8,7 +8,7 @@ const Dashboard = () => {
       value: '2,543',
       change: '+12%',
       changeType: 'increase',
-      icon: Users,
+      icon: ICON_NAMES.USER,
       color: 'blue'
     },
     {
@@ -16,7 +16,7 @@ const Dashboard = () => {
       value: '1,234',
       change: '+5%',
       changeType: 'increase',
-      icon: Package,
+      icon: ICON_NAMES.PRODUCT,
       color: 'green'
     },
     {
@@ -24,7 +24,7 @@ const Dashboard = () => {
       value: '89',
       change: '+23%',
       changeType: 'increase',
-      icon: TrendingUp,
+      icon: ICON_NAMES.TRENDING_UP,
       color: 'purple'
     },
     {
@@ -32,7 +32,7 @@ const Dashboard = () => {
       value: '$54,321',
       change: '+8%',
       changeType: 'increase',
-      icon: DollarSign,
+      icon: ICON_NAMES.DOLLAR_SIGN,
       color: 'yellow'
     }
   ];
@@ -122,7 +122,7 @@ const Dashboard = () => {
                 </p>
               </div>
               <div className={`p-3 rounded-full ${getColorClasses(stat.color)}`}>
-                <stat.icon size={24} />
+                <Icon name={stat.icon} size={24} />
               </div>
             </div>
           </div>
@@ -176,13 +176,13 @@ const Dashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50">
-                          <Eye size={16} />
+                          <Icon name={ICON_NAMES.EYE} size={16} />
                         </button>
                         <button className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50">
-                          <Edit size={16} />
+                          <Icon name={ICON_NAMES.EDIT} size={16} />
                         </button>
                         <button className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50">
-                          <Trash2 size={16} />
+                          <Icon name={ICON_NAMES.TRASH_2} size={16} />
                         </button>
                       </div>
                     </td>
