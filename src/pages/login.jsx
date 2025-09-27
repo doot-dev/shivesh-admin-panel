@@ -30,7 +30,7 @@ export default function Login() {
             <h1 className=" text-2xl md:text-[42px] font-semibold mt-4 text-primary tracking-wide leading-11 ">
               Welcome back!
             </h1>
-            <p className="text-2xl text-[#6D8FEF] leading-8 ">Please log in to continue</p>
+            <p className="text-2xl text-[#6D8FEF] leading-8 mt-2">Please log in to continue</p>
           </div>
 
           {/* Form */}
@@ -43,20 +43,20 @@ export default function Login() {
                 type="text"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="mt-1 w-full px-3  border rounded-[6px] h-[60px] border-[#6D8FEFA6] focus:outline-none bg-input-bg"
               />
             </div>
 
             <div>
               <label className="text-[18px]  text-text-primary">
                 Password
-                
+
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="mt-1 w-full px-3  border rounded-[6px] h-[60px] border-[#6D8FEFA6] focus:outline-none bg-input-bg"
               />
             </div>
 
@@ -64,15 +64,15 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 bg-primary-dark text-white rounded-lg hover:bg-blue-700 transition"
+              className="w-full py-2 bg-primary text-white text-xl mt-[30px] transition rounded-[6px] h-[60px]"
             >
               {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
           {/* Forgot Password */}
-          <div className="text-center mt-4">
-            <a href="#" className="text-sm text-blue-600 hover:underline">
+          <div className="text-center mt-8">
+            <a href="#" className="text-base font-medium tracking-wide text-primary hover:underline">
               Forgot your password?
             </a>
           </div>

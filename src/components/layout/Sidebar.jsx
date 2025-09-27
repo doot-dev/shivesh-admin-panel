@@ -122,20 +122,13 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div className={`
-        fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-[calc(100vh-100px)] bg-white border-r border-primary z-50 transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0 md:static md:z-auto
         w-64
       `}>
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
-            </div>
-            <span className="text-xl font-bold text-gray-800">SHIVESH</span>
-          </div>
-        </div>
+
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 overflow-y-auto">

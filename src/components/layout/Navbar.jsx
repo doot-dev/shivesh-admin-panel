@@ -5,8 +5,8 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-4 py-3 md:px-6">
-      <div className="flex items-center justify-between">
+    <nav className="bg-white border-b border-primary h-[100px] px-4 inline-flex justify-center w-full  md:px-6">
+      <div className="flex items-center justify-between w-full">
         {/* Left section */}
         <div className="flex items-center space-x-4">
           {/* Mobile menu button */}
