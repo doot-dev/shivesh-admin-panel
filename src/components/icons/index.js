@@ -29,20 +29,25 @@ export const ICON_NAMES = {
   SETTINGS: 'settings',
   LOG_OUT: 'log-out',
   NOTIFICATION: 'notification',
-  
+  ADD_NEW_USER: 'add-new-user',
   // UI Icons (inline SVG)
   SEARCH: 'search',
   PLUS: 'plus',
   EDIT: 'edit',
   TRASH_2: 'trash-2',
   EYE: 'eye',
+  EYE_OFF: 'eye-off',
   MENU: 'menu',
   X: 'x',
   CHEVRON_DOWN: 'chevron-down',
   CHEVRON_RIGHT: 'chevron-right',
   CHEVRON_LEFT: 'chevron-left',
+  CHEVRON_UP: 'chevron-up',
+  CHEVRON_UP_DOWN: 'chevron-up-down',
   DOLLAR_SIGN: 'dollar-sign',
-  TRENDING_UP: 'trending-up'
+  TRENDING_UP: 'trending-up',
+  INBOX: 'inbox',
+  CHECK: 'check'
 };
 
 // Note: For convenience components with JSX, import Icon and ICON_NAMES and create them in your component files

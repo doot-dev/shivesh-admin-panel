@@ -1,4 +1,5 @@
 import { Icon, ICON_NAMES } from '../components/icons';
+import { Table } from '../components/ui';
 
 const Dashboard = () => {
   // Sample statistics
@@ -73,28 +74,86 @@ const Dashboard = () => {
     }
   ];
 
-  const getStatusBadge = (status) => {
-    if (status === 'Active') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          Active
-        </span>
-      );
-    } else {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          Inactive
-        </span>
-      );
+  // Table configuration for recent users
+  const recentUsersColumns = [
+    {
+      key: 'name',
+      header: 'Employee',
+      className: 'text-text-primary font-medium',
+      mobileLabel: true,
+      mobileSubtext: (user) => user.employeeId
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      hideOnMobile: true
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      type: 'badge',
+      badgeConfig: {
+        'Active': {
+          color: 'var(--color-success)',
+          backgroundColor: 'var(--color-success-light)'
+        },
+        'Inactive': {
+          color: 'var(--color-error)',
+          backgroundColor: 'var(--color-error-light)'
+        }
+      }
     }
-  };
+  ];
+
+  const recentUsersActions = [
+    {
+      icon: ICON_NAMES.EYE,
+      onClick: (user) => console.log('View user:', user),
+      variant: 'ghost',
+      size: 'xs',
+      textColor: 'var(--color-primary)',
+      hoverBackgroundColor: 'var(--color-primary-light)',
+      title: 'View',
+      className: 'p-1'
+    },
+    {
+      icon: ICON_NAMES.EDIT,
+      onClick: (user) => console.log('Edit user:', user),
+      variant: 'ghost',
+      size: 'xs',
+      textColor: 'var(--color-success)',
+      hoverBackgroundColor: 'var(--color-success-light)',
+      title: 'Edit',
+      className: 'p-1'
+    },
+    {
+      icon: ICON_NAMES.TRASH_2,
+      onClick: (user) => console.log('Delete user:', user),
+      variant: 'ghost',
+      size: 'xs',
+      textColor: 'var(--color-error)',
+      hoverBackgroundColor: 'var(--color-error-light)',
+      title: 'Delete',
+      className: 'p-1'
+    }
+  ];
 
   const getColorClasses = (color) => {
     const colors = {
-      blue: 'bg-blue-50 text-blue-600',
-      green: 'bg-green-50 text-green-600',
-      purple: 'bg-purple-50 text-purple-600',
-      yellow: 'bg-yellow-50 text-yellow-600'
+      blue: 'text-primary',
+      green: 'text-success',
+      purple: 'text-primary',
+      yellow: 'text-warning'
+    };
+    return colors[color] || colors.blue;
+  };
+
+  const getColorStyles = (color) => {
+    const colors = {
+      blue: { backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)' },
+      green: { backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)' },
+      purple: { backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)' },
+      yellow: { backgroundColor: 'var(--color-warning-light)', color: 'var(--color-warning)' }
     };
     return colors[color] || colors.blue;
   };
@@ -116,12 +175,12 @@ const Dashboard = () => {
                 <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                 <p className={`text-sm mt-1 ${
-                  stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                }`}>
+                  stat.changeType === 'increase' ? 'text-success' : 'text-error'
+                }`} style={{ color: stat.changeType === 'increase' ? 'var(--color-success)' : 'var(--color-error)' }}>
                   {stat.change} from last month
                 </p>
               </div>
-              <div className={`p-3 rounded-full ${getColorClasses(stat.color)}`}>
+              <div className={`p-3 rounded-full ${getColorClasses(stat.color)}`} style={getColorStyles(stat.color)}>
                 <Icon name={stat.icon} size={24} />
               </div>
             </div>
@@ -131,65 +190,26 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Users */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Users</h2>
-              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View All
-              </button>
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6 border-b" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-text-primary">Recent Users</h2>
+                <button className="text-sm font-medium hover:opacity-75 transition-opacity" style={{ color: 'var(--color-primary)' }}>
+                  View All
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Employee
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.employeeId}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.role}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(user.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50">
-                          <Icon name={ICON_NAMES.EYE} size={16} />
-                        </button>
-                        <button className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50">
-                          <Icon name={ICON_NAMES.EDIT} size={16} />
-                        </button>
-                        <button className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50">
-                          <Icon name={ICON_NAMES.TRASH_2} size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-hidden">
+              <Table
+                data={recentUsers}
+                columns={recentUsersColumns}
+                actions={recentUsersActions}
+                showPagination={false}
+                className="shadow-none border-0 rounded-none"
+                headerClassName="bg-background"
+              />
+            </div>
           </div>
         </div>
 
@@ -222,13 +242,34 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+              <button 
+                className="w-full px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-90"
+                style={{ backgroundColor: 'var(--color-primary)' }}
+              >
                 Add New User
               </button>
-              <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              <button 
+                className="w-full px-4 py-2 border text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-75"
+                style={{ 
+                  borderColor: 'var(--color-border)', 
+                  color: 'var(--color-text-secondary)',
+                  backgroundColor: 'transparent'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--color-primary-light)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
                 Generate Report
               </button>
-              <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              <button 
+                className="w-full px-4 py-2 border text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-75"
+                style={{ 
+                  borderColor: 'var(--color-border)', 
+                  color: 'var(--color-text-secondary)',
+                  backgroundColor: 'transparent'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--color-primary-light)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
                 View Analytics
               </button>
             </div>

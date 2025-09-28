@@ -15,7 +15,7 @@ const Layout = () => {
   };
 
   return (
-    <div className=" h-screen bg-gray-50">
+    <div className=" h-screen">
       <Navbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
 
       {/* Main content area */}
@@ -23,7 +23,7 @@ const Layout = () => {
         {/* Sidebar */}
         <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
         {/* Main content */}
-        <main className=" overflow-x-hidden overflow-y-auto">
+        <main className=" overflow-x-hidden overflow-y-auto   w-[calc(100%-256px)] px-3">
           <Outlet />
         </main>
       </div>

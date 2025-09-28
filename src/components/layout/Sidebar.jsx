@@ -1,97 +1,97 @@
-import { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { Icon, ICON_NAMES } from '../icons';
+import { useState } from "react";
+import { useLocation, Link } from "react-router-dom";
+import { Icon, ICON_NAMES } from "../icons";
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState({});
 
   const toggleExpanded = (itemKey) => {
-    setExpandedItems(prev => ({
+    setExpandedItems((prev) => ({
       ...prev,
-      [itemKey]: !prev[itemKey]
+      [itemKey]: !prev[itemKey],
     }));
   };
 
   const menuItems = [
-    { 
-      key: 'dashboard', 
-      icon: ICON_NAMES.DASHBOARD, 
-      label: 'Dashboard', 
-      path: '/dashboard' 
-    },
-    { 
-      key: 'users', 
-      icon: ICON_NAMES.USER, 
-      label: 'Users', 
-      path: '/users' 
-    },
-    { 
-      key: 'products', 
-      icon: ICON_NAMES.PRODUCT, 
-      label: 'Product', 
-      path: '/products' 
-    },
-    { 
-      key: 'clients', 
-      icon: ICON_NAMES.CLIENT, 
-      label: 'Client', 
-      path: '/clients' 
-    },
-    { 
-      key: 'vendors', 
-      icon: ICON_NAMES.VENDOR, 
-      label: 'Vendor', 
-      path: '/vendors' 
-    },
-    { 
-      key: 'leads', 
-      icon: ICON_NAMES.LEADS, 
-      label: 'Leads', 
-      path: '/leads' 
-    },
-    { 
-      key: 'projects', 
-      icon: ICON_NAMES.PROJECTS, 
-      label: 'Project', 
-      path: '/projects' 
+    {
+      key: "dashboard",
+      icon: ICON_NAMES.DASHBOARD,
+      label: "Dashboard",
+      path: "/dashboard",
     },
     {
-      key: 'orders',
+      key: "users",
+      icon: ICON_NAMES.USER,
+      label: "Users",
+      path: "/users",
+    },
+    {
+      key: "products",
+      icon: ICON_NAMES.PRODUCT,
+      label: "Product",
+      path: "/products",
+    },
+    {
+      key: "clients",
+      icon: ICON_NAMES.CLIENT,
+      label: "Client",
+      path: "/clients",
+    },
+    {
+      key: "vendors",
+      icon: ICON_NAMES.VENDOR,
+      label: "Vendor",
+      path: "/vendors",
+    },
+    {
+      key: "leads",
+      icon: ICON_NAMES.LEADS,
+      label: "Leads",
+      path: "/leads",
+    },
+    {
+      key: "projects",
+      icon: ICON_NAMES.PROJECTS,
+      label: "Project",
+      path: "/projects",
+    },
+    {
+      key: "orders",
       icon: ICON_NAMES.ORDERS,
-      label: 'Orders & Tracks',
-      path: '/orders',
-      hasSubmenu: true,
-      submenu: [
-        { label: 'All Orders', path: '/orders/all' },
-        { label: 'Pending Orders', path: '/orders/pending' },
-        { label: 'Completed Orders', path: '/orders/completed' }
-      ]
+      label: "Orders & Tracks",
+      path: "/orders",
+      // hasSubmenu: true,
+      // submenu: [
+      //   { label: "All Orders", path: "/orders/all" },
+      //   { label: "Pending Orders", path: "/orders/pending" },
+      //   { label: "Completed Orders", path: "/orders/completed" },
+      // ],
     },
-    { 
-      key: 'testing', 
-      icon: ICON_NAMES.CUBE_TESTING, 
-      label: 'Cube Testing', 
-      path: '/testing' 
+    {
+      key: "testing",
+      icon: ICON_NAMES.CUBE_TESTING,
+      label: "Cube Testing",
+      path: "/testing",
     },
-    { 
-      key: 'billing', 
-      icon: ICON_NAMES.BILLING, 
-      label: 'Billing', 
-      path: '/billing' 
+    {
+      key: "billing",
+      icon: ICON_NAMES.BILLING,
+      label: "Billing",
+      path: "/billing",
     },
-    { 
-      key: 'reports', 
-      icon: ICON_NAMES.REPORTS, 
-      label: 'Reports', 
-      path: '/reports' 
+    {
+      key: "reports",
+      icon: ICON_NAMES.REPORTS,
+      label: "Reports",
+      path: "/reports",
     },
-    { 
-      key: 'settings', 
-      icon: ICON_NAMES.SETTINGS, 
-      label: 'Settings', 
-      path: '/settings' 
-    }
+    {
+      key: "settings",
+      icon: ICON_NAMES.SETTINGS,
+      label: "Settings",
+      path: "/settings",
+    },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -100,21 +100,22 @@ const Sidebar = ({ isOpen, onClose }) => {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`
+      <div
+        className={`
         fixed top-0 left-0 h-[calc(100vh-100px)] bg-white border-r border-t border-primary z-50 transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
         md:translate-x-0 md:static md:z-auto
         w-64
-      `}>
+      `}
+      >
         {/* Logo */}
-
 
         {/* Navigation */}
         <nav className="flex-1  py-6 overflow-y-auto">
@@ -127,9 +128,10 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={() => toggleExpanded(item.key)}
                       className={`
                         w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors
-                        ${isActive(item.path) 
-                          ? 'bg-primary-light text-blue-700 border-l-4 border-blue-700' 
-                          : 'text-gray-700 hover:bg-gray-100'
+                        ${
+                          isActive(item.path)
+                            ? "bg-primary-light text-blue-700 border-l-4 border-blue-700"
+                            : "text-gray-700 hover:bg-gray-100"
                         }
                       `}
                     >
@@ -151,9 +153,10 @@ const Sidebar = ({ isOpen, onClose }) => {
                               to={subItem.path}
                               className={`
                                 block px-3 py-2 text-sm rounded-lg transition-colors
-                                ${isActive(subItem.path)
-                                  ? 'bg-blue-50 text-blue-700'
-                                  : 'text-gray-600 hover:bg-gray-100'
+                                ${
+                                  isActive(subItem.path)
+                                    ? "bg-blue-50 text-blue-700"
+                                    : "text-gray-600 hover:bg-gray-100"
                                 }
                               `}
                               onClick={onClose}
@@ -169,15 +172,22 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <Link
                     to={item.path}
                     className={`
-                      flex items-center space-x-3 px-3 py-2 h-[48px] text-sm font-medium  transition-colors
-                      ${isActive(item.path) 
-                        ? 'bg-primary-light text-primary border-l-4 border-primary' 
-                        : 'text-gray-700 hover:bg-gray-100'
+                      flex items-center space-x-3 px-6 py-2 h-[48px] text-sm font-medium  transition-colors
+                      ${
+                        isActive(item.path)
+                          ? "bg-primary-light text-primary border-l-4 border-primary"
+                          : "text-gray-700 hover:bg-gray-100"
                       }
                     `}
                     onClick={onClose}
                   >
-                    <Icon name={item.icon} size={18}  />
+                    <Icon
+                      name={item.icon}
+                      size={24}
+                      color={
+                        isActive(item.path) ? "text-primary" : "text-black"
+                      }
+                    />
                     <span>{item.label}</span>
                   </Link>
                 )}

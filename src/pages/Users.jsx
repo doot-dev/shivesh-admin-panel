@@ -1,89 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon, ICON_NAMES } from '../components/icons';
-
+import { Button, Table, Dropdown } from '../components/ui';
+import { AddUserModal } from '../components/modals';
+import { getUsers } from '../services/userService';
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
-
-  // Sample user data based on the image
-  const users = [
-    {
-      id: 1,
-      sno: '01',
-      employeeName: 'Aniket Deshmukh',
-      role: 'Field technician',
-      employeeId: 'EMP01',
-      username: 'aniketg123',
-      password: 'aniket_465',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      sno: '02',
-      employeeName: 'Aniket Deshmukh',
-      role: 'Field technician',
-      employeeId: 'EMP01',
-      username: 'aniketg123',
-      password: 'aniket_465',
-      status: 'Active'
-    },
-    {
-      id: 3,
-      sno: '03',
-      employeeName: 'Aniket Deshmukh',
-      role: 'Field technician',
-      employeeId: 'EMP01',
-      username: 'aniketg123',
-      password: 'aniket_465',
-      status: 'Inactive'
-    },
-    {
-      id: 4,
-      sno: '04',
-      employeeName: 'Aniket Deshmukh',
-      role: 'Field technician',
-      employeeId: 'EMP01',
-      username: 'aniketg123',
-      password: 'aniket_465',
-      status: 'Active'
-    },
-    {
-      id: 5,
-      sno: '05',
-      employeeName: 'Aniket Deshmukh',
-      role: 'Field technician',
-      employeeId: 'EMP01',
-      username: 'aniketg123',
-      password: 'aniket_465',
-      status: 'Inactive'
-    },
-    {
-      id: 6,
-      sno: '06',
-      employeeName: 'Aniket Deshmukh',
-      role: 'Field technician',
-      employeeId: 'EMP01',
-      username: 'aniketg123',
-      password: 'aniket_465',
-      status: 'Active'
-    },
-    {
-      id: 7,
-      sno: '07',
-      employeeName: 'Aniket Deshmukh',
-      role: 'Field technician',
-      employeeId: 'EMP01',
-      username: 'aniketg123',
-      password: 'aniket_465',
-      status: 'Active'
-    }
+  const [usersData, setUsersData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  // Dropdown options
+  const roleOptions = [
+    { value: '', label: 'All Roles' },
+    { value: 'FIELD_TECHNICIAN', label: 'Field Technician' },
+    { value: 'PROJECT_MANAGER', label: 'Manager' },
+    { value: 'ADMIN', label: 'Admin' }
   ];
 
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(users.length / itemsPerPage);
+  const statusOptions = [
+    { value: '', label: 'All Status' },
+    { value: 'Active', label: 'Active' },
+    { value: 'Inactive', label: 'Inactive' }
+  ];
+
+  // This is now replaced by API data loaded in useEffect
 
   const handleEdit = (user) => {
     console.log('Edit user:', user);
@@ -97,37 +39,199 @@ const Users = () => {
     console.log('View user:', user);
   };
 
-  const getStatusBadge = (status) => {
-    if (status === 'Active') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          Active
-        </span>
-      );
-    } else {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          Inactive
-        </span>
-      );
+  const handleAddUser = async (userData) => {
+    try {
+      console.log('Add new user:', userData);
+      // Refresh the users list after adding
+      const response = await getUsers();
+      
+      // Handle different response structures
+      let users = [];
+      if (Array.isArray(response)) {
+        users = response;
+      } else if (response && Array.isArray(response.data)) {
+        users = response.data;
+      } else if (response && Array.isArray(response.users)) {
+        users = response.users;
+      }
+      
+      setUsersData(users);
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('Error refreshing users after add:', error);
     }
   };
 
+  // Helper function to get role label from role value
+  const getRoleLabel = (roleValue) => {
+    const roleOption = roleOptions.find(option => option.value === roleValue);
+    return roleOption ? roleOption.label : roleValue;
+  };
+
+  // Filter users based on search and filters
+  const filteredUsers = (Array.isArray(usersData) ? usersData : []).filter(user => {
+    // Handle search filtering - match your actual API response structure
+    const searchString = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+                         (user.name && user.name.toLowerCase().includes(searchString)) ||
+                         (user.employeeId && user.employeeId.toLowerCase().includes(searchString)) ||
+                         (user.userName && user.userName.toLowerCase().includes(searchString));
+    
+    // Handle role filtering - match your actual API response structure
+    const matchesRole = !roleFilter || user.role === roleFilter;
+    
+    // Handle status filtering - your API uses boolean status
+    const matchesStatus = !statusFilter || 
+                         (statusFilter === 'Active' && user.status === true) ||
+                         (statusFilter === 'Inactive' && user.status === false);
+    
+    return matchesSearch && matchesRole && matchesStatus;
+  }).map((user, index) => ({
+    ...user,
+    // Ensure we have required fields for the table, add sno if not present
+    sno: user.sno || (index + 1).toString().padStart(2, '0'),
+    // Map API fields to expected table fields
+    employeeName: user.name,
+    username: user.userName,
+    password: user.password || '••••••••', // Don't show real passwords
+    role: getRoleLabel(user.role), // Convert role value to label for display
+    status: user.status ? 'Active' : 'Inactive'  // Convert boolean to string
+  }));
+
+  // Table configuration
+  const columns = [
+    {
+      key: 'sno',
+      header: 'S.No',
+      className: 'text-text-primary font-medium'
+    },
+    {
+      key: 'employeeName',
+      header: 'Employee name',
+      className: 'text-text-primary font-medium',
+      mobileLabel: true,
+      mobileSubtext: 'role'
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      hideOnMobile: true
+    },
+    {
+      key: 'employeeId',
+      header: 'Employee ID',
+      hideOnMobile: true
+    },
+    {
+      key: 'username',
+      header: 'Username',
+      hideOnMobile: true
+    },
+    {
+      key: 'password',
+      header: 'Password',
+      hideOnMobile: true
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      type: 'badge',
+      badgeConfig: {
+        'Active': {
+          color: 'var(--color-success)',
+          backgroundColor: 'var(--color-success-light)'
+        },
+        'Inactive': {
+          color: 'var(--color-error)',
+          backgroundColor: 'var(--color-error-light)'
+        }
+      }
+    }
+  ];
+
+  const actions = [
+    {
+      icon: ICON_NAMES.EYE,
+      onClick: handleView,
+      variant: 'ghost',
+      size: 'xs',
+      textColor: 'var(--color-primary)',
+      hoverBackgroundColor: 'var(--color-primary-light)',
+      title: 'View',
+      className: 'p-1'
+    },
+    {
+      icon: ICON_NAMES.EDIT,
+      onClick: handleEdit,
+      variant: 'ghost',
+      size: 'xs',
+      textColor: 'var(--color-success)',
+      hoverBackgroundColor: 'var(--color-primary-light)',
+      title: 'Edit',
+      className: 'p-1'
+    },
+    {
+      icon: ICON_NAMES.TRASH_2,
+      onClick: handleDelete,
+      variant: 'ghost',
+      size: 'xs',
+      textColor: 'var(--color-error)',
+      hoverBackgroundColor: 'var(--color-primary-light)',
+      title: 'Delete',
+      className: 'p-1'
+    }
+  ];
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getUsers();
+        console.log('API Response Data:', response);
+        
+        // Handle different response structures
+        let users = [];
+        if (Array.isArray(response)) {
+          users = response;
+        } else if (response && Array.isArray(response.data)) {
+          users = response.data;
+        } else if (response && Array.isArray(response.users)) {
+          users = response.users;
+        } else if (response && typeof response === 'object') {
+          // If response is a single object, wrap it in an array
+          users = [response];
+        }
+        
+        setUsersData(users);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        setError('Failed to load users');
+        setUsersData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 md:p-6 w-full">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Users</h1>
-        <p className="text-gray-600">View and manage user details</p>
+        <h1 className="text-2xl font-semibold text-text-primary">Users</h1>
+        <p className="text-text-secondary text-base">View and manage user details</p>
       </div>
 
       {/* Filters and Actions */}
-      <div className="mb-6 bg-white rounded-lg shadow p-4">
+      <div className="mb-6 bg-white  py-4  px-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-3 flex-1">
             {/* Search */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 md:max-w-[25%] md:h-[50px]">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
               </div>
@@ -136,227 +240,80 @@ const Users = () => {
                 placeholder="Search by name or ID"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2  border border-border rounded-lg md:h-[50px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             {/* Role Filter */}
-            <select
+            <Dropdown
+              options={roleOptions}
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Role</option>
-              <option value="Field technician">Field technician</option>
-              <option value="Manager">Manager</option>
-              <option value="Admin">Admin</option>
-            </select>
+              onChange={setRoleFilter}
+              placeholder="Role"
+              width="auto"
+              height="50px"
+              className="md:max-w-[14%]"
+            />
 
             {/* Status Filter */}
-            <select
+            <Dropdown
+              options={statusOptions}
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+              onChange={setStatusFilter}
+              placeholder="Status"
+              width="auto"
+              height="50px"
+              className="md:max-w-[14%]"
+            />
           </div>
 
           {/* Add User Button */}
-          <button
+          <Button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            leftIcon={ICON_NAMES.PLUS}
+            variant="primary"
+            size="lg"
+            height="50px"
           >
-            <Icon name={ICON_NAMES.PLUS} size={16} className="mr-2" />
             Add User
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {/* Mobile Cards View - Hidden on desktop */}
-        <div className="md:hidden">
-          {users.map((user) => (
-            <div key={user.id} className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="font-medium text-gray-900">{user.employeeName}</h3>
-                  <p className="text-sm text-gray-500">{user.role}</p>
-                </div>
-                {getStatusBadge(user.status)}
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                <div>
-                  <span className="text-gray-500">ID:</span> {user.employeeId}
-                </div>
-                <div>
-                  <span className="text-gray-500">Username:</span> {user.username}
-                </div>
-              </div>
-              <div className="flex items-center justify-end space-x-2">
-                <button
-                  onClick={() => handleView(user)}
-                  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                >
-                  <Icon name={ICON_NAMES.EYE} size={16} />
-                </button>
-                <button
-                  onClick={() => handleEdit(user)}
-                  className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                >
-                  <Icon name={ICON_NAMES.EDIT} size={16} />
-                </button>
-                <button
-                  onClick={() => handleDelete(user)}
-                  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                >
-                  <Icon name={ICON_NAMES.TRASH_2} size={16} />
-                </button>
-              </div>
-            </div>
-          ))}
+      {loading ? (
+        <div className="flex justify-center items-center py-12 bg-white rounded-lg shadow-sm">
+          <div className="text-text-secondary">Loading users...</div>
         </div>
-
-        {/* Desktop Table View - Hidden on mobile */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  S.No
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Username
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Password
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.sno}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.employeeName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.employeeId}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.username}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.password}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(user.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleView(user)}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                        title="View"
-                      >
-                        <Icon name={ICON_NAMES.EYE} size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                        title="Edit"
-                      >
-                        <Icon name={ICON_NAMES.EDIT} size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                        title="Delete"
-                      >
-                        <Icon name={ICON_NAMES.TRASH_2} size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      ) : error ? (
+        <div className="flex flex-col justify-center items-center py-12 bg-white rounded-lg shadow-sm">
+          <div className="text-error mb-2">{error}</div>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline" 
+            size="sm"
+          >
+            Retry
+          </Button>
         </div>
+      ) : (
+        <Table
+          data={filteredUsers}
+          columns={columns}
+          actions={actions}
+          showPagination={true}
+          itemsPerPage={10}
+          emptyMessage="No users found matching your criteria"
+          className="shadow-sm"
+        />
+      )}
 
-        {/* Pagination */}
-        <div className="px-4 md:px-6 py-3 bg-white border-t border-gray-200">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center space-x-2 text-sm text-gray-700">
-              <span className="hidden sm:inline">Showing 1 to 6 of 30 results</span>
-              <span className="sm:hidden">1-6 of 30</span>
-              <select className="border border-gray-300 rounded px-2 py-1 text-sm">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-2 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Previous"
-              >
-                <Icon name={ICON_NAMES.CHEVRON_LEFT} size={16} />
-              </button>
-              
-              <div className="flex items-center space-x-1">
-                {[1, 2, 3].map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 text-sm rounded ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'border border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-2 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Next"
-              >
-                <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Add User Modal */}
+      <AddUserModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddUser}
+      />
     </div>
   );
 };

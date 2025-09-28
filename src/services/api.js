@@ -8,12 +8,39 @@ const api = axios.create({
 });
 
 // Add token automatically if exists
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access-token");
+    if (token) {
+      config.headers.authorization = token; // Use lowercase 'authorization' and just the token value
+    }
+    
+    // Log the actual request being sent
+    console.log('Request config:', {
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      data: config.data,
+      dataType: typeof config.data
+    });
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log('Response received:', response);
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', error);
+    return Promise.reject(error);
+  }
+);
 
 export default api;

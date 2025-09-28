@@ -6,6 +6,7 @@
   --color-primary-second: #162e6b;
   --color-primary-bg-alt: #9bb3f4;
   --color-primary-light: #e5ecff;
+  --color-border: #6D8FEF;
   --color-input-bg: #f2f5ff;
   --color-bg-alt2: #c8c8c8;
   --color-stroke-alt: #c8c8c8;
@@ -14,10 +15,15 @@
   --color-success: #2e7d32;
   --color-warning: #f9a825;
   --color-error: #d32f2f;
+  --color-error-light: #ffebee;
+  --color-success-light: #e8f5e8;
+  --color-warning-light: #fff8e1;
   --color-text-primary: #3a3a3a;
   --color-text-secondary: #757575;
   --color-text-inverse: #ffffff;
   --color-text-light: #a6a6a6;
+  --color-background: #f8fafc;
+  --color-background-hover: #f1f5f9;
   --font-poppins: "Poppins", sans-serif;
 }
 
