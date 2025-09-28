@@ -16,7 +16,7 @@ const Modal = ({
   footerClassName = '',
   footer,
   maxWidth = '',
-  maxHeight = '90vh',
+  maxHeight = '',
   headerIcon = ICON_NAMES.USER,
   showHeaderIcon = true
 }) => {

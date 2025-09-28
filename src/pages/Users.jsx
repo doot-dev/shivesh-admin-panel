@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Icon, ICON_NAMES } from '../components/icons';
 import { Button, Table, Dropdown } from '../components/ui';
-import { AddUserModal } from '../components/modals';
+import { AddUserModal, ViewUserModal } from '../components/modals';
 import { getUsers } from '../services/userService';
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,7 +38,13 @@ const Users = () => {
   };
 
   const handleView = (user) => {
-    console.log('View user:', user);
+    setSelectedUser(user);
+    setShowViewModal(true);
+  };
+
+  const handleRowClick = (user) => {
+    setSelectedUser(user);
+    setShowViewModal(true);
   };
 
   const handleAddUser = async (userData) => {
@@ -150,35 +158,20 @@ const Users = () => {
   ];
 
   const actions = [
+    
     {
-      icon: ICON_NAMES.EYE,
-      onClick: handleView,
-      variant: 'ghost',
-      size: 'xs',
-      textColor: 'var(--color-primary)',
-      hoverBackgroundColor: 'var(--color-primary-light)',
-      title: 'View',
-      className: 'p-1'
-    },
-    {
-      icon: ICON_NAMES.EDIT,
+      text: 'Edit',
       onClick: handleEdit,
-      variant: 'ghost',
-      size: 'xs',
       textColor: 'var(--color-success)',
-      hoverBackgroundColor: 'var(--color-primary-light)',
-      title: 'Edit',
-      className: 'p-1'
+      hoverBackgroundColor: 'var(--color-success-light)',
+      title: 'Edit'
     },
     {
-      icon: ICON_NAMES.TRASH_2,
+      text: 'Delete',
       onClick: handleDelete,
-      variant: 'ghost',
-      size: 'xs',
       textColor: 'var(--color-error)',
-      hoverBackgroundColor: 'var(--color-primary-light)',
-      title: 'Delete',
-      className: 'p-1'
+      hoverBackgroundColor: 'var(--color-error-light)',
+      title: 'Delete'
     }
   ];
 
@@ -301,6 +294,7 @@ const Users = () => {
           data={filteredUsers}
           columns={columns}
           actions={actions}
+          onRowClick={handleRowClick}
           showPagination={true}
           itemsPerPage={10}
           emptyMessage="No users found matching your criteria"
@@ -313,6 +307,24 @@ const Users = () => {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSubmit={handleAddUser}
+      />
+
+      {/* View User Modal */}
+      <ViewUserModal
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onEdit={(user) => {
+          setShowViewModal(false);
+          handleEdit(user);
+        }}
+        onDelete={(user) => {
+          setShowViewModal(false);
+          handleDelete(user);
+        }}
       />
     </div>
   );

@@ -97,17 +97,26 @@ const Table = ({
     return (
       <div className="flex items-center space-x-2">
         {actions.map((action, index) => (
-          <Button
+          <button
             key={index}
             onClick={() => action.onClick(item)}
-            variant={action.variant || "ghost"}
-            size={action.size || "xs"}
-            leftIcon={action.icon}
-            textColor={action.textColor}
-            hoverBackgroundColor={action.hoverBackgroundColor}
-            className={`p-1 ${action.className || ''}`}
+            className={`px-2 py-1 text-xs font-medium rounded hover:bg-gray-50 transition-colors border-none outline-none ${action.className || ''}`}
+            style={{ 
+              color: action.textColor || 'var(--color-text-primary)',
+              backgroundColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              if (action.hoverBackgroundColor) {
+                e.target.style.backgroundColor = action.hoverBackgroundColor;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+            }}
             title={action.title}
-          />
+          >
+            {action.text || action.title}
+          </button>
         ))}
       </div>
     );
