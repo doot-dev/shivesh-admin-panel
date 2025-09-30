@@ -31,6 +31,8 @@ export const ICON_NAMES = {
   NOTIFICATION: "notification",
   ADD_NEW_USER: "add-new-user",
   USER_DETAILS: "user-details",
+  EDIT_USER: "edit-user",
+
 
   // UI Icons (inline SVG)
   SEARCH: "search",

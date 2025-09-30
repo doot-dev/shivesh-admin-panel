@@ -17,6 +17,8 @@ import LogOutIcon from '../../assets/icons/log-out.svg?url';
 import NotificationIcon from '../../assets/icons/Notification.svg?url';
 import AddNewUserIcon from "../../assets/icons/addNewUser.svg?url";
 import UserDetailIcon from "../../assets/icons/userDetails.svg?url";
+import EditDetailIcon from "../../assets/icons/editUser.svg?url";
+
 const Icon = ({ 
   name, 
   size = 24, 
@@ -54,6 +56,8 @@ const Icon = ({
     'notification': NotificationIcon,
     'add-new-user': AddNewUserIcon,
     'user-details': UserDetailIcon,
+    'edit-user': EditDetailIcon,    
+
     // UI icons - using inline SVG for common UI elements
     'search': (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} {...props}>

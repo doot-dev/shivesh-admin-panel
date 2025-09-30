@@ -29,7 +29,7 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
             />
           </div> */}
           <div>
-            <img src={Logo} alt="Logo" className="h-24 w-auto" />
+            <img src={Logo} alt="Logo" className="h-20" />
           </div>
         </div>
 

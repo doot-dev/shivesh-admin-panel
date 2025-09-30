@@ -1,58 +1,126 @@
-import { useEffect, useState } from 'react';
-import { Icon, ICON_NAMES } from '../components/icons';
-import { Button, Table, Dropdown } from '../components/ui';
-import { AddUserModal, ViewUserModal } from '../components/modals';
-import { getUsers } from '../services/userService';
+import { useEffect, useState } from "react";
+import { Icon, ICON_NAMES } from "../components/icons";
+import { Button, Table, Dropdown } from "../components/ui";
+import { AddUserModal, ViewUserModal, EditUserModal, DeleteUserModal } from "../components/modals";
+import { getUsers, updateUsers, deleteUser } from "../services/userService";
+import { toast } from "react-toastify";
 const Users = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Dropdown options
   const roleOptions = [
-    { value: '', label: 'All Roles' },
-    { value: 'FIELD_TECHNICIAN', label: 'Field Technician' },
-    { value: 'PROJECT_MANAGER', label: 'Manager' },
-    { value: 'ADMIN', label: 'Admin' }
+    { value: "", label: "All Roles" },
+    { value: "FIELD_TECHNICIAN", label: "Field Technician" },
+    { value: "PROJECT_MANAGER", label: "Manager" },
+    { value: "ADMIN", label: "Admin" },
   ];
 
   const statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'Active', label: 'Active' },
-    { value: 'Inactive', label: 'Inactive' }
+    { value: "", label: "All Status" },
+    { value: "Active", label: "Active" },
+    { value: "Inactive", label: "Inactive" },
   ];
 
   // This is now replaced by API data loaded in useEffect
 
   const handleEdit = (user) => {
-    console.log('Edit user:', user);
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (updatedUser) => {
+    try {
+      console.log("User updated successfully:", updatedUser);
+      
+      // Show success message
+      toast.success("User updated successfully!");
+      
+      // Refresh the users list
+      const response = await getUsers();
+      let users = [];
+      if (Array.isArray(response)) {
+        users = response;
+      } else if (response && Array.isArray(response.data)) {
+        users = response.data;
+      } else if (response && Array.isArray(response.users)) {
+        users = response.users;
+      }
+      setUsersData(users);
+      
+      // Close modal
+      setShowEditModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Error refreshing user list:", error);
+      toast.error("User updated but failed to refresh list");
+      
+      // Still close the modal even if refresh fails
+      setShowEditModal(false);
+      setSelectedUser(null);
+    }
   };
 
   const handleDelete = (user) => {
-    console.log('Delete user:', user);
+    setSelectedUser(user);
+    setShowDeleteModal(true);
   };
 
-  const handleView = (user) => {
-    setSelectedUser(user);
-    setShowViewModal(true);
+  const handleConfirmDelete = async (user) => {
+    try {
+      console.log("Deleting user:", user);
+      
+      // Make API call to delete user
+      await deleteUser(user.id);
+      
+      // Show success message
+      toast.success("User deleted successfully!");
+      
+      // Refresh the users list
+      const response = await getUsers();
+      let users = [];
+      if (Array.isArray(response)) {
+        users = response;
+      } else if (response && Array.isArray(response.data)) {
+        users = response.data;
+      } else if (response && Array.isArray(response.users)) {
+        users = response.users;
+      }
+      setUsersData(users);
+      
+      // Close modal
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Failed to delete user");
+    }
   };
 
-  const handleRowClick = (user) => {
-    setSelectedUser(user);
-    setShowViewModal(true);
-  };
+  // const handleView = (user) => {
+  //   setSelectedUser(user);
+  //   setShowViewModal(true);
+  // };
+
+  // const handleRowClick = (user) => {
+  //   setSelectedUser(user);
+  //   setShowViewModal(true);
+  // };
 
   const handleAddUser = async (userData) => {
     try {
-      console.log('Add new user:', userData);
+      console.log("Add new user:", userData);
       // Refresh the users list after adding
       const response = await getUsers();
-      
+
       // Handle different response structures
       let users = [];
       if (Array.isArray(response)) {
@@ -62,119 +130,124 @@ const Users = () => {
       } else if (response && Array.isArray(response.users)) {
         users = response.users;
       }
-      
+
       setUsersData(users);
       setShowAddModal(false);
+      toast.success("User added successfully");
     } catch (error) {
-      console.error('Error refreshing users after add:', error);
+      console.error("Error refreshing users after add:", error);
+      toast.error("Failed to  new user");
     }
   };
 
   // Helper function to get role label from role value
   const getRoleLabel = (roleValue) => {
-    const roleOption = roleOptions.find(option => option.value === roleValue);
+    const roleOption = roleOptions.find((option) => option.value === roleValue);
     return roleOption ? roleOption.label : roleValue;
   };
 
   // Filter users based on search and filters
-  const filteredUsers = (Array.isArray(usersData) ? usersData : []).filter(user => {
-    // Handle search filtering - match your actual API response structure
-    const searchString = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
-                         (user.name && user.name.toLowerCase().includes(searchString)) ||
-                         (user.employeeId && user.employeeId.toLowerCase().includes(searchString)) ||
-                         (user.userName && user.userName.toLowerCase().includes(searchString));
-    
-    // Handle role filtering - match your actual API response structure
-    const matchesRole = !roleFilter || user.role === roleFilter;
-    
-    // Handle status filtering - your API uses boolean status
-    const matchesStatus = !statusFilter || 
-                         (statusFilter === 'Active' && user.status === true) ||
-                         (statusFilter === 'Inactive' && user.status === false);
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  }).map((user, index) => ({
-    ...user,
-    // Ensure we have required fields for the table, add sno if not present
-    sno: user.sno || (index + 1).toString().padStart(2, '0'),
-    // Map API fields to expected table fields
-    employeeName: user.name,
-    username: user.userName,
-    password: user.password || '••••••••', // Don't show real passwords
-    role: getRoleLabel(user.role), // Convert role value to label for display
-    status: user.status ? 'Active' : 'Inactive'  // Convert boolean to string
-  }));
+  const filteredUsers = (Array.isArray(usersData) ? usersData : [])
+    .filter((user) => {
+      // Handle search filtering - match your actual API response structure
+      const searchString = searchTerm.toLowerCase();
+      const matchesSearch =
+        !searchTerm ||
+        (user.name && user.name.toLowerCase().includes(searchString)) ||
+        (user.employeeId &&
+          user.employeeId.toLowerCase().includes(searchString)) ||
+        (user.userName && user.userName.toLowerCase().includes(searchString));
+
+      // Handle role filtering - match your actual API response structure
+      const matchesRole = !roleFilter || user.role === roleFilter;
+
+      // Handle status filtering - your API uses boolean status
+      const matchesStatus =
+        !statusFilter ||
+        (statusFilter === "Active" && user.status === true) ||
+        (statusFilter === "Inactive" && user.status === false);
+
+      return matchesSearch && matchesRole && matchesStatus;
+    })
+    .map((user, index) => ({
+      ...user,
+      // Ensure we have required fields for the table, add sno if not present
+      sno: user.sno || (index + 1).toString().padStart(2, "0"),
+      // Map API fields to expected table fields
+      employeeName: user.name,
+      username: user.userName,
+      password: user.password || "••••••••", // Don't show real passwords
+      role: getRoleLabel(user.role), // Convert role value to label for display
+      status: user.status ? "Active" : "Inactive", // Convert boolean to string
+    }));
 
   // Table configuration
   const columns = [
     {
-      key: 'sno',
-      header: 'S.No',
-      className: 'text-text-primary font-medium'
+      key: "sno",
+      header: "S.No",
+      className: "text-text-primary font-medium",
     },
     {
-      key: 'employeeName',
-      header: 'Employee name',
-      className: 'text-text-primary font-medium',
+      key: "employeeName",
+      header: "Employee name",
+      className: "text-text-primary font-medium",
       mobileLabel: true,
-      mobileSubtext: 'role'
+      mobileSubtext: "role",
     },
     {
-      key: 'role',
-      header: 'Role',
-      hideOnMobile: true
+      key: "role",
+      header: "Role",
+      hideOnMobile: true,
     },
     {
-      key: 'employeeId',
-      header: 'Employee ID',
-      hideOnMobile: true
+      key: "employeeId",
+      header: "Employee ID",
+      hideOnMobile: true,
     },
     {
-      key: 'username',
-      header: 'Username',
-      hideOnMobile: true
+      key: "username",
+      header: "Username",
+      hideOnMobile: true,
     },
     {
-      key: 'password',
-      header: 'Password',
-      hideOnMobile: true
+      key: "password",
+      header: "Password",
+      hideOnMobile: true,
     },
     {
-      key: 'status',
-      header: 'Status',
-      type: 'badge',
+      key: "status",
+      header: "Status",
+      type: "badge",
       badgeConfig: {
-        'Active': {
-          color: 'var(--color-success)',
-          backgroundColor: 'var(--color-success-light)'
+        Active: {
+          color: "var(--color-success)",
+          backgroundColor: "var(--color-success-light)",
         },
-        'Inactive': {
-          color: 'var(--color-error)',
-          backgroundColor: 'var(--color-error-light)'
-        }
-      }
-    }
+        Inactive: {
+          color: "var(--color-error)",
+          backgroundColor: "var(--color-error-light)",
+        },
+      },
+    },
   ];
 
   const actions = [
-    
     {
-      text: 'Edit',
+      text: "Edit",
       onClick: handleEdit,
-      textColor: 'var(--color-success)',
-      hoverBackgroundColor: 'var(--color-success-light)',
-      title: 'Edit'
+      textColor: "var(--color-success)",
+      hoverBackgroundColor: "var(--color-success-light)",
+      title: "Edit",
     },
     {
-      text: 'Delete',
+      text: "Delete",
       onClick: handleDelete,
-      textColor: 'var(--color-error)',
-      hoverBackgroundColor: 'var(--color-error-light)',
-      title: 'Delete'
-    }
+      textColor: "var(--color-error)",
+      hoverBackgroundColor: "var(--color-error-light)",
+      title: "Delete",
+    },
   ];
-
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -182,8 +255,8 @@ const Users = () => {
         setLoading(true);
         setError(null);
         const response = await getUsers();
-        console.log('API Response Data:', response);
-        
+        console.log("API Response Data:", response);
+
         // Handle different response structures
         let users = [];
         if (Array.isArray(response)) {
@@ -192,15 +265,15 @@ const Users = () => {
           users = response.data;
         } else if (response && Array.isArray(response.users)) {
           users = response.users;
-        } else if (response && typeof response === 'object') {
+        } else if (response && typeof response === "object") {
           // If response is a single object, wrap it in an array
           users = [response];
         }
-        
+
         setUsersData(users);
       } catch (error) {
-        console.error('Error fetching users:', error);
-        setError('Failed to load users');
+        console.error("Error fetching users:", error);
+        setError("Failed to load users");
         setUsersData([]);
       } finally {
         setLoading(false);
@@ -215,7 +288,9 @@ const Users = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-text-primary">Users</h1>
-        <p className="text-text-secondary text-base">View and manage user details</p>
+        <p className="text-text-secondary text-base">
+          View and manage user details
+        </p>
       </div>
 
       {/* Filters and Actions */}
@@ -281,9 +356,9 @@ const Users = () => {
       ) : error ? (
         <div className="flex flex-col justify-center items-center py-12 bg-white rounded-lg shadow-sm">
           <div className="text-error mb-2">{error}</div>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline" 
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
             size="sm"
           >
             Retry
@@ -294,7 +369,7 @@ const Users = () => {
           data={filteredUsers}
           columns={columns}
           actions={actions}
-          onRowClick={handleRowClick}
+          // onRowClick={handleRowClick}
           showPagination={true}
           itemsPerPage={10}
           emptyMessage="No users found matching your criteria"
@@ -310,7 +385,7 @@ const Users = () => {
       />
 
       {/* View User Modal */}
-      <ViewUserModal
+      {/* <ViewUserModal
         isOpen={showViewModal}
         onClose={() => {
           setShowViewModal(false);
@@ -325,6 +400,28 @@ const Users = () => {
           setShowViewModal(false);
           handleDelete(user);
         }}
+      /> */}
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onSave={handleSaveEdit}
+      />
+
+      {/* Delete User Modal */}
+      <DeleteUserModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onDelete={handleConfirmDelete}
       />
     </div>
   );
