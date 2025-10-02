@@ -27,6 +27,7 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loadingUserData, setLoadingUserData] = useState(false);
   const [resetPasswordModal, setResetPasswordModal] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -128,8 +129,9 @@ const Users = () => {
   };
 
   const handleConfirmDelete = async (user) => {
+
     try {
-      console.log("Deleting user:", user);
+      console.log("Deleting user:", user.id);
 
       // Make API call to delete user
       await deleteUser(user.id);
@@ -155,7 +157,7 @@ const Users = () => {
     } catch (error) {
       console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
-    }
+    } 
   };
 
   // const handleView = (user) => {
@@ -491,6 +493,7 @@ const Users = () => {
         }}
         user={selectedUser}
         onDelete={handleConfirmDelete}
+        loading={isDeletingUser}
       />
     </div>
   );

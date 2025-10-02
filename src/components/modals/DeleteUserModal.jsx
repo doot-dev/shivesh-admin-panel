@@ -1,11 +1,14 @@
 import { Icon, ICON_NAMES } from "../icons";
 
-const DeleteUserModal = ({ isOpen, onClose, user, onDelete }) => {
+const DeleteUserModal = ({ isOpen, onClose, user, onDelete, loading = false }) => {
   if (!isOpen || !user) return null;
 
+console.log("DeleteUserModal user:", user);
+
   const handleDelete = () => {
+    // Call the delete function but don't close modal immediately
+    // Let the parent component handle the closing after the async operation completes
     onDelete(user);
-    onClose();
   };
 
   const handleOverlayClick = (e) => {
@@ -59,15 +62,17 @@ const DeleteUserModal = ({ isOpen, onClose, user, onDelete }) => {
           <div className="flex justify-center space-x-3">
             <button
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors font-medium"
+              disabled={loading}
+              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleDelete}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+              disabled={loading}
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete
+              {loading ? "Deleting..." : "Delete"}
             </button>
           </div>
         </div>
