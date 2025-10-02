@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Modal, Button, Input, Checkbox, Dropdown } from "../ui";
-import { Icon, ICON_NAMES } from "../icons";
+import { ICON_NAMES } from "../icons";
 import { updateUsers } from "../../services/userService";
+import { toast } from "react-toastify";
 
-const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
+const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPassword }) => {
   const [formData, setFormData] = useState({
-    employeeName: '',
-    employeeId: '',
-    role: '',
+    employeeName: "",
+    employeeId: "",
+    role: "",
     status: true,
-    username: '',
-    password: '',
+    username: "",
+    password: "",
     menuAccess: {
       client: false,
       productMaster: false,
@@ -19,13 +20,13 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
       project: false,
       ordersAndTrucks: false,
       leads: false,
-    }
+    },
   });
 
+  console.log("EditUserModal user prop:", user);
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [originalPassword, setOriginalPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Role options for dropdown
   const roleOptions = [
@@ -47,10 +48,12 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
     { key: "leads", label: "Leads", id: 7 },
   ];
 
-  // Initialize form data when user changes
+  // Update form data when user data changes
   useEffect(() => {
-    if (user) {
-      // Convert menuAccess array back to boolean object
+    if (user && user.data) {
+      console.log("Setting form data from user:", user.data);
+
+      // Convert menuAccess array to boolean object for checkboxes
       const menuAccessObject = {
         client: false,
         productMaster: false,
@@ -61,29 +64,29 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
         leads: false,
       };
 
-      // Set true for accessed menus based on user's menuAccess array
-      if (user.menuAccess && Array.isArray(user.menuAccess)) {
-        menuAccessOptions.forEach(option => {
-          if (user.menuAccess.includes(option.id)) {
+      // If user has menuAccess array, set the corresponding checkboxes to true
+      if (user.data.menuAccess && Array.isArray(user.data.menuAccess)) {
+        console.log("User menuAccess array:", user.data.menuAccess);
+
+        menuAccessOptions.forEach((option) => {
+          if (user.data.menuAccess.includes(option.id)) {
             menuAccessObject[option.key] = true;
+            console.log(`Setting ${option.key} to true for id ${option.id}`);
           }
         });
       }
 
-      const currentPassword = user.password || '••••••••';
-      setOriginalPassword(currentPassword);
-      
+      console.log("Final menuAccess object:", menuAccessObject);
+
       setFormData({
-        employeeName: user.name || user.employeeName || '',
-        employeeId: user.employeeId || '',
-        role: user.role || '',
-        status: user.status !== undefined ? user.status : true,
-        username: user.userName || user.username || '',
-        password: currentPassword, // Show current password (masked)
-        menuAccess: menuAccessObject
+        employeeName: user.data.name || "",
+        employeeId: user.data.employeeId || "",
+        role: user.data.role || "",
+        status: user.data.status !== undefined ? user.data.status : true,
+        username: user.data.userName || "",
+        password: user.data.password || "",
+        menuAccess: menuAccessObject,
       });
-      setErrors({});
-      setIsChangingPassword(false);
     }
   }, [user]);
 
@@ -146,96 +149,98 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
       newErrors.username = "Username is required";
     }
 
-    // Password validation only if changing password
-    if (isChangingPassword && formData.password && formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
-    if (validateForm()) {
-      setIsSubmitting(true);
-      try {
-        // Convert menu access to array of IDs
-        const selectedMenuAccess = menuAccessOptions
-          .filter(option => formData.menuAccess[option.key])
-          .map(option => option.id);
+    if (!validateForm()) {
+      return;
+    }
 
-        // Format data according to API structure
-        const userData = {
-          id: user.id, // Include the user id for update
-          name: formData.employeeName,
-          employeeId: formData.employeeId,
-          userName: formData.username,
-          role: formData.role, // Keep original case from dropdown
-          status: formData.status,
-          menuAccess: selectedMenuAccess
-        };
+    setIsSubmitting(true);
+    try {
+      // Convert menu access boolean object back to array of IDs
+      const selectedMenuAccess = menuAccessOptions
+        .filter(option => formData.menuAccess[option.key])
+        .map(option => option.id);
 
-        // Only include password if user is changing it and provided a new one
-        if (isChangingPassword && formData.password.trim() && formData.password !== originalPassword) {
-          userData.password = formData.password;
-        }
+      // Format data according to API structure
+      const userData = {
+        id: user.data.id,
+        name: formData.employeeName,
+        employeeId: formData.employeeId,
+        userName: formData.username,
+        role: formData.role,
+        status: formData.status,
+        menuAccess: selectedMenuAccess
+      };
 
-        console.log('Updating user data:', userData);
-
-        // Make API call
-        const response = await updateUsers(userData);
-        console.log('Update user response:', response);
-
-        // Call parent onSave handler with the updated user data
-        onSave?.(userData);
-        
-      } catch (error) {
-        console.error('Error updating user:', error);
-        setErrors(prev => ({
-          ...prev,
-          submit: 'Failed to update user. Please try again.'
-        }));
-      } finally {
-        setIsSubmitting(false);
+      // Only include password if it's been changed (not the masked version)
+      if (formData.password && formData.password !== "••••••••") {
+        userData.password = formData.password;
       }
+
+      console.log("Updating user with data:", userData);
+      
+      // Call the updateUsers API directly
+      const response = await updateUsers(userData);
+      console.log("Update user API response:", response);
+      
+      // Show success message
+      toast.success("User updated successfully!");
+      
+      // Call the parent onSave handler if provided (for any additional logic)
+      if (onSave) {
+        await onSave(userData);
+      }
+      
+      // Close modal on successful save
+      onClose();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast.error("Failed to update user. Please try again.");
+      setErrors(prev => ({
+        ...prev,
+        submit: "Failed to update user. Please try again."
+      }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
     setErrors({});
-    setIsSubmitting(false);
     setIsChangingPassword(false);
-    setOriginalPassword('');
-    onClose?.();
+    setIsSubmitting(false);
+    onClose();
   };
-
-  if (!user) return null;
 
   const modalFooter = (
     <>
-      <Button 
-        variant="outline" 
-        onClick={handleClose} 
+      <Button
+        variant="outline"
+        onClick={handleClose}
         className="mr-3 px-6"
-        disabled={isSubmitting}
+        disabled={isSubmitting || loading}
         style={{
-          textTransform: 'capitalize'
+          textTransform: "capitalize",
         }}
       >
         Cancel
       </Button>
-      <Button 
-        variant="primary" 
+      <Button
+        variant="primary"
         onClick={handleSave}
-        disabled={isSubmitting}
         className="px-6"
-        style={{ 
-          backgroundColor: 'var(--color-primary)',
-          color: 'white',
-          textTransform: 'lowercase'
+        disabled={isSubmitting || loading}
+        style={{
+          backgroundColor: "var(--color-primary)",
+          color: "white",
+          textTransform: "lowercase",
         }}
       >
-        {isSubmitting ? 'Saving Changes...' : 'save changes'}
+        {isSubmitting ? "Saving..." : "save changes"}
       </Button>
     </>
   );
@@ -250,194 +255,189 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
       maxWidth="700px"
       headerIcon={ICON_NAMES.EDIT_USER}
     >
-      <div className="space-y-6">
-        {/* Employee Name */}
-        <div>
-          <Input
-            label="Employee Name"
-            placeholder="Enter full name"
-            value={formData.employeeName}
-            onChange={handleInputChange("employeeName")}
-            error={!!errors.employeeName}
-            errorMessage={errors.employeeName}
-            required
-            backgroundColor="input-bg"
-          />
-        </div>
-
-        {/* Employee ID */}
-        <div>
-          <Input
-            label="Employee ID"
-            placeholder="Enter ID"
-            value={formData.employeeId}
-            onChange={handleInputChange("employeeId")}
-            error={!!errors.employeeId}
-            errorMessage={errors.employeeId}
-            required
-            backgroundColor="input-bg"
-          />
-        </div>
-
-        {/* Role Dropdown */}
-        <div>
-          <label
-            className="block text-sm font-medium mb-2"
-            style={{ color: "var(--color-text-primary)" }}
-          >
-            Role <span style={{ color: "var(--color-error)" }}>*</span>
-          </label>
-          <Dropdown
-            options={roleOptions}
-            value={formData.role}
-            onChange={handleRoleChange}
-            placeholder="Select a role"
-            width="100%"
-            height="42px"
-            error={!!errors.role}
-            backgroundColor="input-bg"
-          />
-          {errors.role && (
-            <p className="mt-1 text-sm" style={{ color: "var(--color-error)" }}>
-              {errors.role}
-            </p>
-          )}
-        </div>
-
-        {/* Status */}
-        <div>
-          <label
-            className="block text-sm font-medium mb-2"
-            style={{ color: "var(--color-text-primary)" }}
-          >
-            Status
-          </label>
-          <div className="flex items-center">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={formData.status}
-                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.checked }))}
-              />
-              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-              <span className="ml-3 text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-                {formData.status ? 'Active' : 'Inactive'}
-              </span>
-            </label>
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        handleSave();
+      }}>
+        <div className="space-y-6">
+          {/* Employee Name */}
+          <div>
+            <Input
+              label="Employee Name"
+              placeholder="Enter full name"
+              value={formData.employeeName}
+              onChange={handleInputChange("employeeName")}
+              error={!!errors.employeeName}
+              errorMessage={errors.employeeName}
+              required
+              backgroundColor="input-bg"
+            />
           </div>
-        </div>
 
-        {/* Username */}
-        <div>
-          <Input
-            label="Username"
-            placeholder="e.g JoneDoe"
-            value={formData.username}
-            onChange={handleInputChange("username")}
-            error={!!errors.username}
-            errorMessage={errors.username}
-            required
-            backgroundColor="input-bg"
-          />
-        </div>
+          {/* Employee ID */}
+          <div>
+            <Input
+              label="Employee ID"
+              placeholder="Enter ID"
+              value={formData.employeeId}
+              onChange={handleInputChange("employeeId")}
+              error={!!errors.employeeId}
+              errorMessage={errors.employeeId}
+              required
+              backgroundColor="input-bg"
+            />
+          </div>
 
-        {/* Password */}
-        <div>
-          <Input
-            label="Password"
-            type={isChangingPassword ? "password" : "text"}
-            placeholder={isChangingPassword ? "Enter new password" : "Current password"}
-            value={formData.password}
-            onChange={isChangingPassword ? handleInputChange("password") : undefined}
-            error={!!errors.password}
-            errorMessage={errors.password}
-            backgroundColor="input-bg"
-            readOnly={!isChangingPassword}
-            className={!isChangingPassword ? "cursor-not-allowed" : ""}
-          />
-          <div className="flex items-center space-x-3 mt-1">
-            {!isChangingPassword ? (
-              <button
-                type="button"
-                className="text-xs text-blue-600 hover:text-blue-800 underline"
-                onClick={() => {
-                  setIsChangingPassword(true);
-                  setFormData(prev => ({ ...prev, password: '' }));
-                }}
+          {/* Role Dropdown */}
+          <div>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Role <span style={{ color: "var(--color-error)" }}>*</span>
+            </label>
+            <Dropdown
+              options={roleOptions}
+              value={formData.role}
+              onChange={handleRoleChange}
+              placeholder="Select a role"
+              width="100%"
+              height="42px"
+              error={!!errors.role}
+              backgroundColor="input-bg"
+            />
+            {errors.role && (
+              <p
+                className="mt-1 text-sm"
+                style={{ color: "var(--color-error)" }}
               >
-                Change password
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="text-xs text-green-600 hover:text-green-800 underline"
-                  onClick={() => {
-                    setIsChangingPassword(false);
-                    setFormData(prev => ({ ...prev, password: originalPassword }));
-                  }}
-                >
-                  Keep current
-                </button>
-                <button
-                  type="button"
-                  className="text-xs text-blue-600 hover:text-blue-800 underline"
-                  onClick={() => setFormData(prev => ({ ...prev, password: '' }))}
-                >
-                  Clear
-                </button>
-              </>
+                {errors.role}
+              </p>
             )}
           </div>
-        </div>
 
-        {/* Menu Access */}
-        <div>
-          <h4
-            className="text-sm font-medium mb-2"
-            style={{ color: "var(--color-text-primary)" }}
-          >
-            Menu access
-          </h4>
-          <p
-            className="text-sm mb-4"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
-            Access granted to the navigations to this user
-          </p>
-
-          <div
-            className="border rounded-[12px] p-4 max-h-60 overflow-y-auto space-y-3 bg-input-bg"
-            style={{
-              borderColor: "var(--color-border)",
-            }}
-          >
-            {menuAccessOptions.map((option) => (
-              <Checkbox
-                key={option.key}
-                checked={formData.menuAccess[option.key]}
-                onChange={handleMenuAccessChange(option.key)}
-                label={option.label}
-                className="w-full"
-              />
-            ))}
+          {/* Status */}
+          <div>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Status
+            </label>
+            <div className="flex items-center">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={formData.status}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      status: e.target.checked,
+                    }))
+                  }
+                />
+                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                <span
+                  className="ml-3 text-sm font-medium"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  {formData.status ? "Active" : "Inactive"}
+                </span>
+              </label>
+            </div>
           </div>
-        </div>
 
-        {/* Submit Error */}
-        {errors.submit && (
-          <div 
-            className="p-3 rounded-lg text-sm"
-            style={{ 
-              backgroundColor: 'var(--color-error-light)', 
-              color: 'var(--color-error)' 
-            }}
-          >
-            {errors.submit}
+          {/* Username */}
+          <div>
+            <Input
+              label="Username"
+              placeholder="e.g JoneDoe"
+              value={formData.username}
+              onChange={handleInputChange("username")}
+              error={!!errors.username}
+              errorMessage={errors.username}
+              required
+              backgroundColor="input-bg"
+            />
           </div>
-        )}
-      </div>
+
+          {/* Password */}
+          <div>
+            <Input
+              label="Password"
+              type="password"
+              placeholder="Enter password"
+              value={formData.password}
+              onChange={handleInputChange("password")}
+              error={!!errors.password}
+              errorMessage={errors.password}
+              backgroundColor="input-bg"
+            />
+            <button 
+              type="button" 
+              onClick={() => handleResetPassword && handleResetPassword(user)} 
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              Reset password
+            </button>
+          </div>
+
+
+          {/* Menu Access */}
+          <div>
+            <h4
+              className="text-sm font-medium mb-2"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Menu access
+            </h4>
+            <p
+              className="text-sm mb-4"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              Access granted to the navigations to this user
+            </p>
+
+            <div
+              className="border rounded-[12px] p-4 max-h-60 overflow-y-auto space-y-3 bg-input-bg"
+              style={{
+                borderColor: "var(--color-border)",
+              }}
+            >
+              {menuAccessOptions.map((option) => {
+                console.log(
+                  `Rendering checkbox for ${option.key}: checked=${
+                    formData.menuAccess[option.key]
+                  }`
+                );
+                return (
+                  <Checkbox
+                    key={option.key}
+                    checked={formData.menuAccess[option.key]}
+                    onChange={handleMenuAccessChange(option.key)}
+                    label={option.label}
+                    className="w-full"
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Submit Error */}
+          {errors.submit && (
+            <div
+              className="p-3 rounded-lg text-sm"
+              style={{
+                backgroundColor: "var(--color-error-light)",
+                color: "var(--color-error)",
+              }}
+            >
+              {errors.submit}
+            </div>
+          )}
+        </div>
+      </form>
     </Modal>
   );
 };

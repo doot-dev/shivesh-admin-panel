@@ -4,6 +4,7 @@ import LoginImg from "../assets/img/loginImg.png";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 export default function Login() {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
@@ -12,12 +13,34 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await login({ userName, password });
-
-    if (!error) {
-      console.log("Login successful:", result);
-
-      navigate('/dashboard');
+    
+    // Validate form fields
+    if (!userName.trim()) {
+      toast.error("Please enter your username");
+      return;
+    }
+    
+    if (!password.trim()) {
+      toast.error("Please enter your password");
+      return;
+    }
+    
+    try {
+      const result = await login({ userName, password });
+      
+      // Check if the login thunk was fulfilled
+      if (result.type === 'auth/login/fulfilled') {
+        console.log("Login successful:", result.payload);
+        toast.success("Login successful!");
+        navigate("/dashboard");
+      } else if (result.type === 'auth/login/rejected') {
+        // Login failed - could be wrong credentials or server error
+        console.error("Login failed:", result.error);
+        toast.error("Invalid username or password. Please try again.");
+      }
+    } catch (error) {
+      console.error("Unexpected login error:", error);
+      toast.error("Invalid username or password. Please try again.");
     }
   };
   return (
@@ -30,7 +53,9 @@ export default function Login() {
             <h1 className=" text-2xl md:text-[42px] font-semibold mt-4 text-primary tracking-wide leading-11 ">
               Welcome back!
             </h1>
-            <p className="text-2xl text-[#6D8FEF] leading-8 mt-2">Please log in to continue</p>
+            <p className="text-2xl text-[#6D8FEF] leading-8 mt-2">
+              Please log in to continue
+            </p>
           </div>
 
           {/* Form */}
@@ -43,15 +68,12 @@ export default function Login() {
                 type="text"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                  className="mt-1 w-full px-3  border rounded-[6px] h-[60px] border-[#6D8FEFA6] focus:outline-none bg-input-bg"
+                className="mt-1 w-full px-3  border rounded-[6px] h-[60px] border-[#6D8FEFA6] focus:outline-none bg-input-bg"
               />
             </div>
 
             <div>
-              <label className="text-[18px]  text-text-primary">
-                Password
-
-              </label>
+              <label className="text-[18px]  text-text-primary">Password</label>
               <input
                 type="password"
                 value={password}
@@ -72,7 +94,10 @@ export default function Login() {
 
           {/* Forgot Password */}
           <div className="text-center mt-8">
-            <a href="#" className="text-base font-medium tracking-wide text-primary hover:underline">
+            <a
+              href="#"
+              className="text-base font-medium tracking-wide text-primary hover:underline"
+            >
               Forgot your password?
             </a>
           </div>

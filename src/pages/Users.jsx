@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
 import { Icon, ICON_NAMES } from "../components/icons";
 import { Button, Table, Dropdown } from "../components/ui";
-import { AddUserModal, ViewUserModal, EditUserModal, DeleteUserModal } from "../components/modals";
-import { getUsers, updateUsers, deleteUser } from "../services/userService";
+import {
+  AddUserModal,
+  ViewUserModal,
+  EditUserModal,
+  DeleteUserModal,
+  ResetPasswordModal,
+} from "../components/modals";
+import {
+  getUsers,
+  getUserById,
+  updateUsers,
+  deleteUser,
+  resetPassword,
+} from "../services/userService";
 import { toast } from "react-toastify";
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -13,6 +25,8 @@ const Users = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [loadingUserData, setLoadingUserData] = useState(false);
+  const [resetPasswordModal, setResetPasswordModal] = useState(false);
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,18 +46,30 @@ const Users = () => {
 
   // This is now replaced by API data loaded in useEffect
 
-  const handleEdit = (user) => {
-    setSelectedUser(user);
-    setShowEditModal(true);
+  const handleEdit = async (user) => {
+    try {
+      console.log("Editing user:", user);
+      setLoadingUserData(true);
+      setShowEditModal(true);
+
+      // Fetch the latest user data by ID
+      const userData = await getUserById(user.id);
+      console.log("Fetched user data for edit:", userData);
+
+      setSelectedUser(userData);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      toast.error("Failed to load user data");
+      setShowEditModal(false);
+    } finally {
+      setLoadingUserData(false);
+    }
   };
 
   const handleSaveEdit = async (updatedUser) => {
     try {
       console.log("User updated successfully:", updatedUser);
-      
-      // Show success message
-      toast.success("User updated successfully!");
-      
+
       // Refresh the users list
       const response = await getUsers();
       let users = [];
@@ -55,17 +81,44 @@ const Users = () => {
         users = response.users;
       }
       setUsersData(users);
-      
+
       // Close modal
       setShowEditModal(false);
       setSelectedUser(null);
     } catch (error) {
       console.error("Error refreshing user list:", error);
       toast.error("User updated but failed to refresh list");
-      
+
       // Still close the modal even if refresh fails
       setShowEditModal(false);
       setSelectedUser(null);
+    }
+  };
+
+  const handleResetPassword = async (user) => {
+    setSelectedUser(user);
+    setResetPasswordModal(true);
+    setShowEditModal(false);
+  };
+
+  const handleConfirmResetPassword = async (passwordData) => {
+    try {
+      console.log("Resetting password:", passwordData);
+      
+      // Call the reset password API
+      const response = await resetPassword(passwordData);
+      console.log("Reset password response:", response);
+      
+      // Show success message
+      toast.success("Password reset successfully!");
+      
+      // Close modal
+      setResetPasswordModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      toast.error("Failed to reset password. Please try again.");
+      throw error; // Re-throw to let modal handle the error state
     }
   };
 
@@ -77,13 +130,13 @@ const Users = () => {
   const handleConfirmDelete = async (user) => {
     try {
       console.log("Deleting user:", user);
-      
+
       // Make API call to delete user
       await deleteUser(user.id);
-      
+
       // Show success message
       toast.success("User deleted successfully!");
-      
+
       // Refresh the users list
       const response = await getUsers();
       let users = [];
@@ -95,7 +148,7 @@ const Users = () => {
         users = response.users;
       }
       setUsersData(users);
-      
+
       // Close modal
       setShowDeleteModal(false);
       setSelectedUser(null);
@@ -112,6 +165,7 @@ const Users = () => {
 
   // const handleRowClick = (user) => {
   //   setSelectedUser(user);
+
   //   setShowViewModal(true);
   // };
 
@@ -177,6 +231,7 @@ const Users = () => {
       employeeName: user.name,
       username: user.userName,
       password: user.password || "••••••••", // Don't show real passwords
+      originalRole: user.role, // Keep original API role value for editing
       role: getRoleLabel(user.role), // Convert role value to label for display
       status: user.status ? "Active" : "Inactive", // Convert boolean to string
     }));
@@ -221,12 +276,12 @@ const Users = () => {
       type: "badge",
       badgeConfig: {
         Active: {
-          color: "var(--color-success)",
-          backgroundColor: "var(--color-success-light)",
+          color: "#16A34A", // Green text for active
+          backgroundColor: "#D1FAE5", // Light green background for active
         },
         Inactive: {
-          color: "var(--color-error)",
-          backgroundColor: "var(--color-error-light)",
+          color: "#DC2626", // Red text for inactive
+          backgroundColor: "#FFD5C9", // Light red background for inactive
         },
       },
     },
@@ -408,9 +463,23 @@ const Users = () => {
         onClose={() => {
           setShowEditModal(false);
           setSelectedUser(null);
+          setLoadingUserData(false);
         }}
         user={selectedUser}
+        loading={loadingUserData}
         onSave={handleSaveEdit}
+        handleResetPassword={handleResetPassword}
+      />
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={resetPasswordModal}
+        onClose={() => {
+          setResetPasswordModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onResetPassword={handleConfirmResetPassword}
       />
 
       {/* Delete User Modal */}
