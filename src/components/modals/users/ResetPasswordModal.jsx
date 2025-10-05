@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Modal, Button, Input } from "../ui";
-import { ICON_NAMES } from "../icons";
+import { Modal, Button, Input } from "../../ui";
+import { ICON_NAMES } from "../../icons";
 
 const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
   const [formData, setFormData] = useState({

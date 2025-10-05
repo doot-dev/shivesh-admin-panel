@@ -30,7 +30,8 @@ const Sidebar = ({ isOpen, onClose }) => {
       key: "products",
       icon: ICON_NAMES.PRODUCT,
       label: "Product",
-      path: "/products",
+      path: "/products" ,
+      
     },
     {
       key: "clients",

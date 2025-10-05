@@ -1,5 +1,5 @@
-import { Modal, Button, Input, Checkbox } from "../ui";
-import { Icon, ICON_NAMES } from "../icons";
+import { Modal, Button, Input, Checkbox } from "../../ui";
+import { Icon, ICON_NAMES } from "../../icons";
 
 const ViewUserModal = ({ isOpen, onClose, user, onEdit, onDelete }) => {
   if (!user) return null;

@@ -203,125 +203,126 @@ const Table = ({
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow overflow-hidden ${className}`}>
-      {/* Search Bar */}
-      {searchable && (
-        <div className="p-4 border-b border-border">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Icon
-                name={ICON_NAMES.SEARCH}
-                size={16}
-                color="var(--color-text-secondary)"
+    <>
+      <div
+        className={`bg-white rounded-lg shadow overflow-hidden ${className}`}
+      >
+        {/* Search Bar */}
+        {searchable && (
+          <div className="p-4 border-b border-border">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Icon
+                  name={ICON_NAMES.SEARCH}
+                  size={16}
+                  color="var(--color-text-secondary)"
+                />
+              </div>
+              <input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchValue}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
-            <input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Empty State */}
-      {data.length === 0 && (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Icon
-              name={ICON_NAMES.INBOX}
-              size={48}
-              color="var(--color-text-secondary)"
-              className="mx-auto mb-4"
-            />
-            <p className="text-text-secondary">{emptyMessage}</p>
+        {/* Empty State */}
+        {data.length === 0 && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Icon
+                name={ICON_NAMES.INBOX}
+                size={48}
+                color="var(--color-text-secondary)"
+                className="mx-auto mb-4"
+              />
+              <p className="text-text-secondary">{emptyMessage}</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Mobile Cards View */}
-      {data.length > 0 && showMobileCards && (
-        <div className="md:hidden">
-          {currentData.map((item, index) => renderMobileCard(item, index))}
-        </div>
-      )}
+        {/* Mobile Cards View */}
+        {data.length > 0 && showMobileCards && (
+          <div className="md:hidden">
+            {currentData.map((item, index) => renderMobileCard(item, index))}
+          </div>
+        )}
 
-      {/* Desktop Table View */}
-      {data.length > 0 && (
-        <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead
-              className={`bg-border text-white md:h-[64px] ${headerClassName}`}
-            >
-              <tr>
-                {columns.map((column, index) => (
-                  <th
-                    key={index}
-                    className={`px-6 py-3 text-left md:text-base font-semibold   tracking-wider ${
-                      sortable && column.sortable !== false
-                        ? "cursor-pointer select-none group hover:bg-background-hover"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      column.sortable !== false && handleSort(column.key)
-                    }
-                  >
-                    <div className="flex items-center">
-                      {column.header}
-                      {sortable &&
-                        column.sortable !== false &&
-                        renderSortIcon(column.key)}
-                    </div>
-                  </th>
-                ))}
-                {actions && actions.length > 0 && (
-                  <th className="px-6 py-3 text-left md:text-base font-semibold   tracking-wider">
-                    Actions
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody
-              className={`bg-white divide-y divide-[#E2E2E2] ${rowClassName}`}
-            >
-              {currentData.map((item, index) => (
-                <tr
-                  key={item.id || index}
-                  className={`hover:bg-background-hover transition-colors md:h-[64px] ${
-                    onRowClick ? "cursor-pointer" : ""
-                  }`}
-                  onClick={() => onRowClick?.(item)}
-                >
-                  {columns.map((column, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className={`px-6 py-4 whitespace-nowrap text-xs font-medium ${
-                        column.className ||
-                        (colIndex === 0
-                          ? "text-text-primary font-medium"
-                          : "text-text-primary")
+        {/* Desktop Table View */}
+        {data.length > 0 && (
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full divide-y divide-border">
+              <thead
+                className={`bg-border text-white md:h-[64px] ${headerClassName}`}
+              >
+                <tr>
+                  {columns.map((column, index) => (
+                    <th
+                      key={index}
+                      className={`px-6 py-3 text-left md:text-base font-semibold   tracking-wider ${
+                        sortable && column.sortable !== false
+                          ? "cursor-pointer select-none group hover:bg-background-hover"
+                          : ""
                       }`}
+                      onClick={() =>
+                        column.sortable !== false && handleSort(column.key)
+                      }
                     >
-                      {renderCellContent(column, item)}
-                    </td>
+                      <div className="flex items-center">
+                        {column.header}
+                        {sortable &&
+                          column.sortable !== false &&
+                          renderSortIcon(column.key)}
+                      </div>
+                    </th>
                   ))}
                   {actions && actions.length > 0 && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {renderActions(item)}
-                    </td>
+                    <th className="px-6 py-3 text-left md:text-base font-semibold   tracking-wider">
+                      Actions
+                    </th>
                   )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
+              </thead>
+              <tbody className={`bg-white ${rowClassName}`}>
+                {currentData.map((item, index) => (
+                  <tr
+                    key={item.id || index}
+                    className={`hover:bg-background-hover transition-colors md:h-[64px] border-b border-[#E2E2E2] 
+                   
+      ${onRowClick ? "cursor-pointer" : ""}`}
+                    onClick={() => onRowClick?.(item)}
+                  >
+                    {columns.map((column, colIndex) => (
+                      <td
+                        key={colIndex}
+                        className={`px-6 py-4 whitespace-nowrap text-xs font-medium ${
+                          column.className ||
+                          (colIndex === 0
+                            ? "text-text-primary font-medium"
+                            : "text-text-primary")
+                        }`}
+                      >
+                        {renderCellContent(column, item)}
+                      </td>
+                    ))}
+                    {actions && actions.length > 0 && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {renderActions(item)}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
       {/* Pagination */}
       {showPagination && data.length > 0 && (
-        <div className="px-4 md:px-6 py-3 bg-white border-t border-[#E2E2E2]">
+        <div className="px-0 py-3 bg-white ">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center space-x-2 text-sm text-text-secondary">
               <span className="hidden sm:inline">
@@ -403,7 +404,7 @@ const Table = ({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

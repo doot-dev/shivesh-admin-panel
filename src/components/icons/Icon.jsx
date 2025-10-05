@@ -18,6 +18,8 @@ import NotificationIcon from '../../assets/icons/Notification.svg?url';
 import AddNewUserIcon from "../../assets/icons/addNewUser.svg?url";
 import UserDetailIcon from "../../assets/icons/userDetails.svg?url";
 import EditDetailIcon from "../../assets/icons/editUser.svg?url";
+import TickIcon from "../../assets/icons/tick.svg?url";
+import ProductModalIcon from "../../assets/icons/productModal.svg?url";
 
 const Icon = ({ 
   name, 
@@ -56,7 +58,9 @@ const Icon = ({
     'notification': NotificationIcon,
     'add-new-user': AddNewUserIcon,
     'user-details': UserDetailIcon,
-    'edit-user': EditDetailIcon,    
+    'edit-user': EditDetailIcon,
+    'tick': TickIcon,
+    'product-modal': ProductModalIcon,
 
     // UI icons - using inline SVG for common UI elements
     'search': (

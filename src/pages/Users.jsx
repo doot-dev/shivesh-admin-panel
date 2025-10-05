@@ -7,7 +7,7 @@ import {
   EditUserModal,
   DeleteUserModal,
   ResetPasswordModal,
-} from "../components/modals";
+} from "../components/modals/users";
 import {
   getUsers,
   getUserById,

@@ -21,18 +21,18 @@ const Checkbox = ({
 
   const colorStyles = {
     primary: {
-      backgroundColor: checked ? 'var(--color-primary)' : 'transparent',
-      borderColor: checked ? 'var(--color-primary)' : 'var(--color-border)',
+      backgroundColor: checked ? 'var(--color-border)' : 'transparent',
+      borderColor: checked ? '#3B82F6' : '#D1D5DB',
       color: 'white'
     },
     success: {
-      backgroundColor: checked ? 'var(--color-success)' : 'transparent',
-      borderColor: checked ? 'var(--color-success)' : 'var(--color-border)',
+      backgroundColor: checked ? 'var(--color-border)' : 'transparent',
+      borderColor: checked ? '#10B981' : '#D1D5DB',
       color: 'white'
     },
     error: {
-      backgroundColor: checked ? 'var(--color-error)' : 'transparent',
-      borderColor: checked ? 'var(--color-error)' : 'var(--color-border)',
+      backgroundColor: checked ? 'var(--color-border)' : 'transparent',
+      borderColor: checked ? '#EF4444' : '#D1D5DB',
       color: 'white'
     }
   };
@@ -46,7 +46,7 @@ const Checkbox = ({
   return (
     <label 
       className={`
-        flex items-center cursor-pointer select-none
+        flex items-center cursor-pointer select-none group
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
@@ -67,21 +67,25 @@ const Checkbox = ({
             ${sizeClasses[size]} border-2 rounded flex items-center justify-center
             transition-all duration-200 ease-in-out
             ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
-            ${checked || indeterminate ? 'border-transparent' : 'hover:border-opacity-75'}
+            ${!checked && !disabled ? 'group-hover:border-blue-300' : ''}
+            shadow-sm
           `}
-          style={colorStyles[color]}
+          style={{
+            backgroundColor: colorStyles[color].backgroundColor,
+            borderColor: colorStyles[color].borderColor,
+          }}
         >
           {checked && (
             <Icon 
-              name={ICON_NAMES.CHECK} 
-              size={size === 'sm' ? 12 : size === 'lg' ? 16 : 14} 
+              name={ICON_NAMES.TICK} 
+              size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} 
               color="white"
+              style={{ filter: 'brightness(0) invert(1)' }}
             />
           )}
           {indeterminate && !checked && (
             <div 
-              className="w-2 h-0.5 rounded"
-              style={{ backgroundColor: 'white' }}
+              className="w-2.5 h-0.5 rounded-full bg-white"
             />
           )}
         </div>
@@ -89,10 +93,10 @@ const Checkbox = ({
       {label && (
         <span 
           className={`
-            ml-3 text-sm font-medium
+            ml-3 text-sm font-medium text-gray-700
             ${disabled ? 'text-gray-400' : ''}
+            ${!disabled ? 'group-hover:text-gray-900' : ''}
           `}
-          style={{ color: disabled ? 'var(--color-disabled)' : 'var(--color-text-primary)' }}
         >
           {label}
         </span>

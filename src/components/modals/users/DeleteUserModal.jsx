@@ -1,4 +1,4 @@
-import { Icon, ICON_NAMES } from "../icons";
+import { Icon, ICON_NAMES } from "../../icons";
 
 const DeleteUserModal = ({ isOpen, onClose, user, onDelete, loading = false }) => {
   if (!isOpen || !user) return null;

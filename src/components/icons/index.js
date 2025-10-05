@@ -32,7 +32,8 @@ export const ICON_NAMES = {
   ADD_NEW_USER: "add-new-user",
   USER_DETAILS: "user-details",
   EDIT_USER: "edit-user",
-
+  TICK: "tick",
+  PRODUCT_MODAL: "product-modal",
 
   // UI Icons (inline SVG)
   SEARCH: "search",

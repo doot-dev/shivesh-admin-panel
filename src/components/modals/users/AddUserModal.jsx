@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Modal, Input, Dropdown, Checkbox, Button } from "../ui";
-import { Icon, ICON_NAMES } from "../icons";
-import { addUser } from "../../services/userService";
+import { Modal, Input, Dropdown, Checkbox, Button } from "../../ui";
+import { Icon, ICON_NAMES } from "../../icons";
+import { addUser } from "../../../services/userService";
 
 const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({

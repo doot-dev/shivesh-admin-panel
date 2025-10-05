@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import Dashboard from "../pages/dashboard";
 import Users from "../pages/Users";
+import Products from "../pages/products";
+import ProductRMC from "../pages/productRMC";
 import Login from "../pages/login";
 import ProtectedRoute from "../components/ProtectedRoute";
 
@@ -16,7 +18,8 @@ export default function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
-          <Route path="/products" element={<div className="p-6"><h1>Products Page</h1></div>} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:productName" element={<ProductRMC />} />
           <Route path="/clients" element={<div className="p-6"><h1>Clients Page</h1></div>} />
           <Route path="/vendors" element={<div className="p-6"><h1>Vendors Page</h1></div>} />
           <Route path="/leads" element={<div className="p-6"><h1>Leads Page</h1></div>} />
