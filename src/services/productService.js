@@ -4,7 +4,7 @@ const productService = {
   // Get all products
   getAllProducts: async () => {
     try {
-      const response = await api.get('/api/v1/admin/products');
+      const response = await api.get('/api/v1/admin/product');
       return response.data;
     } catch (error) {
       console.error('Error fetching products:', error);

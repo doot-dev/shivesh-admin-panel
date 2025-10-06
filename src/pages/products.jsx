@@ -7,8 +7,8 @@ import Input from "../components/ui/Input";
 import { Icon, ICON_NAMES } from "../components/icons";
 import AddProductModal from "../components/modals/product/AddProductModal";
 import DeleteProductModal from "../components/modals/product/DeleteProductModal";
-import ViewProductModal from "../components/modals/product/ViewProductModal";
 import productService from "../services/productService";
+import EditProductModal from "../components/modals/product/EditProductModal";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -20,9 +20,8 @@ const Products = () => {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-
+const [showEditModal, setShowEditModal] = useState(false);
   // Loading states for different operations
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
@@ -71,9 +70,8 @@ const Products = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      // For now, using mock data. Replace with actual API call:
-      // const response = await productService.getAllProducts();
-      // setProducts(response.data || []);
+      const productData = await productService.getAllProducts();
+      console.log("Fetched Products:", productData);
       setProducts(mockProducts);
       setFilteredProducts(mockProducts);
     } catch (error) {
@@ -116,6 +114,7 @@ const Products = () => {
 
   // Handle edit product - navigate to subcategory page
   const handleEdit = (product) => {
+    setShowEditModal(true);
     // navigate(`/products/${product.product}`);
   };
 
@@ -273,14 +272,13 @@ const Products = () => {
         loading={isDeletingProduct}
       />
 
-      {/* <ViewProductModal
-        isOpen={showViewModal}
-        onClose={() => {
-          setShowViewModal(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
-      /> */}
+      <EditProductModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        // product={selectedProduct}
+        // onSubmit={handleEditSubmit}
+        // loading={isEditingProduct}
+      />
     </div>
   );
 };
