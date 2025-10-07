@@ -13,25 +13,20 @@ const EditProductModal = ({
   loading = false,
 }) => {
   const [formData, setFormData] = useState({
-    product: "",
-    gradeSize: "",
-    status: "Active",
+    name: "",
+    isActive: true,
   });
 
   const [errors, setErrors] = useState({});
 
-  const statusOptions = [
-    { value: "Active", label: "Active" },
-    { value: "Inactive", label: "Inactive" },
-  ];
-
   // Populate form when product data changes
   useEffect(() => {
     if (product) {
+        console.log("Product data:", product);
       setFormData({
-        product: product.product || "",
-        gradeSize: product.gradeSize || "",
-        status: product.status || "Active",
+        id: product.id || "",
+        name: product.name || "",
+        isActive: product.isActive || true,
       });
       setErrors({});
     }
@@ -55,12 +50,8 @@ const EditProductModal = ({
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.product.trim()) {
-      newErrors.product = "Product name is required";
-    }
-
-    if (!formData.gradeSize.trim()) {
-      newErrors.gradeSize = "Grade/Size is required";
+    if (!formData.name.trim()) {
+      newErrors.name = "Product name is required";
     }
 
     setErrors(newErrors);
@@ -96,10 +87,10 @@ const EditProductModal = ({
           </label>
           <Input
             type="text"
-            value={formData.product}
-            onChange={(e) => handleChange("product", e.target.value)}
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
             placeholder="Enter product name"
-            error={errors.product}
+            error={errors.name}
             disabled={loading}
           />
         </div>
@@ -116,10 +107,11 @@ const EditProductModal = ({
               <input
                 type="checkbox"
                 className="sr-only peer"
+                checked={formData.isActive}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    status: e.target.checked,
+                    isActive: e.target.checked,
                   }))
                 }
               />
@@ -128,7 +120,7 @@ const EditProductModal = ({
                 className="ml-3 text-sm font-medium"
                 style={{ color: "var(--color-text-primary)" }}
               >
-                {formData.status ? "Active" : "Inactive"}
+                {formData.isActive ? "Active" : "Inactive"}
               </span>
             </label>
           </div>

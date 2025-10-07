@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
 import Input from "../components/ui/Input";
+import FullPageLoader from "../components/ui/FullPageLoader";
 import { Icon, ICON_NAMES } from "../components/icons";
 import AddProductModal from "../components/modals/product/AddProductModal";
 import DeleteProductModal from "../components/modals/product/DeleteProductModal";
@@ -21,9 +22,10 @@ const Products = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   // Loading states for different operations
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
 
   // Mock data - replace with actual API call
@@ -56,13 +58,25 @@ const [showEditModal, setShowEditModal] = useState(false);
   }, []);
 
   useEffect(() => {
-    // Filter products based on search term
+    if (!searchTerm.trim()) {
+      setFilteredProducts(products);
+      return;
+    }
+
     const filtered = products.filter(
       (product) =>
-        product.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.gradeSize.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.status.toLowerCase().includes(searchTerm.toLowerCase())
+        (product?.product?.toLowerCase?.() || "").includes(
+          searchTerm.toLowerCase()
+        ) ||
+        (product?.gradeSize?.toString?.() || "").includes(
+          searchTerm.toLowerCase()
+        ) ||
+        (product?.status?.toLowerCase?.() || "").includes(
+          searchTerm.toLowerCase()
+        )
     );
+    console.log("Filtered Products:", filtered);
+
     setFilteredProducts(filtered);
   }, [searchTerm, products]);
 
@@ -70,13 +84,42 @@ const [showEditModal, setShowEditModal] = useState(false);
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const productData = await productService.getAllProducts();
-      console.log("Fetched Products:", productData);
-      setProducts(mockProducts);
-      setFilteredProducts(mockProducts);
+      const response = await productService.getAllProducts();
+      console.log("Fetched Products:", response);
+
+      // Handle different response structures
+      let rawData = [];
+      if (Array.isArray(response)) {
+        rawData = response;
+      } else if (response && Array.isArray(response.data)) {
+        rawData = response.data;
+      } else if (response && Array.isArray(response.products)) {
+        rawData = response.products;
+      } else {
+        console.warn("Unexpected response structure:", response);
+        rawData = mockProducts; // Fallback to mock data
+      }
+
+      // Map API data to table format
+      const productData = rawData.map((item, index) => ({
+        id: item.id,
+        sNo: String(index + 1).padStart(2, "0"),
+        product: item.name,
+        gradeSize: Array.isArray(item.size) ? item.size.length : 0,
+        status: item.isActive ? "Active" : "Inactive",
+        isActive: item.isActive, // Keep boolean for operations
+        name: item.name, // Keep original name for operations
+      }));
+
+      console.log("Mapped Products:", productData);
+      setProducts(productData);
+      setFilteredProducts(productData);
     } catch (error) {
       console.error("Error loading products:", error);
       toast.error("Failed to load products");
+      // Fallback to mock data on error
+      setProducts(mockProducts);
+      setFilteredProducts(mockProducts);
     } finally {
       setLoading(false);
     }
@@ -90,18 +133,13 @@ const [showEditModal, setShowEditModal] = useState(false);
   const handleAddSubmit = async (productData) => {
     try {
       setIsAddingProduct(true);
-      // For now, simulate API call. Replace with actual API call:
-      // const response = await productService.createProduct(productData);
-
-      // Mock implementation
-      const newId = Math.max(...products.map((p) => p.id), 0) + 1;
-      const newProduct = {
-        id: newId,
-        sNo: String(newId).padStart(2, "0"),
-        ...productData,
-      };
-
-      setProducts((prev) => [...prev, newProduct]);
+      const response = await productService.createProduct(productData);
+      console.log("Add Product Response:", response);
+      
+      // Refresh product list
+      await loadProducts();
+      
+      // Close modal and show success message
       setShowAddModal(false);
       toast.success("Product added successfully");
     } catch (error) {
@@ -112,10 +150,51 @@ const [showEditModal, setShowEditModal] = useState(false);
     }
   };
 
-  // Handle edit product - navigate to subcategory page
-  const handleEdit = (product) => {
-    setShowEditModal(true);
-    // navigate(`/products/${product.product}`);
+  // Handle edit product - open modal and fetch product data
+  const handleEdit = async (product) => {
+    try {
+      console.log("Opening edit modal for product:", product);
+      setShowEditModal(true);
+
+      // Fetch complete product data by ID
+      const response = await productService.getProductById(product.id);
+      console.log("Fetched Product Data for Edit:", response);
+
+      // Handle different response structures
+      let productData = response;
+      if (response && response.data) {
+        productData = response.data;
+      }
+
+      setSelectedProduct(productData);
+    } catch (error) {
+      console.error("Error fetching product for edit:", error);
+      toast.error("Failed to load product data");
+      setShowEditModal(false);
+    }
+  };
+
+  // Handle edit form submission
+  const handleEditSubmit = async (productId, formData) => {
+    try {
+      setIsEditingProduct(true);
+      console.log("Updating product:", { productId, formData });
+
+      const response = await productService.updateProduct(productId, formData);
+      console.log("Update Product Response:", response);
+
+      // Refresh products list
+      await loadProducts();
+
+      setShowEditModal(false);
+      setSelectedProduct(null);
+      toast.success("Product updated successfully");
+    } catch (error) {
+      console.error("Error updating product:", error);
+      toast.error("Failed to update product");
+    } finally {
+      setIsEditingProduct(false);
+    }
   };
 
   // Handle delete product
@@ -124,14 +203,18 @@ const [showEditModal, setShowEditModal] = useState(false);
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = async (productId) => {
+  const handleConfirmDelete = async (product) => {
     try {
       setIsDeletingProduct(true);
-      // For now, simulate API call. Replace with actual API call:
-      // await productService.deleteProduct(productId);
+      console.log("Deleting product:", product);
 
-      // Mock implementation
-      setProducts((prev) => prev.filter((product) => product.id !== productId));
+      // Use the product ID directly
+      const productId = product.id;
+      const deleteResponse = await productService.deleteProduct(productId);
+      console.log("Delete Product Response:", deleteResponse);
+
+      // Reload the products table to get fresh data from the API
+      await loadProducts();
 
       setShowDeleteModal(false);
       setSelectedProduct(null);
@@ -146,7 +229,8 @@ const [showEditModal, setShowEditModal] = useState(false);
 
   // Handle view product
   const handleView = (product) => {
-    navigate(`/products/${product.product}`);
+    console.log("Viewing product:", product);
+    navigate(`/products/${product.id}`);
   };
 
   // Table configuration
@@ -208,9 +292,27 @@ const [showEditModal, setShowEditModal] = useState(false);
     },
   ];
 
+  // Determine loading message based on current operation
+  const getLoadingMessage = () => {
+    if (loading) return "Loading products...";
+    if (isAddingProduct) return "Adding product...";
+    if (isEditingProduct) return "Updating product...";
+    if (isDeletingProduct) return "Deleting product...";
+    return "Processing...";
+  };
+
   return (
-    <div className="p-6">
-      {/* Header */}
+    <>
+      {/* Full Page Loader */}
+      <FullPageLoader 
+        isVisible={loading || isAddingProduct || isEditingProduct || isDeletingProduct}
+        message={getLoadingMessage()}
+        spinnerSize="w-20 h-20"
+        spinnerVariant="default"
+      />
+
+      <div className="p-6">
+        {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">Products</h1>
         <p className="text-gray-600">View and manage products</p>
@@ -256,7 +358,9 @@ const [showEditModal, setShowEditModal] = useState(false);
       {/* Modals */}
       <AddProductModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+        }}
         onSubmit={handleAddSubmit}
         loading={isAddingProduct}
       />
@@ -274,12 +378,16 @@ const [showEditModal, setShowEditModal] = useState(false);
 
       <EditProductModal
         isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        // product={selectedProduct}
-        // onSubmit={handleEditSubmit}
-        // loading={isEditingProduct}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        onSubmit={handleEditSubmit}
+        loading={isEditingProduct}
       />
     </div>
+    </>
   );
 };
 

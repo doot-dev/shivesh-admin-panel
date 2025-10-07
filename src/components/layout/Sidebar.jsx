@@ -95,7 +95,15 @@ const Sidebar = ({ isOpen, onClose }) => {
     },
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    // Special case for products - should be active for /products and /products/:id
+    if (path === "/products") {
+      return location.pathname === "/products" || location.pathname.startsWith("/products/");
+    }
+    
+    // Default exact match for other paths
+    return location.pathname === path;
+  };
 
   return (
     <>

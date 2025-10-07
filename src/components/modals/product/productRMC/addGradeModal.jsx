@@ -5,31 +5,45 @@ import Input from "../../../ui/Input";
 import Dropdown from "../../../ui/Dropdown";
 import { ICON_NAMES } from "../../../icons";
 
-const AddGradeModal = ({ isOpen, onClose }) => {
+const AddGradeModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  loading = false,
+  productId,
+  productName,
+}) => {
   const [formData, setFormData] = useState({
-    product: "",
-    gradeSize: "",
-    status: "Active",
+    name: "",
+    subcategory: "",
+    productId: productId || "",
   });
+
+  console.log("AddGradeModal - productId:", productId);
 
   const [errors, setErrors] = useState({});
 
-  const statusOptions = [
-    { value: "Active", label: "Active" },
-    { value: "Inactive", label: "Inactive" },
-  ];
+  // Update productId in formData when productId prop changes
+  useEffect(() => {
+    if (productId) {
+      setFormData((prev) => ({
+        ...prev,
+        productId: productId,
+      }));
+    }
+  }, [productId]);
 
-  // Populate form when product data changes
-  // useEffect(() => {
-  //   if (product) {
-  //     setFormData({
-  //       product: product.product || "",
-  //       gradeSize: product.gradeSize || "",
-  //       status: product.status || "Active",
-  //     });
-  //     setErrors({});
-  //   }
-  // }, [product]);
+  // Reset form only when modal opens for the first time
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(prev => ({
+        name: "",
+        subcategory: "",
+        productId: productId || prev.productId,
+      }));
+      setErrors({});
+    }
+  }, [isOpen]); // Removed productId from dependencies to prevent unnecessary resets
 
   const handleChange = (name, value) => {
     setFormData((prev) => ({
@@ -49,12 +63,16 @@ const AddGradeModal = ({ isOpen, onClose }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.product.trim()) {
-      newErrors.product = "Product name is required";
+    if (!formData.name.trim()) {
+      newErrors.name = "Grade/Size name is required";
     }
 
-    if (!formData.gradeSize.trim()) {
-      newErrors.gradeSize = "Grade/Size is required";
+    if (!formData.subcategory.trim()) {
+      newErrors.subcategory = "Sub-category is required";
+    }
+
+    if (!formData.productId) {
+      newErrors.productId = "Product ID is required";
     }
 
     setErrors(newErrors);
@@ -65,11 +83,20 @@ const AddGradeModal = ({ isOpen, onClose }) => {
     e.preventDefault();
 
     if (validateForm()) {
-      onSubmit(product.id, formData);
+      console.log("Form Data of grade Submitted:", formData);
+      
+      // Just pass the form data to parent - let parent handle API call
+      onSubmit(formData);
     }
   };
 
   const handleClose = () => {
+    // Reset form data when manually closing
+    setFormData({
+      name: "",
+      subcategory: "",
+      productId: productId || "",
+    });
     setErrors({});
     onClose();
   };
@@ -83,7 +110,7 @@ const AddGradeModal = ({ isOpen, onClose }) => {
       maxWidth="700px"
       headerIcon={ICON_NAMES.PRODUCT_MODAL}
     >
-      <form className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -91,11 +118,11 @@ const AddGradeModal = ({ isOpen, onClose }) => {
             </label>
             <Input
               type="text"
-              value={formData.product}
-              onChange={(e) => handleChange("product", e.target.value)}
-              placeholder="Enter product name"
-              error={errors.product}
-              // disabled={loading}
+              value={formData.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              placeholder="Enter grade/size name (e.g., M30, M40)"
+              error={errors.name}
+              disabled={loading}
             />
           </div>
 
@@ -105,16 +132,27 @@ const AddGradeModal = ({ isOpen, onClose }) => {
             </label>
             <Input
               type="text"
-              value={formData.gradeSize}
-              onChange={(e) => handleChange("gradeSize", e.target.value)}
-              placeholder="Enter grade or size"
-              error={errors.gradeSize}
-              // disabled={loading}
+              value={formData.subcategory}
+              onChange={(e) => handleChange("subcategory", e.target.value)}
+              placeholder="Enter sub-category (e.g., Pure OPC)"
+              error={errors.subcategory}
+              disabled={loading}
             />
           </div>
         </div>
 
-        
+        {/* Product Info Display */}
+        {productName && (
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-sm text-gray-600">
+              Adding grade/size for:{" "}
+              <span className="font-medium text-gray-900">{productName}</span>
+              <span className="text-xs text-gray-500 ml-2">
+                (ID: {productId})
+              </span>
+            </p>
+          </div>
+        )}
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button
@@ -123,7 +161,7 @@ const AddGradeModal = ({ isOpen, onClose }) => {
             onClick={handleClose}
             width="150px"
             height="45px"
-            // disabled={loading}
+            disabled={loading}
           >
             Cancel
           </Button>
@@ -131,11 +169,10 @@ const AddGradeModal = ({ isOpen, onClose }) => {
             type="submit"
             width="150px"
             height="45px"
-            //  disabled={loading} loading={loading}
+            disabled={loading}
+            loading={loading}
           >
-            {/* {loading ? "Updating..." : "Update Product"}
-             */}
-            Add
+            {loading ? "Adding..." : "Add Grade/Size"}
           </Button>
         </div>
       </form>

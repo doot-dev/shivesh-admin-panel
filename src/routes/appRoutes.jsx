@@ -6,7 +6,7 @@ import Products from "../pages/products";
 import ProductRMC from "../pages/productRMC";
 import Login from "../pages/login";
 import ProtectedRoute from "../components/ProtectedRoute";
-
+import { useParams } from "react-router";
 export default function AppRoutes() {
   return (
     <BrowserRouter>
@@ -19,7 +19,7 @@ export default function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/products/:productName" element={<ProductRMC />} />
+          <Route path="/products/:id" element={<ProductRMC />} />
           <Route path="/clients" element={<div className="p-6"><h1>Clients Page</h1></div>} />
           <Route path="/vendors" element={<div className="p-6"><h1>Vendors Page</h1></div>} />
           <Route path="/leads" element={<div className="p-6"><h1>Leads Page</h1></div>} />

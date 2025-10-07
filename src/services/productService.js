@@ -1,13 +1,13 @@
-import api from './api';
+import api from "./api";
 
 const productService = {
   // Get all products
   getAllProducts: async () => {
     try {
-      const response = await api.get('/api/v1/admin/product');
+      const response = await api.get("/api/v1/admin/product");
       return response.data;
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
       throw error;
     }
   },
@@ -18,7 +18,7 @@ const productService = {
       const response = await api.get(`/api/v1/admin/product/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching product:', error);
+      console.error("Error fetching product:", error);
       throw error;
     }
   },
@@ -26,10 +26,10 @@ const productService = {
   // Create new product
   createProduct: async (productData) => {
     try {
-      const response = await api.post('/api/v1/admin/product', productData);
+      const response = await api.post("/api/v1/admin/product", productData);
       return response.data;
     } catch (error) {
-      console.error('Error creating product:', error);
+      console.error("Error creating product:", error);
       throw error;
     }
   },
@@ -37,10 +37,10 @@ const productService = {
   // Update product
   updateProduct: async (id, productData) => {
     try {
-      const response = await api.put(`/api/v1/admin/product/${id}`, productData);
+      const response = await api.put(`/api/v1/admin/product/`, productData);
       return response.data;
     } catch (error) {
-      console.error('Error updating product:', error);
+      console.error("Error updating product:", error);
       throw error;
     }
   },
@@ -48,10 +48,10 @@ const productService = {
   // Delete product
   deleteProduct: async (id) => {
     try {
-      const response = await api.delete(`/api/v1/admin/product/?id=${id}`);
+      const response = await api.delete(`/api/v1/admin/product/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error("Error deleting product:", error);
       throw error;
     }
   },
@@ -59,13 +59,27 @@ const productService = {
   // Toggle product status
   toggleProductStatus: async (id) => {
     try {
-      const response = await api.patch(`/api/v1/admin/product/${id}/toggle-status`);
+      const response = await api.patch(
+        `/api/v1/admin/product/${id}/toggle-status`
+      );
       return response.data;
     } catch (error) {
-      console.error('Error toggling product status:', error);
+      console.error("Error toggling product status:", error);
       throw error;
     }
-  }
+  },
+
+    // Create new Create size/grade for product
+  createGradeSize: async (productData) => {
+    try {
+      const response = await api.post("/api/v1/admin/product/size", productData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating product:", error);
+      throw error;
+    }
+  },
+
 };
 
 export default productService;

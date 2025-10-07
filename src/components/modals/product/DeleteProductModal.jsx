@@ -1,105 +1,82 @@
-import React from "react";
-import Modal from "../../ui/Modal";
+import { Icon, ICON_NAMES } from "../../icons";
 import Button from "../../ui/Button";
-import { ICON_NAMES } from "../../icons";
+const DeleteProductModal = ({ isOpen, onClose, product, onDelete, loading = false }) => {
+  if (!isOpen || !product) return null;
 
-const DeleteProductModal = ({
-  isOpen,
-  onClose,
-  product,
-  onDelete,
-  loading = false,
-}) => {
-  if (!product) return null;
+  console.log("DeleteProductModal product:", product);
 
   const handleDelete = () => {
-    onDelete(product.id);
+    // Call the delete function but don't close modal immediately
+    // Let the parent component handle the closing after the async operation completes
+    onDelete(product);
+  };
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Delete Product"
-      size="lg"
-      maxWidth="700px"
-      headerIcon={ICON_NAMES.DELETE}
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={handleOverlayClick}
     >
-      <div className="space-y-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-[#00000063] bg-opacity-50 transition-opacity"></div>
+      
+      {/* Modal Content */}
+      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 transform transition-all">
+    
+
+        {/* Content */}
         <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-            <svg
-              className="h-6 w-6 text-red-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          {/* Delete Icon */}
+          <div className="flex justify-center mb-4">
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              <Icon 
+                name={ICON_NAMES.TRASH_2} 
+                size={24} 
+                color="#EF4444"
               />
-            </svg>
+            </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Confirm Delete
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Are you sure you want to delete the product "{product.product}" with
-            grade/size "{product.gradeSize}"? This action cannot be undone.
-          </p>
-        </div>
 
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-600">Product:</span>
-            <span className="font-medium text-gray-900">{product.product}</span>
+          {/* Confirmation Text */}
+          <div className="mb-6">
+            <p className="text-base font-medium text-gray-900 leading-relaxed">
+              Are you sure you want to delete this product? This action is permanent and cannot be undone.
+            </p>
           </div>
-          <div className="flex justify-between items-center text-sm mt-2">
-            <span className="text-gray-600">Grade/Size:</span>
-            <span className="font-medium text-gray-900">
-              {product.gradeSize}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-sm mt-2">
-            <span className="text-gray-600">Status:</span>
-            <span
-              className={`
-                inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                ${
-                  product.status === "Active"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }
-              `}
+
+          {/* Action Buttons */}
+          <div className="flex justify-center space-x-3">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="px-6 py-2 border border-gray-300 rounded-lg w-1/2 text-gray-700 bg-white hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {product.status}
-            </span>
-          </div>
-        </div>
+              Cancel
+            </button>
+            {/* <button
+              onClick={handleDelete}
+              disabled={loading}
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg w-1/2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+           
+              {loading ? <Spinner size="w-4 h-4"  /> : "Delete"}
+            </button> */}
 
-        <div className="flex justify-end space-x-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-          >
-            Cancel
+            <Button  onClick={handleDelete} type="submit" disabled={loading} loading={loading} variant="danger" className="w-1/2" >
+            {loading ? "Deleting..." : "Delete"}
           </Button>
-          <Button
-            type="button"
-            variant="danger"
-            onClick={handleDelete}
-            disabled={loading}
-            loading={loading}
-          >
-            {loading ? "Deleting..." : "Delete Product"}
-          </Button>
+          </div>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 

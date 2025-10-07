@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
@@ -7,17 +7,13 @@ import { ICON_NAMES } from "../../icons";
 
 const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
   const [formData, setFormData] = useState({
-    product: "",
-    gradeSize: "",
-    status: "Active",
+    name: "",
   });
 
   const [errors, setErrors] = useState({});
 
-  const statusOptions = [
-    { value: "Active", label: "Active" },
-    { value: "Inactive", label: "Inactive" },
-  ];
+  // Reset form when modal closes
+
 
   const handleChange = (name, value) => {
     setFormData((prev) => ({
@@ -37,12 +33,8 @@ const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.product.trim()) {
-      newErrors.product = "Product name is required";
-    }
-
-    if (!formData.gradeSize.trim()) {
-      newErrors.gradeSize = "Grade/Size is required";
+    if (!formData.name.trim()) {
+      newErrors.name = "Product name is required";
     }
 
     setErrors(newErrors);
@@ -51,17 +43,16 @@ const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    console.log("Form Data Submitted:", formData);
     if (validateForm()) {
       onSubmit(formData);
     }
+    handleClose();
   };
 
   const handleClose = () => {
     setFormData({
-      product: "",
-      gradeSize: "",
-      status: "Active",
+      name: "",
     });
     setErrors({});
     onClose();
@@ -83,10 +74,10 @@ const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
           </label>
           <Input
             type="text"
-            value={formData.product}
-            onChange={(e) => handleChange("product", e.target.value)}
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
             placeholder="Enter product name"
-            error={errors.product}
+            error={errors.name}
             disabled={loading}
             className="focus:outline-none"
           />
