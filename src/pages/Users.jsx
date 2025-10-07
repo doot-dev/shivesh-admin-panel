@@ -105,20 +105,27 @@ const Users = () => {
   const handleConfirmResetPassword = async (passwordData) => {
     try {
       console.log("Resetting password:", passwordData);
-      
+
       // Call the reset password API
       const response = await resetPassword(passwordData);
       console.log("Reset password response:", response);
-      
-      // Show success message
-      toast.success("Password reset successfully!");
-      
+
+      // Show success message from API response
+      const successMessage = response?.message || response?.data?.message || "Password reset successfully";
+      toast.success(successMessage);
+
       // Close modal
       setResetPasswordModal(false);
       setSelectedUser(null);
     } catch (error) {
       console.error("Error resetting password:", error);
-      toast.error("Failed to reset password. Please try again.");
+      
+      // Show error message from API response or default message
+      const errorMessage = error?.response?.data?.message || 
+                          error?.message || 
+                          "Failed to reset password. Please try again.";
+      toast.error(errorMessage);
+      
       throw error; // Re-throw to let modal handle the error state
     }
   };
@@ -129,7 +136,6 @@ const Users = () => {
   };
 
   const handleConfirmDelete = async (user) => {
-
     try {
       console.log("Deleting user:", user.id);
 
@@ -157,7 +163,7 @@ const Users = () => {
     } catch (error) {
       console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
-    } 
+    }
   };
 
   // const handleView = (user) => {
@@ -397,10 +403,12 @@ const Users = () => {
             onClick={() => setShowAddModal(true)}
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
-            size="lg"
-            height="50px"
+            size="md"
+            height="40px"
+            className="md:!h-[50px] md:!px-6 md:!py-3 md:!text-base text-sm px-4 py-2"
           >
-            Add User
+            <span className="hidden sm:inline">Add User</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
@@ -417,6 +425,7 @@ const Users = () => {
             onClick={() => window.location.reload()}
             variant="outline"
             size="sm"
+            className="text-xs sm:text-sm px-3 py-1.5 sm:px-3 sm:py-1.5"
           >
             Retry
           </Button>

@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Icon, ICON_NAMES } from '../icons';
 import Logo from "../../assets/img/shivesh-logo.png";
+import { useUser } from '../../context/UserContext';
+import { localStorageKeys } from '../../constant/constant';
+import { decrypt, encrypt } from '../../utils/security';
 const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { getUserName, getUserRole } = useUser();
 
   return (
     <nav className="bg-white border-b border-primary h-[100px] px-4 inline-flex justify-center w-full  md:px-6">
@@ -53,8 +57,8 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
                 className="h-8 w-8 rounded-full"
               />
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-700">Rokesh Mishra</p>
-                <p className="text-xs text-gray-500">Admin</p>
+                <p className="text-sm font-medium text-gray-700">{localStorage.getItem(localStorageKeys.userData, decrypt(JSON.stringify(localStorageKeys.userData)))}</p>
+                <p className="text-xs text-gray-500">{getUserRole()}</p>
               </div>
             </button>
 

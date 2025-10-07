@@ -19,11 +19,11 @@ const Layout = () => {
       <Navbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
 
       {/* Main content area */}
-      <div className=" flex flex-row md:ml-0">
+      <div className="w-full md:flex md:flex-row md:ml-0">
         {/* Sidebar */}
         <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
         {/* Main content */}
-        <main className=" overflow-x-hidden overflow-y-auto   w-[calc(100%-256px)] px-3">
+        <main className=" overflow-x-hidden overflow-y-auto  w-full md:w-[calc(100%-256px)] px-3">
           <Outlet />
         </main>
       </div>

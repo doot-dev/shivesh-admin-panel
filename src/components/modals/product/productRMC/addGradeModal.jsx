@@ -170,16 +170,18 @@ const AddGradeModal = ({
             type="button"
             variant="outline"
             onClick={handleClose}
-            width="150px"
-            height="45px"
+            width="120px"
+            height="40px"
+            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
             disabled={loading}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            width="150px"
-            height="45px"
+            width="120px"
+            height="40px"
+            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
             disabled={loading}
             loading={loading}
           >

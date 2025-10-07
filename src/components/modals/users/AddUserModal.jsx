@@ -184,7 +184,9 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
       <Button 
         variant="outline" 
         onClick={handleClose} 
-        className="mr-3"
+        className="mr-3 text-sm sm:text-base px-4 sm:px-6"
+        width="120px"
+        height="40px"
         disabled={isSubmitting}
       >
         Cancel
@@ -192,6 +194,9 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
       <Button 
         variant="primary" 
         onClick={handleSubmit}
+        className="text-sm sm:text-base px-4 sm:px-6"
+        width="120px"
+        height="40px"
         disabled={isSubmitting}
       >
         {isSubmitting ? 'Creating User...' : 'Create User'}

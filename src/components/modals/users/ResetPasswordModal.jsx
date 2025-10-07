@@ -90,7 +90,7 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
 
       console.log("Resetting password for user:", passwordData);
 
-      // Call the parent handler
+      // Call the parent handler (this will show toast notifications)
       if (onResetPassword) {
         await onResetPassword(passwordData);
       }
@@ -105,9 +105,11 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
       onClose();
     } catch (error) {
       console.error("Error resetting password:", error);
+      // Toast notification is handled by parent component
+      // Just show a generic form error
       setErrors((prev) => ({
         ...prev,
-        submit: "Failed to reset password. Please try again.",
+        submit: "An error occurred. Please check your current password and try again.",
       }));
     } finally {
       setIsSubmitting(false);
@@ -130,7 +132,9 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
       <Button
         variant="outline"
         onClick={handleClose}
-        className="mr-3 px-6"
+        className="mr-3 px-4 sm:px-6 text-sm sm:text-base"
+        width="120px"
+        height="40px"
         disabled={isSubmitting}
         style={{
           textTransform: "capitalize",
@@ -141,7 +145,9 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
       <Button
         variant="primary"
         onClick={handleResetPassword}
-        className="px-6"
+        className="px-4 sm:px-6 text-sm sm:text-base"
+        width="120px"
+        height="40px"
         disabled={isSubmitting}
         style={{
           backgroundColor: "var(--color-primary)",

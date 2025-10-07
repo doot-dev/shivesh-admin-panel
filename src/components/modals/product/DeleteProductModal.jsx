@@ -57,7 +57,7 @@ const DeleteProductModal = ({ isOpen, onClose, product, onDelete, loading = fals
             <button
               onClick={onClose}
               disabled={loading}
-              className="px-6 py-2 border border-gray-300 rounded-lg w-1/2 text-gray-700 bg-white hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 sm:px-6 sm:py-2 border border-gray-300 rounded-lg w-1/2 text-gray-700 bg-white hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               Cancel
             </button>
@@ -70,9 +70,16 @@ const DeleteProductModal = ({ isOpen, onClose, product, onDelete, loading = fals
               {loading ? <Spinner size="w-4 h-4"  /> : "Delete"}
             </button> */}
 
-            <Button  onClick={handleDelete} type="submit" disabled={loading} loading={loading} variant="danger" className="w-1/2" >
-            {loading ? "Deleting..." : "Delete"}
-          </Button>
+            <Button  
+              onClick={handleDelete} 
+              type="submit" 
+              disabled={loading} 
+              loading={loading} 
+              variant="danger" 
+              className="w-1/2 text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-2" 
+            >
+              {loading ? "Deleting..." : "Delete"}
+            </Button>
           </div>
         </div>
       </div>

@@ -163,7 +163,7 @@ const Table = ({
                       </p>
                     )}
                   </div>
-                  {colIndex === 0 && actions && (
+                  {actions && (
                     <div className="ml-2">{renderActions(item)}</div>
                   )}
                 </div>

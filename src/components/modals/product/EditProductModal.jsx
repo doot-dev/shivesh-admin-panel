@@ -132,10 +132,20 @@ const EditProductModal = ({
             variant="outline"
             onClick={handleClose}
             disabled={loading}
+            width="120px"
+            height="40px"
+            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={loading} loading={loading}>
+          <Button 
+            type="submit" 
+            disabled={loading} 
+            loading={loading}
+            width="120px"
+            height="40px"
+            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
+          >
             {loading ? "Updating..." : "Save Changes"}
           </Button>
         </div>

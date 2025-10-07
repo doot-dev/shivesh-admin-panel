@@ -228,7 +228,9 @@ const EditUserModal = ({
       <Button
         variant="outline"
         onClick={handleClose}
-        className="mr-3 px-6"
+        className="mr-3 px-4 sm:px-6 text-sm sm:text-base"
+        width="120px"
+        height="40px"
         disabled={isSubmitting || loading}
         style={{
           textTransform: "capitalize",
@@ -239,7 +241,9 @@ const EditUserModal = ({
       <Button
         variant="primary"
         onClick={handleSave}
-        className="px-6"
+        className="px-4 sm:px-6 text-sm sm:text-base"
+        width="120px"
+        height="40px"
         disabled={isSubmitting || loading}
         style={{
           backgroundColor: "var(--color-primary)",

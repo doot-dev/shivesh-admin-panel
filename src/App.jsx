@@ -3,10 +3,11 @@ import "./App.css";
 import AppRoutes from "./routes/appRoutes";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
+import { UserProvider } from "./context/UserContext";
 
 function App() {
   return (
-    <>
+    <UserProvider>
       {/* <h1 class="text-3xl font-bold underline bg-primary  text-primary-dark ">Hello world!</h1> */}
       <AppRoutes />
       <ToastContainer
@@ -21,7 +22,7 @@ function App() {
         pauseOnHover
         theme="light"
       />
-    </>
+    </UserProvider>
   );
 }
 

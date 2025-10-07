@@ -309,10 +309,12 @@ const ProductSubcategory = () => {
           onClick={handleAdd}
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
-          size="lg"
-          height="50px"
+          size="md"
+          height="40px"
+          className="md:!h-[50px] md:!px-6 md:!py-3 md:!text-base text-sm px-4 py-2"
         >
-          Add
+          <span className="hidden sm:inline">Add Grade</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 

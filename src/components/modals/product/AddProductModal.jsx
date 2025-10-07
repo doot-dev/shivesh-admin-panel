@@ -89,8 +89,9 @@ const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
             variant="outline"
             onClick={handleClose}
             disabled={loading}
-            width="150px"
-            height="45px"
+            width="120px"
+            height="40px"
+            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
           >
             Cancel
           </Button>
@@ -98,8 +99,9 @@ const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
             type="submit"
             disabled={loading}
             loading={loading}
-            width="150px"
-            height="45px"
+            width="120px"
+            height="40px"
+            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
           >
             {loading ? "Adding..." : "Add Product"}
           </Button>

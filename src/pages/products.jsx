@@ -320,7 +320,7 @@ const Products = () => {
 
       {/* Search and Add Button */}
       <div className="flex items-center justify-between mb-6">
-        <div className="relative flex-1 md:max-w-[35%] md:h-[50px]">
+        <div className="relative flex-1 max-w-[40%] md:max-w-[35%] md:h-[50px]">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
           </div>
@@ -337,10 +337,12 @@ const Products = () => {
           onClick={handleAddProduct}
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
-          size="lg"
-          height="50px"
+          size="md"
+          height="40px"
+          className="md:!h-[50px] md:!px-6 md:!py-3 md:!text-base text-sm px-4 py-2"
         >
-          Add Product
+          <span className="hidden sm:inline">Add Product</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 

@@ -5,10 +5,12 @@ import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useUser } from "../context/UserContext";
 export default function Login() {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const { login, loading, error } = useAuth();
+  const { updateUser } = useUser();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {

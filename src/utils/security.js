@@ -1,4 +1,5 @@
 import crypto from "crypto-js";
+
 const { AES, enc, HmacSHA256 } = crypto;
 // encryption function
 export function encrypt(data) { return AES.encrypt(data, process.env.AES_TOKEN || "").toString(); }
