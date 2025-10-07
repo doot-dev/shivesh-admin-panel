@@ -1,16 +1,18 @@
+import { localStorageKeys } from "../constant/constant";
+
 // Save token to localStorage
 export const saveToken = (token) => {
-  localStorage.setItem("access-token", token);
+  localStorage.setItem(localStorageKeys.accessToken, token);
 };
 
 // Get token from localStorage
 export const getToken = () => {
-  return localStorage.getItem("access-token");
+  return localStorage.getItem(localStorageKeys.accessToken);
 };
 
 // Clear token from localStorage
 export const clearToken = () => {
-  localStorage.removeItem("access-token");
+  localStorage.removeItem(localStorageKeys.accessToken);
 };
 
 // Save user data

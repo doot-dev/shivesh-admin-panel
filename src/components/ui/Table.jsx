@@ -229,9 +229,16 @@ const Table = ({
           </div>
         )}
 
-        {/* Empty State */}
-        {data.length === 0 && (
-          <div className="flex items-center justify-center py-12">
+        {/* Mobile Cards View */}
+        {data.length > 0 && showMobileCards && (
+          <div className="md:hidden">
+            {currentData.map((item, index) => renderMobileCard(item, index))}
+          </div>
+        )}
+
+        {/* Empty State for Mobile */}
+        {data.length === 0 && showMobileCards && (
+          <div className="md:hidden flex items-center justify-center py-12">
             <div className="text-center">
               <Icon
                 name={ICON_NAMES.INBOX}
@@ -244,50 +251,43 @@ const Table = ({
           </div>
         )}
 
-        {/* Mobile Cards View */}
-        {data.length > 0 && showMobileCards && (
-          <div className="md:hidden">
-            {currentData.map((item, index) => renderMobileCard(item, index))}
-          </div>
-        )}
-
-        {/* Desktop Table View */}
-        {data.length > 0 && (
-          <div className="hidden md:block overflow-x-auto">
-            <table className="min-w-full divide-y divide-border">
-              <thead
-                className={`bg-border text-white md:h-[64px] ${headerClassName}`}
-              >
-                <tr>
-                  {columns.map((column, index) => (
-                    <th
-                      key={index}
-                      className={`px-6 py-3 text-left md:text-base font-semibold   tracking-wider ${
-                        sortable && column.sortable !== false
-                          ? "cursor-pointer select-none group hover:bg-background-hover"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        column.sortable !== false && handleSort(column.key)
-                      }
-                    >
-                      <div className="flex items-center">
-                        {column.header}
-                        {sortable &&
-                          column.sortable !== false &&
-                          renderSortIcon(column.key)}
-                      </div>
-                    </th>
-                  ))}
-                  {actions && actions.length > 0 && (
-                    <th className="px-6 py-3 text-left md:text-base font-semibold   tracking-wider">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className={`bg-white ${rowClassName}`}>
-                {currentData.map((item, index) => (
+        {/* Desktop Table View - Always show headers */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="min-w-full divide-y divide-border">
+            <thead
+              className={`bg-border text-white md:h-[64px] ${headerClassName}`}
+            >
+              <tr>
+                {columns.map((column, index) => (
+                  <th
+                    key={index}
+                    className={`px-6 py-3 text-left md:text-base font-semibold   tracking-wider ${
+                      sortable && column.sortable !== false
+                        ? "cursor-pointer select-none group hover:bg-background-hover"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      column.sortable !== false && handleSort(column.key)
+                    }
+                  >
+                    <div className="flex items-center">
+                      {column.header}
+                      {sortable &&
+                        column.sortable !== false &&
+                        renderSortIcon(column.key)}
+                    </div>
+                  </th>
+                ))}
+                {actions && actions.length > 0 && (
+                  <th className="px-6 py-3 text-left md:text-base font-semibold   tracking-wider">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className={`bg-white ${rowClassName}`}>
+              {data.length > 0 ? (
+                currentData.map((item, index) => (
                   <tr
                     key={item.id || index}
                     className={`hover:bg-background-hover transition-colors md:h-[64px] border-b border-[#E2E2E2] 
@@ -314,11 +314,28 @@ const Table = ({
                       </td>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length + (actions && actions.length > 0 ? 1 : 0)}
+                    className="px-6 py-12 text-center"
+                  >
+                    <div className="flex flex-col items-center">
+                      <Icon
+                        name={ICON_NAMES.INBOX}
+                        size={48}
+                        color="var(--color-text-secondary)"
+                        className="mb-4"
+                      />
+                      <p className="text-text-secondary">{emptyMessage}</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       {/* Pagination */}
       {showPagination && data.length > 0 && (

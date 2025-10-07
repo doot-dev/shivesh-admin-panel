@@ -5,56 +5,93 @@ import Input from "../../../ui/Input";
 import Dropdown from "../../../ui/Dropdown";
 import { ICON_NAMES } from "../../../icons";
 
-const EditGradeModal = ({ isOpen, onClose }) => {
+const EditGradeModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  loading = false,
+  gradeData,
+  productId,
+}) => {
   const [formData, setFormData] = useState({
-    product: "",
-    gradeSize: "",
-    status: "Active",
+    id: "",
+    name: "",
+    subcategory: "",
+    isActive: true,
+    productId: productId || "",
   });
 
   const [errors, setErrors] = useState({});
 
-  const statusOptions = [
-    { value: "Active", label: "Active" },
-    { value: "Inactive", label: "Inactive" },
-  ];
+  // Populate form when grade data changes
+  useEffect(() => {
+    if (gradeData) {
+      console.log("Populating form with grade data:", gradeData);
+      setFormData({
+        id: gradeData.id || "",
+        name: gradeData.name || "",
+        subcategory: gradeData.subcategory || "",
+        isActive: gradeData.isActive !== undefined ? gradeData.isActive : true,
+        productId: productId || gradeData.productId || "",
+      });
+      setErrors({});
+    }
+  }, [gradeData, productId]);
 
-  // Populate form when product data changes
-  // useEffect(() => {
-  //   if (product) {
-  //     setFormData({
-  //       product: product.product || "",
-  //       gradeSize: product.gradeSize || "",
-  //       status: product.status || "Active",
-  //     });
-  //     setErrors({});
-  //   }
-  // }, [product]);
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen && !gradeData) {
+      setFormData({
+        id: "",
+        name: "",
+        subcategory: "",
+        isActive: true,
+        productId: productId || "",
+      });
+      setErrors({});
+    }
+  }, [isOpen, productId]);
 
   const handleChange = (name, value) => {
+    // Real-time validation for character limits
+    let error = "";
+    if ((name === "name" || name === "subcategory") && value.length > 60) {
+      error = "Only 60 characters allowed";
+    }
+
+    // Update form data
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    // Update error state
+    setErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.product.trim()) {
-      newErrors.product = "Product name is required";
+    // Validate Grade/Size name
+    if (!formData.name.trim()) {
+      newErrors.name = "Please fill the field";
+    } else if (formData.name.length > 60) {
+      newErrors.name = "Only 60 characters allowed";
     }
 
-    if (!formData.gradeSize.trim()) {
-      newErrors.gradeSize = "Grade/Size is required";
+    // Validate Sub-category
+    if (!formData.subcategory.trim()) {
+      newErrors.subcategory = "Please fill the field";
+    } else if (formData.subcategory.length > 60) {
+      newErrors.subcategory = "Only 60 characters allowed";
+    }
+
+    // Validate Product ID
+    if (!formData.productId) {
+      newErrors.productId = "Product ID is required";
     }
 
     setErrors(newErrors);
@@ -65,7 +102,8 @@ const EditGradeModal = ({ isOpen, onClose }) => {
     e.preventDefault();
 
     if (validateForm()) {
-      onSubmit(product.id, formData);
+      console.log("Form Data of grade Edit Submitted:", formData);
+      onSubmit(formData);
     }
   };
 
@@ -83,7 +121,7 @@ const EditGradeModal = ({ isOpen, onClose }) => {
       maxWidth="700px"
       headerIcon={ICON_NAMES.PRODUCT_MODAL}
     >
-      <form className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -91,12 +129,18 @@ const EditGradeModal = ({ isOpen, onClose }) => {
             </label>
             <Input
               type="text"
-              value={formData.product}
-              onChange={(e) => handleChange("product", e.target.value)}
-              placeholder="Enter product name"
-              error={errors.product}
-              // disabled={loading}
+              value={formData.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              placeholder="Enter grade/size name (e.g., M30, M40)"
+              error={errors.name}
+              disabled={loading}
+              maxLength={60}
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-xs text-gray-500">
+                {formData.name.length}/60 characters
+              </span>
+            </div>
           </div>
 
           <div>
@@ -105,12 +149,18 @@ const EditGradeModal = ({ isOpen, onClose }) => {
             </label>
             <Input
               type="text"
-              value={formData.gradeSize}
-              onChange={(e) => handleChange("gradeSize", e.target.value)}
-              placeholder="Enter grade or size"
-              error={errors.gradeSize}
-              // disabled={loading}
+              value={formData.subcategory}
+              onChange={(e) => handleChange("subcategory", e.target.value)}
+              placeholder="Enter sub-category (e.g., Pure OPC)"
+              error={errors.subcategory}
+              disabled={loading}
+              maxLength={60}
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-xs text-gray-500">
+                {formData.subcategory.length}/60 characters
+              </span>
+            </div>
           </div>
         </div>
 
@@ -126,10 +176,11 @@ const EditGradeModal = ({ isOpen, onClose }) => {
               <input
                 type="checkbox"
                 className="sr-only peer"
+                checked={formData.isActive}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    status: e.target.checked,
+                    isActive: e.target.checked,
                   }))
                 }
               />
@@ -138,7 +189,7 @@ const EditGradeModal = ({ isOpen, onClose }) => {
                 className="ml-3 text-sm font-medium"
                 style={{ color: "var(--color-text-primary)" }}
               >
-                {formData.status ? "Active" : "Inactive"}
+                {formData.isActive ? "Active" : "Inactive"}
               </span>
             </label>
           </div>
@@ -153,10 +204,7 @@ const EditGradeModal = ({ isOpen, onClose }) => {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            //  disabled={loading} loading={loading}
-          >
+          <Button type="submit" disabled={loading} loading={loading}>
             {/* {loading ? "Updating..." : "Update Product"}
              */}
             Save Changes

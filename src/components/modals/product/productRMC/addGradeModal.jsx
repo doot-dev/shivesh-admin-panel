@@ -36,7 +36,7 @@ const AddGradeModal = ({
   // Reset form only when modal opens for the first time
   useEffect(() => {
     if (isOpen) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         name: "",
         subcategory: "",
         productId: productId || prev.productId,
@@ -46,31 +46,43 @@ const AddGradeModal = ({
   }, [isOpen]); // Removed productId from dependencies to prevent unnecessary resets
 
   const handleChange = (name, value) => {
+    // Real-time validation for character limits
+    let error = "";
+    if ((name === "name" || name === "subcategory") && value.length > 60) {
+      error = "Only 60 characters allowed";
+    }
+
+    // Update form data
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    // Update error state
+    setErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
   };
 
   const validateForm = () => {
     const newErrors = {};
 
+    // Validate Grade/Size name
     if (!formData.name.trim()) {
-      newErrors.name = "Grade/Size name is required";
+      newErrors.name = "Please fill the field";
+    } else if (formData.name.length > 60) {
+      newErrors.name = "Only 60 characters allowed";
     }
 
+    // Validate Sub-category
     if (!formData.subcategory.trim()) {
-      newErrors.subcategory = "Sub-category is required";
+      newErrors.subcategory = "Please fill the field";
+    } else if (formData.subcategory.length > 60) {
+      newErrors.subcategory = "Only 60 characters allowed";
     }
 
+    // Validate Product ID
     if (!formData.productId) {
       newErrors.productId = "Product ID is required";
     }
@@ -84,7 +96,7 @@ const AddGradeModal = ({
 
     if (validateForm()) {
       console.log("Form Data of grade Submitted:", formData);
-      
+
       // Just pass the form data to parent - let parent handle API call
       onSubmit(formData);
     }
@@ -105,7 +117,7 @@ const AddGradeModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Edit Grade/Size and Subcategory"
+      title="Add Grade/Size and Subcategory"
       size="lg"
       maxWidth="700px"
       headerIcon={ICON_NAMES.PRODUCT_MODAL}
@@ -123,7 +135,13 @@ const AddGradeModal = ({
               placeholder="Enter grade/size name (e.g., M30, M40)"
               error={errors.name}
               disabled={loading}
+              maxLength={60}
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-xs text-gray-500">
+                {formData.name.length}/60 characters
+              </span>
+            </div>
           </div>
 
           <div>
@@ -137,24 +155,17 @@ const AddGradeModal = ({
               placeholder="Enter sub-category (e.g., Pure OPC)"
               error={errors.subcategory}
               disabled={loading}
+              maxLength={60}
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-xs text-gray-500">
+                {formData.subcategory.length}/60 characters
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Product Info Display */}
-        {productName && (
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-sm text-gray-600">
-              Adding grade/size for:{" "}
-              <span className="font-medium text-gray-900">{productName}</span>
-              <span className="text-xs text-gray-500 ml-2">
-                (ID: {productId})
-              </span>
-            </p>
-          </div>
-        )}
-
-        <div className="flex justify-end space-x-3 pt-4">
+        <div className="flex justify-end space-x-3 pt-4 mt-8">
           <Button
             type="button"
             variant="outline"

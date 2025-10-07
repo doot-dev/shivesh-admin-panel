@@ -69,10 +69,13 @@ const productService = {
     }
   },
 
-    // Create new Create size/grade for product
+  // Create new Create size/grade for product
   createGradeSize: async (productData) => {
     try {
-      const response = await api.post("/api/v1/admin/product/size", productData);
+      const response = await api.post(
+        "/api/v1/admin/product/size",
+        productData
+      );
       return response.data;
     } catch (error) {
       console.error("Error creating product:", error);
@@ -80,6 +83,26 @@ const productService = {
     }
   },
 
+  // update size/grade for product
+  updateGradeSize: async (gradeData) => {
+    try {
+      const response = await api.put(`/api/v1/admin/product/size`, gradeData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating grade/size:", error);
+      throw error;
+    }
+  },
+
+  deleteGradeSize: async (id) => {
+    try {
+      const response = await api.delete(`/api/v1/admin/product/size/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting grade/size:", error);
+      throw error;
+    }
+  },
 };
 
 export default productService;

@@ -4,7 +4,14 @@ import { ICON_NAMES } from "../../icons";
 import { updateUsers } from "../../../services/userService";
 import { toast } from "react-toastify";
 
-const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPassword }) => {
+const EditUserModal = ({
+  isOpen,
+  onClose,
+  user,
+  loading,
+  onSave,
+  handleResetPassword,
+}) => {
   const [formData, setFormData] = useState({
     employeeName: "",
     employeeId: "",
@@ -162,8 +169,8 @@ const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPass
     try {
       // Convert menu access boolean object back to array of IDs
       const selectedMenuAccess = menuAccessOptions
-        .filter(option => formData.menuAccess[option.key])
-        .map(option => option.id);
+        .filter((option) => formData.menuAccess[option.key])
+        .map((option) => option.id);
 
       // Format data according to API structure
       const userData = {
@@ -173,7 +180,7 @@ const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPass
         userName: formData.username,
         role: formData.role,
         status: formData.status,
-        menuAccess: selectedMenuAccess
+        menuAccess: selectedMenuAccess,
       };
 
       // Only include password if it's been changed (not the masked version)
@@ -182,27 +189,27 @@ const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPass
       }
 
       console.log("Updating user with data:", userData);
-      
+
       // Call the updateUsers API directly
       const response = await updateUsers(userData);
       console.log("Update user API response:", response);
-      
+
       // Show success message
       toast.success("User updated successfully!");
-      
+
       // Call the parent onSave handler if provided (for any additional logic)
       if (onSave) {
         await onSave(userData);
       }
-      
+
       // Close modal on successful save
       onClose();
     } catch (error) {
       console.error("Error updating user:", error);
       toast.error("Failed to update user. Please try again.");
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        submit: "Failed to update user. Please try again."
+        submit: "Failed to update user. Please try again.",
       }));
     } finally {
       setIsSubmitting(false);
@@ -237,10 +244,10 @@ const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPass
         style={{
           backgroundColor: "var(--color-primary)",
           color: "white",
-          textTransform: "lowercase",
+          // textTransform: "lowercase",
         }}
       >
-        {isSubmitting ? "Saving..." : "save changes"}
+        {isSubmitting ? "Saving..." : "Save changes"}
       </Button>
     </>
   );
@@ -255,10 +262,12 @@ const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPass
       maxWidth="700px"
       headerIcon={ICON_NAMES.EDIT_USER}
     >
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        handleSave();
-      }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSave();
+        }}
+      >
         <div className="space-y-6">
           {/* Employee Name */}
           <div>
@@ -374,15 +383,14 @@ const EditUserModal = ({ isOpen, onClose, user, loading, onSave, handleResetPass
               errorMessage={errors.password}
               backgroundColor="input-bg"
             />
-            <button 
-              type="button" 
-              onClick={() => handleResetPassword && handleResetPassword(user)} 
+            <button
+              type="button"
+              onClick={() => handleResetPassword && handleResetPassword(user)}
               className="text-xs text-blue-600 hover:text-blue-800 underline"
             >
               Reset password
             </button>
           </div>
-
 
           {/* Menu Access */}
           <div>

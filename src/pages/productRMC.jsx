@@ -8,12 +8,13 @@ import { Icon, ICON_NAMES } from "../components/icons";
 import EditGradeModal from "../components/modals/product/productRMC/editGradeModal";
 import AddGradeModal from "../components/modals/product/productRMC/addGradeModal";
 import productService from "../services/productService";
+import DeleteGradeModal from "../components/modals/product/productRMC/deleteGradeModal";
 
 const ProductSubcategory = () => {
   const { id } = useParams(); // Changed from productName to id
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   console.log("Product ID from URL:", id);
   const [product, setProduct] = useState(null); // Store product data
   const [subcategories, setSubcategories] = useState([]);
@@ -23,6 +24,7 @@ const ProductSubcategory = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   useEffect(() => {
     if (id) {
       // Set productId in search params
@@ -91,12 +93,52 @@ const ProductSubcategory = () => {
     }
   };
 
+  // State for selected grade data
+  const [selectedGrade, setSelectedGrade] = useState(null);
+
   const handleEdit = (subcategory) => {
+    console.log("Editing grade/size:", subcategory);
+
+    // Use the available data from the table row
+    const gradeData = {
+      id: subcategory.id,
+      name: subcategory.gradeSize,
+      subcategory: subcategory.subCategory,
+      isActive: subcategory.isActive,
+      productId: searchParams.get("productId"),
+    };
+
+    console.log("Grade data for edit:", gradeData);
+    setSelectedGrade(gradeData);
     setShowEditModal(true);
   };
 
-  const handleDelete = (subcategory) => {
-    toast.info(`Delete subcategory: ${subcategory.subCategory}`);
+  const handleDeleteGrade = (subcategory) => {
+    // Just open the modal for confirmation, don't delete yet
+    console.log("Opening delete confirmation for grade/size:", subcategory.id);
+    setSelectedGrade(subcategory);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async (subcategory) => {
+    try {
+      setLoading(true);
+      console.log("Confirming delete for grade/size:", subcategory.id);
+      
+      const deleteResponse = await productService.deleteGradeSize(subcategory.id);
+      console.log("Delete Grade Size Response:", deleteResponse);
+      
+      // Close modal and refresh data
+      setShowDeleteModal(false);
+      setSelectedGrade(null);
+      toast.success("Grade/Size deleted successfully");
+      await loadProductData();
+    } catch (error) {
+      console.error("Error in handleConfirmDelete:", error);
+      toast.error("Failed to delete grade");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAdd = () => {
@@ -107,14 +149,14 @@ const ProductSubcategory = () => {
     try {
       setIsAddingProduct(true);
       console.log("Adding grade data:", gradeData);
-      
+
       // Call the createGradeSize API
       const response = await productService.createGradeSize(gradeData);
       console.log("Create Grade Size Response:", response);
-      
+
       // Refresh the product data after successful creation
       await loadProductData();
-      
+
       setShowAddModal(false);
       toast.success("Grade added successfully");
     } catch (error) {
@@ -122,6 +164,29 @@ const ProductSubcategory = () => {
       toast.error("Failed to add grade");
     } finally {
       setIsAddingProduct(false);
+    }
+  };
+
+  const handleEditGradeSubmit = async (gradeData) => {
+    try {
+      setLoading(true);
+      console.log("Updating grade data:", gradeData);
+
+      // Call the updateGradeSize API
+      const response = await productService.updateGradeSize(gradeData);
+      console.log("Update Grade Size Response:", response);
+
+      // Refresh the product data after successful update
+      await loadProductData();
+
+      setShowEditModal(false);
+      setSelectedGrade(null);
+      toast.success("Grade updated successfully");
+    } catch (error) {
+      console.error("Error updating grade:", error);
+      toast.error("Failed to update grade");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -179,7 +244,7 @@ const ProductSubcategory = () => {
     },
     {
       text: "Delete",
-      onClick: handleDelete,
+      onClick: handleDeleteGrade,
       textColor: "var(--color-error)",
       hoverBackgroundColor: "var(--color-error-light)",
       title: "Delete",
@@ -258,24 +323,44 @@ const ProductSubcategory = () => {
         actions={actions}
         showPagination={true}
         itemsPerPage={10}
-        emptyMessage="No subcategories found matching your criteria"
+        emptyMessage={
+          searchTerm
+            ? "No Grade/Size found matching your search criteria"
+            : "No Grade/Size available"
+        }
         className="shadow-sm"
       />
 
       {/* Edit Grade Modal */}
       <EditGradeModal
         isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedGrade(null);
+        }}
+        onSubmit={handleEditGradeSubmit}
+        loading={loading}
+        gradeData={selectedGrade}
+        productId={searchParams.get("productId")}
       />
       <AddGradeModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSubmit={handleAddGradeSubmit}
         loading={isAddingProduct}
-        productId={searchParams.get('productId')}
+        productId={searchParams.get("productId")}
         productName={product?.name}
       />
-
+      <DeleteGradeModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedGrade(null);
+        }}
+        product={selectedGrade}
+        onDelete={handleConfirmDelete}
+        loading={loading}
+      />
       {/* Results Info */}
     </div>
   );
