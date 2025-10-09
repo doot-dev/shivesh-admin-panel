@@ -5,14 +5,14 @@ import { encrypt } from "../../utils/security";
 
 export const login = createAsyncThunk("auth/login", async (credentials) => {
   const response = await loginUser(credentials);
+  const userData = response.data;
   const data = {
-    name: response.name,
-    userName: response.userName,
-    employeeId: response.employeeId,
-    role: response.role,
-    id: response.id,
+    name: userData.name,
+    userName: userData.userName,
+    employeeId: userData.employeeId,
+    role: userData.role,
+    id: userData.id,
   };
-
   localStorage.setItem(
     localStorageKeys.userData,
     encrypt(JSON.stringify(data))

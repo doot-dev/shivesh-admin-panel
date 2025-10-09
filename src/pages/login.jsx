@@ -35,7 +35,9 @@ export default function Login() {
         console.log("Login successful:", result.payload);
         toast.success("Login successful!");
         navigate("/dashboard");
-      } else if (result.type === 'auth/login/rejected') {
+        
+      } 
+      else if (result.type === 'auth/login/rejected') {
         // Login failed - could be wrong credentials or server error
         console.error("Login failed:", result.error);
         toast.error("Invalid username or password. Please try again.");
@@ -51,7 +53,7 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-6 text-left justify-center">
-            <img src={Logo} alt="Shivesh Logo" className=" w-50" />
+          <img src={Logo} alt="Shivesh Logo" className=" w-50" />  
             <h1 className=" text-2xl md:text-[42px] font-semibold mt-4 text-primary tracking-wide leading-11 ">
               Welcome back!
             </h1>

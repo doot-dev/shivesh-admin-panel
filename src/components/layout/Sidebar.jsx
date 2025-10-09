@@ -110,7 +110,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-[#00000059] bg-opacity-50 z-40 md:hidden"
           onClick={onClose}
         />
       )}
@@ -118,10 +118,10 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <div
         className={`
-        fixed top-0 left-0 h-[calc(100vh-100px)] bg-white border-r border-t border-primary z-50 transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-[100vh] overflow-y-auto md:h-[calc(100vh-100px)] bg-white border-r border-t border-primary z-50 transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:static md:z-auto
-        w-64
+        md:translate-x-0 md:static md:z-auto md:w-64 lg:w-52
+        xl:w-64
       `}
       >
         {/* Logo */}

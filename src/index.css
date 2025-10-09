@@ -30,3 +30,25 @@
 :root {
   font-family: var(--font-poppins);
 }
+
+
+/* width */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #e1e0e0;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #688beca8;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #688bec88;
+}

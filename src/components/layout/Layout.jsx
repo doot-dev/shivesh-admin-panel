@@ -23,7 +23,7 @@ const Layout = () => {
         {/* Sidebar */}
         <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
         {/* Main content */}
-        <main className=" overflow-x-hidden overflow-y-auto  w-full md:w-[calc(100%-256px)] px-3">
+        <main className=" overflow-x-hidden overflow-y-scroll h-[88vh]  w-full lg:w-[calc(100%-208px)] xl:w-[calc(100%-256px)] px-3">
           <Outlet />
         </main>
       </div>

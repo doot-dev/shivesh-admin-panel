@@ -362,7 +362,7 @@ const Users = () => {
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-3 flex-1">
             {/* Search */}
-            <div className="relative flex-1 md:max-w-[25%] md:h-[50px]">
+            <div className="relative flex-1 md:max-w-[25%] lg:max-w-[35%] xl:max-w-[25%]  md:h-[50px]">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
               </div>
@@ -382,8 +382,8 @@ const Users = () => {
               onChange={setRoleFilter}
               placeholder="Role"
               width="auto"
-              height="50px"
-              className="md:max-w-[14%]"
+              height={window.innerWidth < 768 ? "40px" : "50px"}
+              className="md:max-w-[14%] lg:max-w-[20%]  xl:max-w-[20%]"
             />
 
             {/* Status Filter */}
@@ -393,8 +393,8 @@ const Users = () => {
               onChange={setStatusFilter}
               placeholder="Status"
               width="auto"
-              height="50px"
-              className="md:max-w-[14%]"
+             height={window.innerWidth < 768 ? "40px" : "50px"}
+              className="md:max-w-[14%] lg:max-w-[20%] xl:max-w-[20%]"
             />
           </div>
 

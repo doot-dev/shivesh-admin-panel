@@ -23,6 +23,7 @@ export const saveUser = (user) => {
 // Get user data
 export const getUser = () => {
   const user = localStorage.getItem("user");
+  console.log("User data", user)
   return user ? JSON.parse(user) : null;
 };
 
