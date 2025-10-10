@@ -4,9 +4,8 @@ import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
 import { Icon, ICON_NAMES } from "../components/icons";
 import FullPageLoader from "../components/ui/FullPageLoader";
-import AddVendorModal from "../components/modals/product/AddProductModal";
-import EditVendorModal from "../components/modals/product/EditProductModal";
-import DeleteVendorModal from "../components/modals/product/DeleteProductModal";
+import VendorModal from "../components/modals/vendors/VendorModal";
+import DeleteVendorModal from "../components/modals/vendors/DeleteVendorModal";
 
 const Vendors = () => {
   const [vendors, setVendors] = useState([]);
@@ -14,8 +13,7 @@ const Vendors = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showVendorModal, setShowVendorModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
 
@@ -92,28 +90,29 @@ const Vendors = () => {
 
   // 🔹 Add Vendor
   const handleAddVendor = () => {
-    setShowAddModal(true);
-  };
-
-  const handleAddSubmit = (newVendor) => {
-    setVendors((prev) => [...prev, { ...newVendor, id: Date.now() }]);
-    toast.success("Vendor added successfully");
-    setShowAddModal(false);
+    setSelectedVendor(null); // Clear selected vendor for add mode
+    setShowVendorModal(true);
   };
 
   // 🔹 Edit Vendor
   const handleEdit = (vendor) => {
     setSelectedVendor(vendor);
-    setShowEditModal(true);
+    setShowVendorModal(true);
   };
 
-  const handleEditSubmit = (updatedVendor) => {
-    const updated = vendors.map((v) =>
-      v.id === updatedVendor.id ? updatedVendor : v
-    );
-    setVendors(updated);
-    toast.success("Vendor updated successfully");
-    setShowEditModal(false);
+  // 🔹 Handle Vendor Submit (both add and edit)
+  const handleVendorSubmit = (vendorData, mode) => {
+    if (mode === 'add') {
+      setVendors((prev) => [...prev, vendorData]);
+      toast.success("Vendor added successfully");
+    } else if (mode === 'edit') {
+      const updated = vendors.map((v) =>
+        v.id === vendorData.id ? vendorData : v
+      );
+      setVendors(updated);
+      toast.success("Vendor updated successfully");
+    }
+    setShowVendorModal(false);
   };
 
   // 🔹 Delete Vendor
@@ -228,17 +227,11 @@ const Vendors = () => {
         />
 
         {/* Modals */}
-        <AddVendorModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onSubmit={handleAddSubmit}
-        />
-
-        <EditVendorModal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
+        <VendorModal
+          isOpen={showVendorModal}
+          onClose={() => setShowVendorModal(false)}
           vendor={selectedVendor}
-          onSubmit={handleEditSubmit}
+          onSubmit={handleVendorSubmit}
         />
 
         <DeleteVendorModal

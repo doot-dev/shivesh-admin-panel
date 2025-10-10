@@ -93,7 +93,7 @@ const Spinner = () => {
   // Original spinner (fallback)
   return (
     <div
-      class="w-20 h-20 rounded-full animate-spin
+      className="w-20 h-20 rounded-full animate-spin
                     border-y-2 border-solid border-blue-500 border-t-transparent"
     ></div>
   );

@@ -6,39 +6,37 @@ import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useUser } from "../context/UserContext";
+import { Icon, ICON_NAMES } from "../components/icons";
 export default function Login() {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error } = useAuth();
   const { updateUser } = useUser();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate form fields
     if (!userName.trim()) {
       toast.error("Please enter your username");
       return;
     }
-    
+
     if (!password.trim()) {
       toast.error("Please enter your password");
       return;
     }
-    
+
     try {
       const result = await login({ userName, password });
-      
-      // Check if the login thunk was fulfilled
-      if (result.type === 'auth/login/fulfilled') {
+
+      if (result.type === "auth/login/fulfilled") {
         console.log("Login successful:", result.payload);
         toast.success("Login successful!");
         navigate("/dashboard");
-        
-      } 
-      else if (result.type === 'auth/login/rejected') {
-        // Login failed - could be wrong credentials or server error
+      } else if (result.type === "auth/login/rejected") {       
         console.error("Login failed:", result.error);
         toast.error("Invalid username or password. Please try again.");
       }
@@ -47,13 +45,15 @@ export default function Login() {
       toast.error("Invalid username or password. Please try again.");
     }
   };
+
+
   return (
     <div className="flex min-h-screen">
       <div className="flex w-full md:w-1/2 items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-6 text-left justify-center">
-          <img src={Logo} alt="Shivesh Logo" className=" w-50" />  
+            <img src={Logo} alt="Shivesh Logo" className=" w-50" />
             <h1 className=" text-2xl md:text-[42px] font-semibold mt-4 text-primary tracking-wide leading-11 ">
               Welcome back!
             </h1>
@@ -78,12 +78,24 @@ export default function Login() {
 
             <div>
               <label className="text-[18px]  text-text-primary">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full px-3  border rounded-[6px] h-[60px] border-[#6D8FEFA6] focus:outline-none bg-input-bg"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 w-full px-3 pr-12 border rounded-[6px] h-[60px] border-[#6D8FEFA6] focus:outline-none bg-input-bg"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none mt-[2px]"
+                >
+                  <Icon
+                    name={showPassword ? ICON_NAMES.EYE : ICON_NAMES.EYE_OFF}
+                    size={20}
+                  />
+                </button>
+              </div>
             </div>
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
