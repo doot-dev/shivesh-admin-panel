@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Icon, ICON_NAMES } from '../icons';
 import Logo from "../../assets/img/shivesh-logo.png";
-import { useUser } from '../../context/UserContext';
+import { useSelector } from "react-redux";
+// import { useUser } from '../../context/UserContext';
 const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { getUserName, getUserRole } = useUser();
-
+  // const { getUserName, getUserRole } = useUser();
+  const user = useSelector((state) => state.auth.user);
+  
   return (
     <nav className="bg-white border-b border-primary h-[65px] xl:h-[100px] px-4 inline-flex justify-center w-full  md:px-6">
       <div className="flex items-center justify-between w-full">
@@ -55,8 +57,8 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
                 className="h-8 w-8 rounded-full"
               />
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-700">{getUserName()}</p>
-                <p className="text-xs text-gray-500">{getUserRole()}</p>
+                <p className="text-sm font-medium text-gray-700">{user.name}</p>
+                <p className="text-xs text-gray-500">{user.role}</p>
               </div>
             </button>
 

@@ -1,8 +1,21 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { login } from "./authThunks";
 import { saveToken, clearToken } from "../../utils/storage";
+import { decrypt, encrypt } from "../../utils/security";
+import { localStorageKeys } from "../../constant/constant";
+
+const getPersistedUser = () => {
+  try {
+    const encrypted = localStorage.getItem(localStorageKeys.userData);
+    if (!encrypted) return null;
+    return JSON.parse(decrypt(encrypted));
+  } catch {
+    return null;
+  }
+};
+
 const initialState = {
-  user: null,
+  user: getPersistedUser(),
   token: null,
   loading: false,
   error: null,
@@ -16,6 +29,8 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       clearToken();
+        localStorage.removeItem(localStorageKeys.userData);
+
     },
   },
   extraReducers: (builder) => {
@@ -28,6 +43,12 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload.data;
         state.token = action.payload.data.token;
+        saveToken(action.payload.data.token);
+        localStorage.setItem(
+          localStorageKeys.userData,
+          encrypt(JSON.stringify(action.payload.data))
+        );
+
         saveToken(action.payload.data.token);
       })
       .addCase(login.rejected, (state, action) => {

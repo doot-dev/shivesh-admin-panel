@@ -1,18 +1,24 @@
 import { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { Icon, ICON_NAMES } from "../icons";
-
+import { useDispatch } from "react-redux";
+import { logout } from "../../features/auth/authSlice";
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState({});
-
+  const dispatch = useDispatch();
+  const router = useNavigate();
   const toggleExpanded = (itemKey) => {
     setExpandedItems((prev) => ({
       ...prev,
       [itemKey]: !prev[itemKey],
     }));
   };
-
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.clear();
+    router.push("/");
+  };
   const menuItems = [
     {
       key: "dashboard",
@@ -30,8 +36,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       key: "products",
       icon: ICON_NAMES.PRODUCT,
       label: "Product",
-      path: "/products" ,
-      
+      path: "/products",
     },
     {
       key: "clients",
@@ -98,9 +103,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   const isActive = (path) => {
     // Special case for products - should be active for /products and /products/:id
     if (path === "/products") {
-      return location.pathname === "/products" || location.pathname.startsWith("/products/");
+      return (
+        location.pathname === "/products" ||
+        location.pathname.startsWith("/products/")
+      );
     }
-    
+
     // Default exact match for other paths
     return location.pathname === path;
   };
@@ -207,7 +215,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Logout */}
         <div className="p-4 border-t border-gray-200">
-          <button className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full">
+          <button type="button" onClick={handleLogout} className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full">
             <Icon name={ICON_NAMES.LOG_OUT} size={18} />
             <span>Log out</span>
           </button>

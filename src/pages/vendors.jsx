@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
 import { Icon, ICON_NAMES } from "../components/icons";
@@ -8,6 +9,7 @@ import VendorModal from "../components/modals/vendors/VendorModal";
 import DeleteVendorModal from "../components/modals/vendors/DeleteVendorModal";
 
 const Vendors = () => {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -115,7 +117,11 @@ const Vendors = () => {
     setShowVendorModal(false);
   };
 
-  // 🔹 Delete Vendor
+  // 🔹 View Vendor Details
+  const handleView = (vendor) => {
+    navigate(`/vendors/${vendor.id}`, { state: { vendor } });
+  };
+
   const handleDelete = (vendor) => {
     setSelectedVendor(vendor);
     setShowDeleteModal(true);
@@ -169,6 +175,11 @@ const Vendors = () => {
   ];
 
   const actions = [
+    {
+      text: "View",
+      onClick: (vendor) => handleView(vendor),
+      textColor: "var(--color-primary)",
+    },
     {
       text: "Edit",
       onClick: handleEdit,
