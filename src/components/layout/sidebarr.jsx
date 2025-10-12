@@ -3,6 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { Icon, ICON_NAMES } from "../icons";
 import { useDispatch } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
+import LogoImg from "../../assets/img/shivesh-logo.png";
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState({});
@@ -132,6 +133,11 @@ const Sidebar = ({ isOpen, onClose }) => {
         xl:w-64
       `}
       >
+
+        <div className="flex items-center md:hidden justify-center h-[65px] xl:h-[100px] border-b border-primary">
+          <img src={LogoImg} alt="Logo" className="h-12 xl:h-20" />
+        </div>
+
         {/* Logo */}
 
         {/* Navigation */}
@@ -215,7 +221,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Logout */}
         <div className="p-4 border-t border-gray-200">
-          <button type="button" onClick={handleLogout} className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full">
+          <button type="button" onClick={handleLogout} className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-primary-light rounded-lg transition-colors w-full">
             <Icon name={ICON_NAMES.LOG_OUT} size={18} />
             <span>Log out</span>
           </button>

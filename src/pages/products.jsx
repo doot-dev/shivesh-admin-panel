@@ -6,8 +6,8 @@ import Table from "../components/ui/Table";
 import Input from "../components/ui/Input";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import { Icon, ICON_NAMES } from "../components/icons";
-import AddProductModal from "../components/modals/product/AddProductModal";
-import DeleteProductModal from "../components/modals/product/DeleteProductModal";
+import AddProductModal from "../components/modals/product/addProductModal";
+import DeleteProductModal from "../components/modals/product/deleteProductModal";
 import productService from "../services/productService";
 import EditProductModal from "../components/modals/product/EditProductModal";
 
@@ -17,7 +17,14 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
-
+  const [page, setPage] = useState({
+    current: 1,
+    total: 1,
+  });
+  const [length, setLength] = useState({
+    totalLength: 1,
+    limit: 10,
+  });
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -57,6 +64,19 @@ const Products = () => {
     loadProducts();
   }, []);
 
+  const handleSearch = () => {
+    if (searchTerm.trim() === "") {
+      toast.info("Please enter a search term");
+      return;
+    }
+    loadProducts();
+  };
+  // useEffect(() => {
+  //   if (searchTerm.trim() === "") {
+  //     loadProducts();
+  //   }
+  // }, [searchTerm]);
+
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredProducts(products);
@@ -84,13 +104,17 @@ const Products = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const response = await productService.getAllProducts();
+      const response = await productService.getAllProducts(
+        page.current,
+        length.limit,
+        searchTerm
+      );
       console.log("Fetched Products:", response);
 
       // Handle different response structures
       let rawData = [];
-      if (Array.isArray(response)) {
-        rawData = response;
+      if (Array.isArray(response.data)) {
+        rawData = response.data;
       } else if (response && Array.isArray(response.data)) {
         rawData = response.data;
       } else if (response && Array.isArray(response.products)) {
@@ -105,12 +129,19 @@ const Products = () => {
         id: item.id,
         sNo: String(index + 1).padStart(2, "0"),
         product: item.name,
-        gradeSize: Array.isArray(item.size) ? item.size.length : 0,
+        gradeSize: item.sizeCount,
         status: item.isActive ? "Active" : "Inactive",
         isActive: item.isActive, // Keep boolean for operations
         name: item.name, // Keep original name for operations
       }));
-
+      setPage((prev) => ({
+        current: response.meta.page,
+        total: response.meta.totalPages || 1,
+      }));
+      setLength((prev) => ({
+        ...prev,
+        totalLength: response.totalItems || 1,
+      }));
       console.log("Mapped Products:", productData);
       setProducts(productData);
       setFilteredProducts(productData);
@@ -135,10 +166,10 @@ const Products = () => {
       setIsAddingProduct(true);
       const response = await productService.createProduct(productData);
       console.log("Add Product Response:", response);
-      
+
       // Refresh product list
       await loadProducts();
-      
+
       // Close modal and show success message
       setShowAddModal(false);
       toast.success("Product added successfully");
@@ -304,8 +335,10 @@ const Products = () => {
   return (
     <>
       {/* Full Page Loader */}
-      <FullPageLoader 
-        isVisible={loading || isAddingProduct || isEditingProduct || isDeletingProduct}
+      <FullPageLoader
+        isVisible={
+          loading || isAddingProduct || isEditingProduct || isDeletingProduct
+        }
         message={getLoadingMessage()}
         spinnerSize="w-20 h-20"
         spinnerVariant="default"
@@ -313,82 +346,103 @@ const Products = () => {
 
       <div className="p-6">
         {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Products</h1>
-        <p className="text-gray-600">View and manage products</p>
-      </div>
-
-      {/* Search and Add Button */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="relative flex-1 max-w-[40%] md:max-w-[35%] md:h-[50px]">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search by name"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2  border border-border rounded-lg md:h-[50px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            Products
+          </h1>
+          <p className="text-gray-600">View and manage products</p>
         </div>
 
-        <Button
-          onClick={handleAddProduct}
-          leftIcon={ICON_NAMES.PLUS}
-          variant="primary"
-          size="md"
-          height="40px"
-          className="md:!h-[50px] md:!px-6 md:!py-3 md:!text-base text-sm px-4 py-2"
-        >
-          <span className="hidden sm:inline">Add Product</span>
-          <span className="sm:hidden">Add</span>
-        </Button>
+        {/* Search and Add Button */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="relative flex flex-1 max-w-[35%] md:max-w-[30%] md:h-[50px] border border-border rounded-lg">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2   md:h-[50px] focus:outline-none"
+            />
+            {/* <button onClick={handleSearch} className="mr-3">
+              Search
+            </button> */}
+          </div>
+
+          <Button
+            onClick={handleAddProduct}
+            leftIcon={ICON_NAMES.PLUS}
+            variant="primary"
+            size="md"
+            height="40px"
+            className="md:!h-[50px] md:!px-6 md:!py-3 md:!text-base text-sm px-4 py-2"
+          >
+            <span className="hidden sm:inline">Add Product</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
+
+        {/* Products Table */}
+        <Table
+          data={filteredProducts}
+          columns={columns}
+          actions={actions}
+          showPagination={true}
+          itemsPerPage={10}
+          // onPageChange={(value) => {
+          //   setPage((prev) => ({
+          //     current: value || 1,
+          //     total: prev.total,
+          //   }));
+          //   console.log("Page changed to:", value);
+          // }}
+          // onItemPerPageChange={(value) => {
+          //   setLength((prev) => ({
+          //     ...prev,
+          //     limit: value || 10,
+          //   }));
+          //   console.log("Items per page changed to:", value);
+          // }}
+          // mainTotalItems={length.totalLength}
+          // mainTotalPages={page.total}
+          emptyMessage="No products found matching your criteria"
+          className="shadow-sm"
+        />
+
+        {/* Modals */}
+        <AddProductModal
+          isOpen={showAddModal}
+          onClose={() => {
+            setShowAddModal(false);
+          }}
+          onSubmit={handleAddSubmit}
+          loading={isAddingProduct}
+        />
+
+        <DeleteProductModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+          onDelete={handleConfirmDelete}
+          loading={isDeletingProduct}
+        />
+
+        <EditProductModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+          onSubmit={handleEditSubmit}
+          loading={isEditingProduct}
+        />
       </div>
-
-      {/* Products Table */}
-      <Table
-        data={filteredProducts}
-        columns={columns}
-        actions={actions}
-        showPagination={true}
-        itemsPerPage={10}
-        emptyMessage="No products found matching your criteria"
-        className="shadow-sm"
-      />
-
-      {/* Modals */}
-      <AddProductModal
-        isOpen={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-        }}
-        onSubmit={handleAddSubmit}
-        loading={isAddingProduct}
-      />
-
-      <DeleteProductModal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
-        onDelete={handleConfirmDelete}
-        loading={isDeletingProduct}
-      />
-
-      <EditProductModal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
-        onSubmit={handleEditSubmit}
-        loading={isEditingProduct}
-      />
-    </div>
     </>
   );
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Icon, ICON_NAMES } from '../icons';
 import Logo from "../../assets/img/shivesh-logo.png";
 import { useSelector } from "react-redux";
+import UserIcon from "../../assets/img/profile.png"
 // import { useUser } from '../../context/UserContext';
 const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -32,7 +33,7 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
               className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div> */}
-          <div>
+          <div className='hidden md:block' >
             <img src={Logo} alt="Logo" className="h-20" />
           </div>
         </div>
@@ -52,9 +53,9 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
               className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
             >
               <img
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                src={UserIcon}
                 alt="Profile"
-                className="h-8 w-8 rounded-full"
+                className="h-10 w-10 rounded-full"
               />
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-gray-700">{user.name}</p>

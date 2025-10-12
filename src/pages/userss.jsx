@@ -381,9 +381,9 @@ const Users = () => {
               value={roleFilter}
               onChange={setRoleFilter}
               placeholder="Role"
-              width="auto"
+              width={window.innerWidth < 768 ? "100%" : "200px"}
               height={window.innerWidth < 768 ? "40px" : "50px"}
-              className="md:max-w-[14%] lg:max-w-[20%]  xl:max-w-[20%]"
+              // className="md:max-w-[14%] lg:max-w-[20%]  xl:max-w-[20%] md:min-w-[200px] h-[40px]"
             />
 
             {/* Status Filter */}
@@ -392,9 +392,9 @@ const Users = () => {
               value={statusFilter}
               onChange={setStatusFilter}
               placeholder="Status"
-              width="auto"
-             height={window.innerWidth < 768 ? "40px" : "50px"}
-              className="md:max-w-[14%] lg:max-w-[20%] xl:max-w-[20%]"
+              width={window.innerWidth < 768 ? "100%" : "150px"}
+              height={window.innerWidth < 768 ? "40px" : "50px"}
+              // className="md:max-w-[14%] lg:max-w-[20%] xl:max-w-[20%] md:min-w-[120px]"
             />
           </div>
 

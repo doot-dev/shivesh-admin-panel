@@ -229,12 +229,10 @@ const EditUserModal = ({
         variant="outline"
         onClick={handleClose}
         className="mr-3 px-4 sm:px-6 text-sm sm:text-base"
-        width="120px"
+        width="180px"
         height="40px"
         disabled={isSubmitting || loading}
-        style={{
-          textTransform: "capitalize",
-        }}
+        
       >
         Cancel
       </Button>
@@ -242,7 +240,7 @@ const EditUserModal = ({
         variant="primary"
         onClick={handleSave}
         className="px-4 sm:px-6 text-sm sm:text-base"
-        width="120px"
+        width="180px"
         height="40px"
         disabled={isSubmitting || loading}
         style={{

@@ -25,19 +25,24 @@ const Table = ({
   onSort,
   sortBy = "",
   sortOrder = "asc",
+  mainTotalPages,
+  mainTotalItems,
+  onItemPerPageChange = () => {},
+  onPageChange = () => {},
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPageState, setItemsPerPageState] = useState(itemsPerPage);
 
   // Pagination options
   const paginationOptions = [
-    { value: "5", label: "5" },
+    // { value: "5", label: "5" },
     { value: "10", label: "10" },
     { value: "25", label: "25" },
     { value: "50", label: "50" },
   ];
 
-  const totalPages = Math.ceil(data.length / itemsPerPageState);
+  const totalPages =
+    mainTotalPages || Math.ceil(data.length / itemsPerPageState);
   const startIndex = (currentPage - 1) * itemsPerPageState;
   const endIndex = startIndex + itemsPerPageState;
   const currentData = data.slice(startIndex, endIndex);
@@ -163,9 +168,7 @@ const Table = ({
                       </p>
                     )}
                   </div>
-                  {actions && (
-                    <div className="ml-2">{renderActions(item)}</div>
-                  )}
+                  {actions && <div className="ml-2">{renderActions(item)}</div>}
                 </div>
               )}
 
@@ -318,7 +321,9 @@ const Table = ({
               ) : (
                 <tr>
                   <td
-                    colSpan={columns.length + (actions && actions.length > 0 ? 1 : 0)}
+                    colSpan={
+                      columns.length + (actions && actions.length > 0 ? 1 : 0)
+                    }
                     className="px-6 py-12 text-center"
                   >
                     <div className="flex flex-col items-center">
@@ -344,11 +349,11 @@ const Table = ({
             <div className="flex items-center space-x-2 text-sm text-text-secondary">
               <span className="hidden sm:inline">
                 Showing {startIndex + 1} to {Math.min(endIndex, data.length)} of{" "}
-                {data.length} results
+                {mainTotalItems || data.length} results
               </span>
               <span className="sm:hidden">
                 {startIndex + 1}-{Math.min(endIndex, data.length)} of{" "}
-                {data.length}
+                {mainTotalItems || data.length}
               </span>
               <Dropdown
                 options={paginationOptions}
@@ -356,6 +361,8 @@ const Table = ({
                 onChange={(value) => {
                   setItemsPerPageState(Number(value));
                   setCurrentPage(1);
+                  onItemPerPageChange(Number(value));
+                  onPageChange(1);
                 }}
                 width="80px"
                 height="32px"
@@ -363,16 +370,26 @@ const Table = ({
               />
             </div>
 
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-2">
+              {/* Previous Button */}
               <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                onClick={() => {
+                  const newPage = Math.max(1, currentPage - 1);
+                  setCurrentPage(newPage);
+                  onPageChange(newPage);
+                }}
                 disabled={currentPage === 1}
-                className="px-2 py-1 border border-border rounded text-sm hover:bg-background-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="Previous"
+                className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <Icon name={ICON_NAMES.CHEVRON_LEFT} size={16} />
+                <Icon
+                  name={ICON_NAMES.CHEVRON_LEFT}
+                  size={16}
+                  className="mr-1"
+                />
+                Prev
               </button>
 
+              {/* Page Numbers */}
               <div className="flex items-center space-x-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
@@ -389,17 +406,15 @@ const Table = ({
                   return (
                     <button
                       key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`px-3 py-1 text-sm rounded transition-colors ${
+                      onClick={() => {
+                        setCurrentPage(pageNum);
+                        onPageChange(pageNum);
+                      }}
+                      className={`w-10 h-10 flex items-center justify-center text-sm font-medium rounded-lg transition-colors ${
                         currentPage === pageNum
-                          ? "text-white"
-                          : "border border-border hover:bg-background-hover"
+                          ? "bg-primary text-white"
+                          : "text-gray-700 hover:bg-gray-100"
                       }`}
-                      style={
-                        currentPage === pageNum
-                          ? { backgroundColor: "var(--color-primary)" }
-                          : {}
-                      }
                     >
                       {pageNum}
                     </button>
@@ -407,15 +422,22 @@ const Table = ({
                 })}
               </div>
 
+              {/* Next Button */}
               <button
-                onClick={() =>
-                  setCurrentPage(Math.min(totalPages, currentPage + 1))
-                }
+                onClick={() => {
+                  const newPage = Math.min(totalPages, currentPage + 1);
+                  setCurrentPage(newPage);
+                  onPageChange(newPage);
+                }}
                 disabled={currentPage === totalPages}
-                className="px-2 py-1 border border-border rounded text-sm hover:bg-background-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="Next"
+                className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} />
+                Next
+                <Icon
+                  name={ICON_NAMES.CHEVRON_RIGHT}
+                  size={16}
+                  className="ml-1"
+                />
               </button>
             </div>
           </div>

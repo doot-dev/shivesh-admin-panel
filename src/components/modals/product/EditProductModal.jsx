@@ -132,7 +132,7 @@ const EditProductModal = ({
             variant="outline"
             onClick={handleClose}
             disabled={loading}
-            width="120px"
+            width="150px"
             height="40px"
             className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
           >
@@ -142,9 +142,9 @@ const EditProductModal = ({
             type="submit" 
             disabled={loading} 
             loading={loading}
-            width="120px"
+            width="180px"
             height="40px"
-            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
+            className="sm:!w-[180px] sm:!h-[45px] text-sm sm:text-base"
           >
             {loading ? "Updating..." : "Save Changes"}
           </Button>

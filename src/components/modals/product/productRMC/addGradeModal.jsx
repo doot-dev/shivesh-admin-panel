@@ -126,7 +126,7 @@ const AddGradeModal = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Grade/Size
+              Grade/Size <span className="text-red-500" >*</span>
             </label>
             <Input
               type="text"
@@ -170,18 +170,18 @@ const AddGradeModal = ({
             type="button"
             variant="outline"
             onClick={handleClose}
-            width="120px"
+            width="180px"
             height="40px"
-            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
+            className="sm:!w-[180px] sm:!h-[45px] text-sm sm:text-base"
             disabled={loading}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            width="120px"
+            width="180px"
             height="40px"
-            className="sm:!w-[150px] sm:!h-[45px] text-sm sm:text-base"
+            className="sm:!w-[180px] sm:!h-[45px] text-sm sm:text-base"
             disabled={loading}
             loading={loading}
           >

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Logo from "../assets/img/shivesh-logo.png";
-import LoginImg from "../assets/img/loginImg.png";
+import LoginImg from "../assets/img/loginImg.jpeg";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -66,7 +66,7 @@ export default function Login() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label className=" text-[18px]  text-text-primary">
-                E-mail address
+                Username
               </label>
               <input
                 type="text"
@@ -98,7 +98,7 @@ export default function Login() {
               </div>
             </div>
 
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {/* {error && <p className="text-red-500 text-sm">{error}</p>} */}
             <button
               type="submit"
               disabled={loading}

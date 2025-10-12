@@ -2,9 +2,11 @@ import api from "./api";
 
 const productService = {
   // Get all products
-  getAllProducts: async () => {
+  getAllProducts: async (page = 1, length = 10, search = "") => {
     try {
-      const response = await api.get("/api/v1/admin/product");
+      const response = await api.get(
+        `/api/v1/admin/product?length=1000`
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching products:", error);

@@ -185,7 +185,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         variant="outline" 
         onClick={handleClose} 
         className="mr-3 text-sm sm:text-base px-4 sm:px-6"
-        width="120px"
+        width="180px"
         height="40px"
         disabled={isSubmitting}
       >
@@ -195,7 +195,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         variant="primary" 
         onClick={handleSubmit}
         className="text-sm sm:text-base px-4 sm:px-6"
-        width="120px"
+        width="180px"
         height="40px"
         disabled={isSubmitting}
       >
