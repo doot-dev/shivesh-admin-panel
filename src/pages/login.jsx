@@ -109,14 +109,14 @@ export default function Login() {
           </form>
 
           {/* Forgot Password */}
-          <div className="text-center mt-8">
+          {/* <div className="text-center mt-8">
             <a
               href="#"
               className="text-base font-medium tracking-wide text-primary hover:underline"
             >
               Forgot your password?
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
 
