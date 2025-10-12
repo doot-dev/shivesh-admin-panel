@@ -1,4 +1,4 @@
-export { default as Icon } from "./icon";
+export { default as Icon } from "./Icon";
 
 // Export individual icon names for easy reference
 export const ICON_NAMES = {

@@ -6,8 +6,8 @@ import Table from "../components/ui/Table";
 import Input from "../components/ui/Input";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import { Icon, ICON_NAMES } from "../components/icons";
-import AddProductModal from "../components/modals/product/addProductModal";
-import DeleteProductModal from "../components/modals/product/deleteProductModal";
+import AddProductModal from "../components/modals/product/AddProductModal";
+import DeleteProductModal from "../components/modals/product/DeleteProductModal";
 import productService from "../services/productService";
 import EditProductModal from "../components/modals/product/EditProductModal";
 
