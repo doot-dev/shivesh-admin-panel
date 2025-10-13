@@ -7,6 +7,7 @@ import { Icon, ICON_NAMES } from "../components/icons";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import VendorModal from "../components/modals/vendors/VendorModal";
 import DeleteVendorModal from "../components/modals/vendors/DeleteVendorModal";
+import vendorService from "../services/vendorService";
 
 const Vendors = () => {
   const navigate = useNavigate();
@@ -15,43 +16,10 @@ const Vendors = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
-
-  // 🔹 Fake Vendor Data
-  const mockVendors = [
-    {
-      id: 1,
-      sNo: "01",
-      name: "ACC Cement",
-      contactPerson: "Ramesh Goel",
-      designation: "Manager",
-      phone: "9203463584",
-      email: "rameshg@gmail.com",
-      status: "Active",
-    },
-    {
-      id: 2,
-      sNo: "02",
-      name: "Ambuja Cement",
-      contactPerson: "Aman Seth",
-      designation: "Sales Head",
-      phone: "9244567886",
-      email: "sethaman@gmail.com",
-      status: "Active",
-    },
-    {
-      id: 3,
-      sNo: "03",
-      name: "Steel Works Ltd.",
-      contactPerson: "Amit Singh",
-      designation: "Director",
-      phone: "8756454433",
-      email: "director@steelworks.com",
-      status: "Inactive",
-    },
-  ];
 
   useEffect(() => {
     loadVendors();
@@ -61,12 +29,38 @@ const Vendors = () => {
   const loadVendors = async () => {
     try {
       setLoading(true);
-      // Simulate API
-      setTimeout(() => {
-        setVendors(mockVendors);
-        setFilteredVendors(mockVendors);
-        setLoading(false);
-      }, 800);
+
+      const response = await vendorService.getVendors();
+      console.log("Vendors response:", response);
+      let rawData = [];
+      if (Array.isArray(response.data)) {
+        rawData = response.data;
+      } else if (response && Array.isArray(response.data)) {
+        rawData = response.data;
+      } else if (response && Array.isArray(response.products)) {
+        rawData = response.products;
+      } else {
+        console.warn("Unexpected response structure:", response);
+        // rawData = mockProducts; // Fallback to mock data
+      }
+
+      const vendorsData = rawData.map((vendor, index) => ({
+        id: vendor.id,
+        sNo: index + 1,
+        name: vendor.companyName,
+        contactPerson: vendor.ownerName || vendor.contactPersonName || "N/A",
+        contactPersonDesignation: vendor.designation || vendor.contactPersonDesignation || "Manager",
+        phone: vendor.phone || vendor.contactPersonPhone,
+        email: vendor.email || vendor.contactPersonEmail,
+        status: vendor.isActive ? "Active" : "Inactive",
+        isActive: vendor.isActive,
+        // Keep original data for API calls
+        originalData: vendor,
+      }));
+
+      setVendors(vendorsData);
+      setFilteredVendors(vendorsData);
+      setLoading(false);
     } catch (error) {
       console.error("Error loading vendors:", error);
       toast.error("Failed to load vendors");
@@ -103,23 +97,76 @@ const Vendors = () => {
   };
 
   // 🔹 Handle Vendor Submit (both add and edit)
-  const handleVendorSubmit = (vendorData, mode) => {
-    if (mode === 'add') {
-      setVendors((prev) => [...prev, vendorData]);
-      toast.success("Vendor added successfully");
-    } else if (mode === 'edit') {
-      const updated = vendors.map((v) =>
-        v.id === vendorData.id ? vendorData : v
-      );
-      setVendors(updated);
-      toast.success("Vendor updated successfully");
+  const handleVendorSubmit = async (vendorData, mode) => {
+    try {
+      setSubmitting(true);
+      
+      if (mode === "add") {
+        // Prepare data for createVendor API
+        const apiPayload = {
+          companyName: vendorData.vendorCompanyName,
+          ownerName: vendorData.ownerName,
+          phone: vendorData.phone,
+          email: vendorData.email,
+          address: vendorData.registeredAddress,
+        };
+
+        console.log("Creating vendor with payload:", apiPayload);
+
+        // Call createVendor API
+        const response = await vendorService.createVendor(apiPayload);
+        console.log("Vendor created successfully:", response);
+
+        toast.success("Vendor added successfully");
+        
+        // Refresh vendors list after successful creation
+        loadVendors();
+        
+      } else if (mode === "edit") {
+        // Prepare data for updateVendor API (if needed later)
+        const apiPayload = {
+          id: selectedVendor.id,
+          companyName: vendorData.vendorCompanyName,
+          ownerName: vendorData.ownerName,
+          phone: vendorData.phone,
+          email: vendorData.email,
+          address: vendorData.registeredAddress,
+          gstNumber: vendorData.gstNumber,
+          panNumber: vendorData.panNumber,
+        };
+
+        console.log("Updating vendor with payload:", apiPayload);
+
+        // Call updateVendor API
+        const response = await vendorService.updateVendor(apiPayload);
+        console.log("Vendor updated successfully:", response);
+
+        toast.success("Vendor updated successfully");
+        
+        // Refresh vendors list after successful update
+        loadVendors();
+      }
+      
+      setShowVendorModal(false);
+    } catch (error) {
+      console.error(`Error ${mode === "add" ? "creating" : "updating"} vendor:`, error);
+      
+      // Show specific error message from API response
+      const errorMessage = error?.response?.data?.message || 
+                          error?.message || 
+                          `Failed to ${mode === "add" ? "add" : "update"} vendor. Please try again.`;
+      
+      toast.error(errorMessage);
+      
+      // Don't close modal on error so user can retry
+    } finally {
+      setSubmitting(false);
     }
-    setShowVendorModal(false);
   };
 
   // 🔹 View Vendor Details
   const handleView = (vendor) => {
-    navigate(`/vendors/${vendor.id}`, { state: { vendor } });
+    navigate(`/vendors/${vendor.id}`);
   };
 
   const handleDelete = (vendor) => {
@@ -140,19 +187,21 @@ const Vendors = () => {
     {
       key: "contactPerson",
       header: "Contact person",
-      render: (vendor) => (
+      render: (value, vendor) => (
         <div>
-          <div className="font-semibold">{vendor.contactPerson}</div>
-          <div className="text-sm text-gray-500">{vendor.designation}</div>
+          <div className="font-semibold text-gray-900">
+            {vendor.contactPerson}
+          </div> 
+          <div className="text-sm text-gray-500">{vendor.contactPersonDesignation}</div>
         </div>
       ),
     },
     {
       key: "phone",
       header: "Phone/E-mail",
-      render: (vendor) => (
+      render: (value, vendor) => (
         <div>
-          <div>{vendor.phone}</div>
+          <div className="text-gray-900">{vendor.phone}</div>
           <div className="text-sm text-gray-500">{vendor.email}</div>
         </div>
       ),
@@ -243,6 +292,7 @@ const Vendors = () => {
           onClose={() => setShowVendorModal(false)}
           vendor={selectedVendor}
           onSubmit={handleVendorSubmit}
+          loading={submitting}
         />
 
         <DeleteVendorModal

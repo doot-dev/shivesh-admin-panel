@@ -45,12 +45,12 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
     if (!formData.registeredAddress.trim()) {
       newErrors.registeredAddress = "Please fill the field";
     }
-    if (!formData.gstNo.trim()) {
-      newErrors.gstNo = "Please fill the field";
-    }
-    if (!formData.panNo.trim()) {
-      newErrors.panNo = "Please fill the field";
-    }
+    // if (!formData.gstNo.trim()) {
+    //   newErrors.gstNo = "Please fill the field";
+    // }
+    // if (!formData.panNo.trim()) {
+    //   newErrors.panNo = "Please fill the field";
+    // }
 
     // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {

@@ -41,11 +41,14 @@ const Table = ({
     { value: "50", label: "50" },
   ];
 
+  // Ensure data is always an array
+  const safeData = Array.isArray(data) ? data : [];
+  
   const totalPages =
-    mainTotalPages || Math.ceil(data.length / itemsPerPageState);
+    mainTotalPages || Math.ceil(safeData.length / itemsPerPageState);
   const startIndex = (currentPage - 1) * itemsPerPageState;
   const endIndex = startIndex + itemsPerPageState;
-  const currentData = data.slice(startIndex, endIndex);
+  const currentData = safeData.slice(startIndex, endIndex);
 
   const handleSort = (columnKey) => {
     if (!sortable || !onSort) return;
@@ -233,14 +236,14 @@ const Table = ({
         )}
 
         {/* Mobile Cards View */}
-        {data.length > 0 && showMobileCards && (
+        {safeData.length > 0 && showMobileCards && (
           <div className="md:hidden">
             {currentData.map((item, index) => renderMobileCard(item, index))}
           </div>
         )}
 
         {/* Empty State for Mobile */}
-        {data.length === 0 && showMobileCards && (
+        {safeData.length === 0 && showMobileCards && (
           <div className="md:hidden flex items-center justify-center py-12">
             <div className="text-center">
               <Icon
@@ -289,7 +292,7 @@ const Table = ({
               </tr>
             </thead>
             <tbody className={`bg-white ${rowClassName}`}>
-              {data.length > 0 ? (
+              {safeData.length > 0 ? (
                 currentData.map((item, index) => (
                   <tr
                     key={item.id || index}
@@ -343,17 +346,17 @@ const Table = ({
         </div>
       </div>
       {/* Pagination */}
-      {showPagination && data.length > 0 && (
+      {showPagination && safeData.length > 0 && (
         <div className="px-0 py-3 bg-white ">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center space-x-2 text-sm text-text-secondary">
               <span className="hidden sm:inline">
-                Showing {startIndex + 1} to {Math.min(endIndex, data.length)} of{" "}
-                {mainTotalItems || data.length} results
+                Showing {startIndex + 1} to {Math.min(endIndex, safeData.length)} of{" "}
+                {mainTotalItems || safeData.length} results
               </span>
               <span className="sm:hidden">
-                {startIndex + 1}-{Math.min(endIndex, data.length)} of{" "}
-                {mainTotalItems || data.length}
+                {startIndex + 1}-{Math.min(endIndex, safeData.length)} of{" "}
+                {mainTotalItems || safeData.length}
               </span>
               <Dropdown
                 options={paginationOptions}

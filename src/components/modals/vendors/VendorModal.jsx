@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "../../ui/Modal";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
-
+import { ICON_NAMES } from "../../icons";
 const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
   const [formData, setFormData] = useState({
     vendorCompanyName: "",
@@ -46,11 +46,11 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
   }, [vendor]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -86,7 +86,10 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     }
 
     // Phone validation (basic)
-    if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\s+/g, ""))) {
+    if (
+      formData.phone &&
+      !/^\d{10}$/.test(formData.phone.replace(/\s+/g, ""))
+    ) {
       newErrors.phone = "Please enter a valid 10-digit phone number";
     }
 
@@ -96,7 +99,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -109,7 +112,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         name: formData.vendorCompanyName,
         contactPerson: formData.ownerName,
       };
-      onSubmit(updatedVendor, 'edit');
+      onSubmit(updatedVendor, "edit");
     } else {
       // Add mode - create new vendor
       const newVendor = {
@@ -121,7 +124,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         designation: "Owner", // Default designation
         status: "Active", // Default status
       };
-      onSubmit(newVendor, 'add');
+      onSubmit(newVendor, "add");
     }
 
     handleClose();
@@ -142,18 +145,23 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={handleClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
       title={isEditMode ? "Edit vendor" : "Add new vendor"}
+      size="lg"
+   
+      maxWidth="700px"
+      headerIcon={ICON_NAMES.EDIT_USER}
     >
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Vendor details</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-1">
+          Vendor details
+        </h3>
         <p className="text-sm text-gray-500 mb-6">
-          {isEditMode 
-            ? "Update the details below to edit the vendor" 
-            : "Fill in the details below to add a new vendor"
-          }
+          {isEditMode
+            ? "Update the details below to edit the vendor"
+            : "Fill in the details below to add a new vendor"}
         </p>
       </div>
 
@@ -167,7 +175,9 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
             type="text"
             placeholder="Enter full name"
             value={formData.vendorCompanyName}
-            onChange={(e) => handleInputChange("vendorCompanyName", e.target.value)}
+            onChange={(e) =>
+              handleInputChange("vendorCompanyName", e.target.value)
+            }
             error={errors.vendorCompanyName}
             className="w-full"
           />
@@ -226,14 +236,18 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           <textarea
             placeholder="Enter registered address"
             value={formData.registeredAddress}
-            onChange={(e) => handleInputChange("registeredAddress", e.target.value)}
+            onChange={(e) =>
+              handleInputChange("registeredAddress", e.target.value)
+            }
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
               errors.registeredAddress ? "border-red-500" : "border-gray-300"
             }`}
             rows={3}
           />
           {errors.registeredAddress && (
-            <p className="text-red-500 text-xs mt-1">{errors.registeredAddress}</p>
+            <p className="text-red-500 text-xs mt-1">
+              {errors.registeredAddress}
+            </p>
           )}
         </div>
 
@@ -277,11 +291,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            className="flex-1"
-          >
+          <Button type="submit" variant="primary" className="flex-1">
             {isEditMode ? "Update" : "Save"}
           </Button>
         </div>

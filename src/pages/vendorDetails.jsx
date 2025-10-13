@@ -5,14 +5,17 @@ import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
 import { Icon, ICON_NAMES } from "../components/icons";
 import VendorModal from "../components/modals/vendors/VendorModal";
-import AddHandlerModal from "../components/modals/vendors/AddHandlerModal";
+import HandlerModal from "../components/modals/vendors/handlerModal";
+import vendorService from "../services/vendorService";
+import FullPageLoader from "../components/ui/FullPageLoader";
 
 const VendorDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [vendor, setVendor] = useState(null);
+  const [handlerInfo, setHandlerInfo] = useState(null);
   const [handlers, setHandlers] = useState([]);
   const [filteredHandlers, setFilteredHandlers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,34 +51,93 @@ const VendorDetail = () => {
     loadVendorData();
   }, [id]);
 
-  const loadVendorData = () => {
+  const loadVendorData = async () => {
     try {
-      // Try to get vendor from location state first
+      setLoading(true);
+
+      // Fetch vendor data using API
+      const response = await vendorService.getVendorById(id);
+      console.log("Vendor detail response:", response);
+
+      let vendorData = null;
+
+      // Handle different response structures
+      if (response.data) {
+        vendorData = response.data;
+      } else if (response) {
+        vendorData = response;
+      }
+
+      if (!vendorData) {
+        throw new Error("Vendor not found");
+      }
+
+      // Map API response to component state
+      const mappedVendor = {
+        id: vendorData.id,
+        name: vendorData.companyName,
+        contactPerson: vendorData.ownerName,
+        phone: vendorData.phone,
+        email: vendorData.email,
+        address: vendorData.address,
+        gstNo: vendorData.gstNumber,
+        panNo: vendorData.panNumber,
+        status: vendorData.isActive ? "Active" : "Inactive",
+        isActive: vendorData.isActive,
+      };
+
+      setVendor(mappedVendor);
+
+      // Handle handlers data if available in response
+      if (vendorData.handlers && Array.isArray(vendorData.handlers)) {
+        const mappedHandlers = vendorData.handlers.map((handler, index) => ({
+          id: handler.id || index + 1,
+          handlerName: handler.name || handler.handlerName,
+          phone: handler.phone,
+          email: handler.email,
+          productServices: handler.productServices || handler.product || "N/A",
+          plantName: handler.plantName || "N/A",
+          location: handler.location || handler.address || "N/A",
+          status: handler.isActive ? "Active" : "Inactive",
+          designation: handler.designation || "Manager",
+        }));
+        setHandlers(mappedHandlers);
+        setFilteredHandlers(mappedHandlers);
+      } else {
+        // Fallback to mock handlers if no handlers in API response
+        setHandlers(mockHandlers);
+        setFilteredHandlers(mockHandlers);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error loading vendor data:", error);
+      toast.error("Failed to load vendor data");
+
+      // Try fallback to location state if API fails
       if (location.state?.vendor) {
         setVendor(location.state.vendor);
+        setHandlers(location.state.handlers || mockHandlers);
+        setFilteredHandlers(location.state.handlers || mockHandlers);
       } else {
-        // Fallback: Mock vendor data based on ID
+        // Complete fallback with mock data
         const mockVendor = {
           id: parseInt(id),
           name: "ACC Cement",
           contactPerson: "Ramesh Goel",
           phone: "9203463584",
           email: "rameshg@gmail.com",
-          address: "A- 243, govind marg, Calgiri road, Jaipur, Rajasthan- 302015",
+          address:
+            "A- 243, govind marg, Calgiri road, Jaipur, Rajasthan- 302015",
           gstNo: "76KNDCK9780",
           panNo: "A0P0987YH34",
           status: "Active",
         };
         setVendor(mockVendor);
+        setHandlers(mockHandlers);
+        setFilteredHandlers(mockHandlers);
       }
-      
-      // Load handlers for this vendor
-      setHandlers(mockHandlers);
-      setFilteredHandlers(mockHandlers);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading vendor data:", error);
-      toast.error("Failed to load vendor data");
+
       setLoading(false);
     }
   };
@@ -112,7 +174,7 @@ const VendorDetail = () => {
 
   const handleAddHandlerSubmit = (handlerData) => {
     // Add new handlers to the existing handlers list
-    const newHandlers = handlerData.handlers.map(handler => ({
+    const newHandlers = handlerData.handlers.map((handler) => ({
       id: Date.now() + Math.random(),
       handlerName: handler.name,
       phone: handler.phone,
@@ -124,15 +186,17 @@ const VendorDetail = () => {
       designation: handler.designation,
     }));
 
-    setHandlers(prev => [...prev, ...newHandlers]);
-    setFilteredHandlers(prev => [...prev, ...newHandlers]);
+    setHandlers((prev) => [...prev, ...newHandlers]);
+    setFilteredHandlers((prev) => [...prev, ...newHandlers]);
     toast.success(`${newHandlers.length} handler(s) added successfully!`);
     setShowAddHandlerModal(false);
   };
 
   const handleEditHandler = (handler) => {
     console.log("Edit handler:", handler);
-    toast.info("Edit handler functionality coming soon!");
+
+    setHandlerInfo(handler);
+    setShowAddHandlerModal(true);
   };
 
   const handleDeleteHandler = (handler) => {
@@ -201,14 +265,18 @@ const VendorDetail = () => {
   ];
 
   if (loading) {
-    return <div className="p-6">Loading...</div>;
+    return (
+      <FullPageLoader isVisible={loading} message="Loading vendor details..." />
+    );
   }
 
   if (!vendor) {
     return (
       <div className="p-6">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Vendor not found</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Vendor not found
+          </h2>
           <Button onClick={() => navigate("/vendors")} variant="primary">
             Back to Vendors
           </Button>
@@ -240,15 +308,19 @@ const VendorDetail = () => {
           onClick={handleEdit}
           leftIcon={ICON_NAMES.EDIT}
           variant="secondary"
+          height={44}
+          className="bg-transparent"
         >
           Edit
         </Button>
       </div>
 
       {/* Basic Details Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-6">Basic details</h2>
-        
+      <div className="bg-white rounded-lg border border-[#9BB3F4] shadow p-6 mb-8">
+        <h2 className="text-lg font-medium text-gray-900 mb-6">
+          Basic details
+        </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Owner's name */}
           <div>
@@ -307,7 +379,8 @@ const VendorDetail = () => {
               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
               style={{
                 color: vendor.status === "Active" ? "#16A34A" : "#DC2626",
-                backgroundColor: vendor.status === "Active" ? "#D1FAE5" : "#FECACA",
+                backgroundColor:
+                  vendor.status === "Active" ? "#D1FAE5" : "#FECACA",
               }}
             >
               • {vendor.status}
@@ -317,11 +390,13 @@ const VendorDetail = () => {
       </div>
 
       {/* Handlers Detail Section */}
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-white rounded-lg  ">
         {/* Handlers Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">Handlers Detail</h2>
+            <h2 className="text-lg font-medium text-gray-900">
+              Handlers Detail
+            </h2>
             <div className="flex items-center gap-4">
               {/* Search */}
               <div className="relative">
@@ -333,15 +408,16 @@ const VendorDetail = () => {
                   placeholder="Search by name"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-12 focus:outline-none"
                 />
               </div>
-              
+
               {/* Add Button */}
               <Button
                 onClick={handleAddHandler}
                 leftIcon={ICON_NAMES.PLUS}
                 variant="primary"
+                height={48}
               >
                 Add
               </Button>
@@ -371,11 +447,12 @@ const VendorDetail = () => {
       />
 
       {/* Add Handler Modal */}
-      <AddHandlerModal
+      <HandlerModal
         isOpen={showAddHandlerModal}
         onClose={() => setShowAddHandlerModal(false)}
         onSubmit={handleAddHandlerSubmit}
         vendorId={vendor?.id}
+        handler={handlerInfo}
       />
     </div>
   );

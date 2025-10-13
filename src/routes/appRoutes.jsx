@@ -10,6 +10,8 @@ import { useParams } from "react-router";
 import Vendors from "../pages/vendors";
 import VendorDetail from "../pages/vendorDetails";
 import ComingSoon from "../pages/comingSoonn";
+import LeadsPage from "../pages/leads";
+import LeadsDetailsPage from "../pages/leadsDetails";
 
 export default function AppRoutes() {
   return (
@@ -29,7 +31,8 @@ export default function AppRoutes() {
             <Route path="vendors" element={<Vendors />} />
             <Route path="vendors/:id" element={<VendorDetail />} />
             <Route path="clients" element={<ComingSoon />} />
-            <Route path="leads" element={<ComingSoon />} />
+            <Route path="leads" element={<LeadsPage />} />
+            <Route path="leads/:id" element={<LeadsDetailsPage />} />
             <Route path="projects" element={<ComingSoon />} />
             <Route path="orders" element={<ComingSoon />} />
             <Route path="orders/all" element={<ComingSoon />} />
