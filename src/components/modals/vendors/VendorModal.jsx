@@ -13,7 +13,8 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     gstNumber: "",
     panNumber: "",
   });
-
+console.log("VendorModal formData:", formData);
+console.log("VendorModal Vendor Detail:", vendor);
   const [errors, setErrors] = useState({});
 
   // Determine if this is edit mode
@@ -23,13 +24,13 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
   useEffect(() => {
     if (vendor) {
       setFormData({
-        vendorCompanyName: vendor.name || "",
-        ownerName: vendor.contactPerson || "",
-        phone: vendor.phone || "",
-        email: vendor.email || "",
-        registeredAddress: vendor.registeredAddress || "",
-        gstNumber: vendor.gstNumber || "",
-        panNumber: vendor.panNumber || "",
+        vendorCompanyName: vendor.name,
+        ownerName: vendor.contactPerson,
+        phone: vendor.phone,
+        email: vendor.email,
+        address: vendor.address,
+        gstNumber: vendor.gstNumber,
+        panNumber: vendor.panNumber,
       });
     } else {
       // Reset form for add mode
@@ -38,7 +39,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         ownerName: "",
         phone: "",
         email: "",
-        registeredAddress: "",
+        address: "",
         gstNumber: "",
         panNumber: "",
       });
@@ -64,22 +65,11 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     if (!formData.ownerName.trim()) {
       newErrors.ownerName = "Please fill the field";
     }
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Please fill the field";
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = "Please fill the field";
-    }
-    if (!formData.registeredAddress.trim()) {
-      newErrors.registeredAddress = "Please fill the field";
-    }
-    // if (!formData.gstNo.trim()) {
-    //   newErrors.gstNo = "Please fill the field";
-    // }
-    // if (!formData.panNo.trim()) {
-    //   newErrors.panNo = "Please fill the field";
-    // }
 
+    if (!formData.address.trim()) {
+      newErrors.address = "Please fill the field";
+    }
+    
     // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
@@ -234,18 +224,18 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           </label>
           <textarea
             placeholder="Enter registered address"
-            value={formData.registeredAddress}
+            value={formData.address}
             onChange={(e) =>
               handleInputChange("registeredAddress", e.target.value)
             }
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
-              errors.registeredAddress ? "border-red-500" : "border-gray-300"
+              errors.address ? "border-red-500" : "border-gray-300"
             }`}
             rows={3}
           />
-          {errors.registeredAddress && (
+          {errors.address && (
             <p className="text-red-500 text-xs mt-1">
-              {errors.registeredAddress}
+              {errors.address}
             </p>
           )}
         </div>

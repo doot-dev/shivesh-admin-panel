@@ -1,14 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "../../ui/Modal";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
+import MapImage from "../../../assets/img/map.png";
 import { Icon, ICON_NAMES } from "../../icons";
+import vendorService from "../../../services/vendorService";
 
 const AddHandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
   const [locationDetails, setLocationDetails] = useState({
+    vendorId: vendorId,
     plantName: "",
     address: "",
-    productName: "",
+    latitude: "",
+    longitude: "",
   });
 
   const [handlers, setHandlers] = useState([]);
@@ -173,6 +177,29 @@ const AddHandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
     onClose();
   };
 
+  /// get handler data by vendor Id
+  useEffect(() => {
+    if (isEditMode && handler) {
+      setLocationDetails({
+        plantName: handler.plantName || "",
+        address: handler.address || "",
+        latitude: handler.latitude || "",
+        longitude: handler.longitude || "",
+        productName: handler.productName || "",
+      });
+      setHandlers(handler.handlers || []);
+    } else {
+      setLocationDetails({
+        plantName: "",
+        address: "",
+        latitude: "",
+        longitude: "",
+        productName: "",
+      });
+      setHandlers([]);
+    }
+  }, [isEditMode, handler]);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -221,14 +248,34 @@ const AddHandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Address
-              <button
-                type="button"
-                className="ml-2 text-blue-600 text-xs hover:underline"
-                onClick={() => console.log("Locate on map clicked")}
-              >
-                📍 Locate on map
-              </button>
             </label>
+            <img
+              src={MapImage}
+              alt="Map"
+              className="w-full h-32 object-cover mb-2"
+            />
+            <div className="grid grid-cols-2 gap-3 my-2">
+              <Input
+                type="text"
+                placeholder="Enter latitude"
+                value={locationDetails.latitude}
+                onChange={(e) =>
+                  handleLocationChange("latitude", e.target.value)
+                }
+                error={errors.latitude}
+                className="w-full"
+              />
+              <Input
+                type="text"
+                placeholder="Enter longitude"
+                value={locationDetails.longitude}
+                onChange={(e) =>
+                  handleLocationChange("longitude", e.target.value)
+                }
+                error={errors.longitude}
+                className="w-full"
+              />
+            </div>
             <textarea
               placeholder="Enter full address"
               value={locationDetails.address}
@@ -443,7 +490,7 @@ const AddHandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
             Cancel
           </Button>
           <Button type="submit" variant="primary" className="flex-1">
-            {isEditMode ? "Update Vendor" :  "Add Vendor"}
+            {isEditMode ? "Update Vendor" : "Add Vendor"}
           </Button>
         </div>
       </form>

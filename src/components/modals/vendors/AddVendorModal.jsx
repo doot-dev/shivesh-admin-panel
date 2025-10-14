@@ -18,11 +18,11 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
   const [errors, setErrors] = useState({});
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -36,21 +36,10 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
     if (!formData.ownerName.trim()) {
       newErrors.ownerName = "Please fill the field";
     }
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Please fill the field";
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = "Please fill the field";
-    }
+
     if (!formData.registeredAddress.trim()) {
       newErrors.registeredAddress = "Please fill the field";
     }
-    // if (!formData.gstNo.trim()) {
-    //   newErrors.gstNo = "Please fill the field";
-    // }
-    // if (!formData.panNo.trim()) {
-    //   newErrors.panNo = "Please fill the field";
-    // }
 
     // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
@@ -58,7 +47,10 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
     }
 
     // Phone validation (basic)
-    if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\s+/g, ""))) {
+    if (
+      formData.phone &&
+      !/^\d{10}$/.test(formData.phone.replace(/\s+/g, ""))
+    ) {
       newErrors.phone = "Please enter a valid 10-digit phone number";
     }
 
@@ -68,7 +60,7 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -105,8 +97,12 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Add new vendor">
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Vendor details</h3>
-        <p className="text-sm text-gray-500 mb-6">Fill in the details below to add a new vendor</p>
+        <h3 className="text-lg font-medium text-gray-900 mb-1">
+          Vendor details
+        </h3>
+        <p className="text-sm text-gray-500 mb-6">
+          Fill in the details below to add a new vendor
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -119,7 +115,9 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
             type="text"
             placeholder="Enter full name"
             value={formData.vendorCompanyName}
-            onChange={(e) => handleInputChange("vendorCompanyName", e.target.value)}
+            onChange={(e) =>
+              handleInputChange("vendorCompanyName", e.target.value)
+            }
             error={errors.vendorCompanyName}
             className="w-full"
           />
@@ -178,14 +176,18 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
           <textarea
             placeholder="Enter full name"
             value={formData.registeredAddress}
-            onChange={(e) => handleInputChange("registeredAddress", e.target.value)}
+            onChange={(e) =>
+              handleInputChange("registeredAddress", e.target.value)
+            }
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
               errors.registeredAddress ? "border-red-500" : "border-gray-300"
             }`}
             rows={3}
           />
           {errors.registeredAddress && (
-            <p className="text-red-500 text-xs mt-1">{errors.registeredAddress}</p>
+            <p className="text-red-500 text-xs mt-1">
+              {errors.registeredAddress}
+            </p>
           )}
         </div>
 
@@ -229,11 +231,7 @@ const AddVendorModal = ({ isOpen, onClose, onSubmit }) => {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            className="flex-1"
-          >
+          <Button type="submit" variant="primary" className="flex-1">
             Save
           </Button>
         </div>

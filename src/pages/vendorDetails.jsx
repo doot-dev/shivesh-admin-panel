@@ -57,21 +57,9 @@ const VendorDetail = () => {
 
       // Fetch vendor data using API
       const response = await vendorService.getVendorById(id);
-      console.log("Vendor detail response:", response);
+      console.log("Vendor detail response:", response.data);
 
-      let vendorData = null;
-
-      // Handle different response structures
-      if (response.data) {
-        vendorData = response.data;
-      } else if (response) {
-        vendorData = response;
-      }
-
-      if (!vendorData) {
-        throw new Error("Vendor not found");
-      }
-
+      let vendorData = response.data;
       // Map API response to component state
       const mappedVendor = {
         id: vendorData.id,
@@ -80,13 +68,17 @@ const VendorDetail = () => {
         phone: vendorData.phone,
         email: vendorData.email,
         address: vendorData.address,
-        gstNo: vendorData.gstNumber,
-        panNo: vendorData.panNumber,
+        gstNumber: vendorData.gstNumber,
+        panNumber: vendorData.panNumber,
         status: vendorData.isActive ? "Active" : "Inactive",
         isActive: vendorData.isActive,
       };
 
       setVendor(mappedVendor);
+
+      const handlerResponse = await vendorService.getLocationbyVendorId(id);
+      console.log("Vendor handlers response:", handlerResponse.data);
+      vendorData = { ...vendorData, handlers: handlerResponse.data };
 
       // Handle handlers data if available in response
       if (vendorData.handlers && Array.isArray(vendorData.handlers)) {
@@ -114,29 +106,9 @@ const VendorDetail = () => {
       console.error("Error loading vendor data:", error);
       toast.error("Failed to load vendor data");
 
-      // Try fallback to location state if API fails
-      if (location.state?.vendor) {
-        setVendor(location.state.vendor);
-        setHandlers(location.state.handlers || mockHandlers);
-        setFilteredHandlers(location.state.handlers || mockHandlers);
-      } else {
-        // Complete fallback with mock data
-        const mockVendor = {
-          id: parseInt(id),
-          name: "ACC Cement",
-          contactPerson: "Ramesh Goel",
-          phone: "9203463584",
-          email: "rameshg@gmail.com",
-          address:
-            "A- 243, govind marg, Calgiri road, Jaipur, Rajasthan- 302015",
-          gstNo: "76KNDCK9780",
-          panNo: "A0P0987YH34",
-          status: "Active",
-        };
-        setVendor(mockVendor);
-        setHandlers(mockHandlers);
-        setFilteredHandlers(mockHandlers);
-      }
+      setVendor(location.state.vendor);
+      setHandlers(location.state.handlers || mockHandlers);
+      setFilteredHandlers(location.state.handlers || mockHandlers);
 
       setLoading(false);
     }
@@ -216,8 +188,8 @@ const VendorDetail = () => {
       header: "Phone/E-mail",
       render: (handler) => (
         <div>
-          <div>{handler.phone}</div>
-          <div className="text-sm text-gray-500">{handler.email}</div>
+          <div>handler.phone</div>
+          <div className="text-sm text-gray-500">handler.email</div>
         </div>
       ),
     },
@@ -359,7 +331,7 @@ const VendorDetail = () => {
             <label className="block text-sm font-medium text-gray-500 mb-1">
               GST No.
             </label>
-            <p className="text-gray-900">{vendor.gstNo}</p>
+            <p className="text-gray-900">{vendor.gstNumber}</p>
           </div>
 
           {/* PAN No. */}
@@ -367,7 +339,7 @@ const VendorDetail = () => {
             <label className="block text-sm font-medium text-gray-500 mb-1">
               PAN No.
             </label>
-            <p className="text-gray-900">{vendor.panNo}</p>
+            <p className="text-gray-900">{vendor.panNumber}</p>
           </div>
 
           {/* Status */}
