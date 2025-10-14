@@ -48,13 +48,12 @@ const Vendors = () => {
         id: vendor.id,
         sNo: index + 1,
         name: vendor.companyName,
-        contactPerson: vendor.ownerName || vendor.contactPersonName || "N/A",
-        contactPersonDesignation: vendor.designation || vendor.contactPersonDesignation || "Manager",
-        phone: vendor.phone || vendor.contactPersonPhone,
-        email: vendor.email || vendor.contactPersonEmail,
+        contactPerson: vendor.ownerName,
+        contactPersonDesignation: vendor.designation,
+        phone: vendor.phone,
+        email: vendor.email,
         status: vendor.isActive ? "Active" : "Inactive",
         isActive: vendor.isActive,
-        // Keep original data for API calls
         originalData: vendor,
       }));
 
@@ -94,13 +93,15 @@ const Vendors = () => {
   const handleEdit = (vendor) => {
     setSelectedVendor(vendor);
     setShowVendorModal(true);
+    console.log("Editing vendor:", vendor);
+
   };
 
   // 🔹 Handle Vendor Submit (both add and edit)
   const handleVendorSubmit = async (vendorData, mode) => {
     try {
       setSubmitting(true);
-      
+
       if (mode === "add") {
         // Prepare data for createVendor API
         const apiPayload = {
@@ -109,6 +110,8 @@ const Vendors = () => {
           phone: vendorData.phone,
           email: vendorData.email,
           address: vendorData.registeredAddress,
+          gstNumber: vendorData.gstNumber || "",
+          panNumber: vendorData.panNumber || "",
         };
 
         console.log("Creating vendor with payload:", apiPayload);
@@ -117,13 +120,13 @@ const Vendors = () => {
         const response = await vendorService.createVendor(apiPayload);
         console.log("Vendor created successfully:", response);
 
-        toast.success("Vendor added successfully");
-        
+        toast.success(response.message);
+
         // Refresh vendors list after successful creation
         loadVendors();
-        
       } else if (mode === "edit") {
         // Prepare data for updateVendor API (if needed later)
+        debugger;
         const apiPayload = {
           id: selectedVendor.id,
           companyName: vendorData.vendorCompanyName,
@@ -131,8 +134,8 @@ const Vendors = () => {
           phone: vendorData.phone,
           email: vendorData.email,
           address: vendorData.registeredAddress,
-          gstNumber: vendorData.gstNumber,
-          panNumber: vendorData.panNumber,
+          gstNumber: vendorData.gstNumber || "",
+          panNumber: vendorData.panNumber || "",
         };
 
         console.log("Updating vendor with payload:", apiPayload);
@@ -141,23 +144,29 @@ const Vendors = () => {
         const response = await vendorService.updateVendor(apiPayload);
         console.log("Vendor updated successfully:", response);
 
-        toast.success("Vendor updated successfully");
-        
+        toast.success(response.message);
+
         // Refresh vendors list after successful update
         loadVendors();
       }
-      
+
       setShowVendorModal(false);
     } catch (error) {
-      console.error(`Error ${mode === "add" ? "creating" : "updating"} vendor:`, error);
-      
+      console.error(
+        `Error ${mode === "add" ? "creating" : "updating"} vendor:`,
+        error
+      );
+
       // Show specific error message from API response
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          `Failed to ${mode === "add" ? "add" : "update"} vendor. Please try again.`;
-      
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        `Failed to ${
+          mode === "add" ? "add" : "update"
+        } vendor. Please try again.`;
+
       toast.error(errorMessage);
-      
+
       // Don't close modal on error so user can retry
     } finally {
       setSubmitting(false);
@@ -174,10 +183,17 @@ const Vendors = () => {
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = () => {
-    setVendors((prev) => prev.filter((v) => v.id !== selectedVendor.id));
-    toast.success("Vendor deleted successfully");
-    setShowDeleteModal(false);
+  const handleConfirmDelete = async (vendor) => {
+    try {
+      const response = await vendorService.deleteVendor(vendor.id);
+  
+      toast.success(response.message);
+      setShowDeleteModal(false);
+      loadVendors();
+    } catch (error) {
+      console.error("Error deleting vendor:", error);
+      toast.error("Failed to delete vendor");
+    }
   };
 
   // 🔹 Table Columns
@@ -191,8 +207,10 @@ const Vendors = () => {
         <div>
           <div className="font-semibold text-gray-900">
             {vendor.contactPerson}
-          </div> 
-          <div className="text-sm text-gray-500">{vendor.contactPersonDesignation}</div>
+          </div>
+          <div className="text-sm text-gray-500">
+            {vendor.contactPersonDesignation}
+          </div>
         </div>
       ),
     },
@@ -297,7 +315,10 @@ const Vendors = () => {
 
         <DeleteVendorModal
           isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedVendor(null);
+          }}
           onConfirm={handleConfirmDelete}
           vendor={selectedVendor}
         />

@@ -3,13 +3,13 @@ import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
 import { Icon, ICON_NAMES } from "../../icons";
 
-const DeleteVendorModal = ({ isOpen, onClose, onConfirm, vendor }) => {
+const DeleteLeadsModal = ({ isOpen, onClose, onConfirm, leads }) => {
   const handleConfirm = () => {
-    onConfirm(vendor);
+    onConfirm(leads);
     onClose();
   };
 
-  if (!vendor) return null;
+  if (!leads) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Delete vendor">
@@ -28,19 +28,20 @@ const DeleteVendorModal = ({ isOpen, onClose, onConfirm, vendor }) => {
           Are you sure?
         </h3>
         <p className="text-sm text-gray-500 mb-6">
-          Do you really want to delete <strong>"{vendor.name}"</strong>? 
+          Do you really want to delete 
+          {/* <strong>"{vendor.name}"</strong>?  */}
           This action cannot be undone.
         </p>
 
         {/* Vendor Info */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+        {/* <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
           <div className="text-sm space-y-1">
             <div><strong>Company:</strong> {vendor.name}</div>
             <div><strong>Contact Person:</strong> {vendor.contactPerson}</div>
             <div><strong>Phone:</strong> {vendor.phone}</div>
             <div><strong>Email:</strong> {vendor.email}</div>
           </div>
-        </div>
+        </div> */}
 
         {/* Action Buttons */}
         <div className="flex gap-3">
@@ -66,4 +67,4 @@ const DeleteVendorModal = ({ isOpen, onClose, onConfirm, vendor }) => {
   );
 };
 
-export default DeleteVendorModal;
+export default DeleteLeadsModal;

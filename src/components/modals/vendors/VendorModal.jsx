@@ -10,8 +10,8 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     phone: "",
     email: "",
     registeredAddress: "",
-    gstNo: "",
-    panNo: "",
+    gstNumber: "",
+    panNumber: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -28,8 +28,8 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         phone: vendor.phone || "",
         email: vendor.email || "",
         registeredAddress: vendor.registeredAddress || "",
-        gstNo: vendor.gstNo || "",
-        panNo: vendor.panNo || "",
+        gstNumber: vendor.gstNumber || "",
+        panNumber: vendor.panNumber || "",
       });
     } else {
       // Reset form for add mode
@@ -39,8 +39,8 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         phone: "",
         email: "",
         registeredAddress: "",
-        gstNo: "",
-        panNo: "",
+        gstNumber: "",
+        panNumber: "",
       });
     }
   }, [vendor]);
@@ -73,12 +73,12 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     if (!formData.registeredAddress.trim()) {
       newErrors.registeredAddress = "Please fill the field";
     }
-    if (!formData.gstNo.trim()) {
-      newErrors.gstNo = "Please fill the field";
-    }
-    if (!formData.panNo.trim()) {
-      newErrors.panNo = "Please fill the field";
-    }
+    // if (!formData.gstNo.trim()) {
+    //   newErrors.gstNo = "Please fill the field";
+    // }
+    // if (!formData.panNo.trim()) {
+    //   newErrors.panNo = "Please fill the field";
+    // }
 
     // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
@@ -150,7 +150,6 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
       onClose={handleClose}
       title={isEditMode ? "Edit vendor" : "Add new vendor"}
       size="lg"
-   
       maxWidth="700px"
       headerIcon={ICON_NAMES.EDIT_USER}
     >
@@ -259,9 +258,9 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           <Input
             type="text"
             placeholder="Enter GST No."
-            value={formData.gstNo}
-            onChange={(e) => handleInputChange("gstNo", e.target.value)}
-            error={errors.gstNo}
+            value={formData.gstNumber}
+            onChange={(e) => handleInputChange("gstNumber", e.target.value)}
+            error={errors.gstNumber}
             className="w-full"
           />
         </div>
@@ -274,9 +273,9 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           <Input
             type="text"
             placeholder="Enter PAN No."
-            value={formData.panNo}
-            onChange={(e) => handleInputChange("panNo", e.target.value)}
-            error={errors.panNo}
+            value={formData.panNumber}
+            onChange={(e) => handleInputChange("panNumber", e.target.value)}
+            error={errors.panNumber}
             className="w-full"
           />
         </div>

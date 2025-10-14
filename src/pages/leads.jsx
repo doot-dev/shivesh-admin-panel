@@ -4,6 +4,8 @@ import { Button, Table, Dropdown } from "../components/ui";
 import { toast } from "react-toastify";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import { useNavigate } from "react-router-dom";
+import LeadsModal from "../components/modals/leads/leadsModal";
+import DeleteModal from "../components/modals/leads/deleteModal";
 const LeadsPage = () => {
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -208,6 +210,21 @@ const LeadsPage = () => {
           showPagination={true}
           itemsPerPage={10}
           emptyMessage="No leads found"
+        />
+        <LeadsModal
+          isOpen={showLeadsModal}
+          lead={selectedLead}
+          onClose={() => {
+            setShowLeadsModal(false);
+            setSelectedLead(null);
+          }}
+          onSubmit={handleLeadSubmit}
+        />
+        <DeleteModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleConfirmDelete}
+          leads={selectedLead}
         />
       </div>
     </>
