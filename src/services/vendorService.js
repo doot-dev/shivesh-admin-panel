@@ -59,7 +59,7 @@ const vendorService = {
   addLocation: async (locationData) => {
     try {
       const response = await api.post(
-        "/api/v1/admin/vendor/location",
+        "/api/v1/admin/vendor/locations",
         locationData
       );
       return response.data;

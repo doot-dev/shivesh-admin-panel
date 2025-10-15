@@ -13,8 +13,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     gstNumber: "",
     panNumber: "",
   });
-console.log("VendorModal formData:", formData);
-console.log("VendorModal Vendor Detail:", vendor);
+
   const [errors, setErrors] = useState({});
 
   // Determine if this is edit mode

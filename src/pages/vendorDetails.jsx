@@ -15,15 +15,16 @@ const VendorDetail = () => {
   const location = useLocation();
 
   const [vendor, setVendor] = useState(null);
-  const [handlerInfo, setHandlerInfo] = useState(null);
   const [handlers, setHandlers] = useState([]);
   const [filteredHandlers, setFilteredHandlers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddHandlerModal, setShowAddHandlerModal] = useState(false);
+  const [handlerInfo, setHandlerInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock handlers data
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showHandlerModal, setShowHandlerModal] = useState(false);
+
+  // ---------------- Mock Data Fallback ----------------
   const mockHandlers = [
     {
       id: 1,
@@ -32,7 +33,7 @@ const VendorDetail = () => {
       email: "ravig@gmail.com",
       productServices: "Cement",
       plantName: "Plant A",
-      location: "A- 243, govind marg, Calgiri road, Jaipur, Rajasthan- 302015",
+      location: "A-243, Govind Marg, Jaipur, Rajasthan - 302015",
       status: "Active",
     },
     {
@@ -42,97 +43,84 @@ const VendorDetail = () => {
       email: "sethaman@gmail.com",
       productServices: "Cement",
       plantName: "Plant A",
-      location: "A- 243, govind marg, Calgiri road, Jaipur, Rajasthan- 302015",
+      location: "A-243, Govind Marg, Jaipur, Rajasthan - 302015",
       status: "Active",
     },
   ];
 
+  // ---------------- API: Load Vendor ----------------
   useEffect(() => {
-    loadVendorData();
-  }, [id]);
+    const loadVendorData = async () => {
+      try {
+        setLoading(true);
+        const vendorRes = await vendorService.getVendorById(id);
+        const vendorData = vendorRes.data;
 
-  const loadVendorData = async () => {
-    try {
-      setLoading(true);
+        const mappedVendor = {
+          id: vendorData.id,
+          name: vendorData.companyName,
+          contactPerson: vendorData.ownerName,
+          phone: vendorData.phone,
+          email: vendorData.email,
+          address: vendorData.address,
+          gstNumber: vendorData.gstNumber,
+          panNumber: vendorData.panNumber,
+          status: vendorData.isActive ? "Active" : "Inactive",
+          isActive: vendorData.isActive,
+        };
 
-      // Fetch vendor data using API
-      const response = await vendorService.getVendorById(id);
-      console.log("Vendor detail response:", response.data);
+        setVendor(mappedVendor);
 
-      let vendorData = response.data;
-      // Map API response to component state
-      const mappedVendor = {
-        id: vendorData.id,
-        name: vendorData.companyName,
-        contactPerson: vendorData.ownerName,
-        phone: vendorData.phone,
-        email: vendorData.email,
-        address: vendorData.address,
-        gstNumber: vendorData.gstNumber,
-        panNumber: vendorData.panNumber,
-        status: vendorData.isActive ? "Active" : "Inactive",
-        isActive: vendorData.isActive,
-      };
-
-      setVendor(mappedVendor);
-
-      const handlerResponse = await vendorService.getLocationbyVendorId(id);
-      console.log("Vendor handlers response:", handlerResponse.data);
-      vendorData = { ...vendorData, handlers: handlerResponse.data };
-
-      // Handle handlers data if available in response
-      if (vendorData.handlers && Array.isArray(vendorData.handlers)) {
-        const mappedHandlers = vendorData.handlers.map((handler, index) => ({
-          id: handler.id || index + 1,
-          handlerName: handler.name || handler.handlerName,
-          phone: handler.phone,
-          email: handler.email,
-          productServices: handler.productServices || handler.product || "N/A",
-          plantName: handler.plantName || "N/A",
-          location: handler.location || handler.address || "N/A",
-          status: handler.isActive ? "Active" : "Inactive",
-          designation: handler.designation || "Manager",
+        const handlerRes = await vendorService.getLocationbyVendorId(id);
+        const mappedHandlers = (handlerRes.data || []).map((h, i) => ({
+          id: h.id || i + 1,
+          handlerName: h.name || h.handlerName,
+          phone: h.phone,
+          email: h.email,
+          productServices: h.productServices || h.product || "N/A",
+          plantName: h.plantName || "N/A",
+          location: h.location || h.address || "N/A",
+          status: h.isActive ? "Active" : "Inactive",
+          designation: h.designation || "Manager",
         }));
-        setHandlers(mappedHandlers);
-        setFilteredHandlers(mappedHandlers);
-      } else {
-        // Fallback to mock handlers if no handlers in API response
-        setHandlers(mockHandlers);
-        setFilteredHandlers(mockHandlers);
+
+        setHandlers(mappedHandlers.length ? mappedHandlers : mockHandlers);
+        setFilteredHandlers(
+          mappedHandlers.length ? mappedHandlers : mockHandlers
+        );
+      } catch (error) {
+        console.error("Error loading vendor data:", error);
+        toast.error("Failed to load vendor data");
+
+        // fallback to navigation state or mock
+        setVendor(location.state?.vendor || null);
+        setHandlers(location.state?.handlers || mockHandlers);
+        setFilteredHandlers(location.state?.handlers || mockHandlers);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading vendor data:", error);
-      toast.error("Failed to load vendor data");
+    loadVendorData();
+  }, [id, location.state]);
 
-      setVendor(location.state.vendor);
-      setHandlers(location.state.handlers || mockHandlers);
-      setFilteredHandlers(location.state.handlers || mockHandlers);
-
-      setLoading(false);
-    }
-  };
-
-  // Search filter for handlers
+  // ---------------- Search Filter ----------------
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredHandlers(handlers);
-      return;
-    }
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return setFilteredHandlers(handlers);
 
-    const filtered = handlers.filter(
-      (handler) =>
-        handler.handlerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        handler.phone.includes(searchTerm) ||
-        handler.email.toLowerCase().includes(searchTerm.toLowerCase())
+    setFilteredHandlers(
+      handlers.filter(
+        (h) =>
+          h.handlerName.toLowerCase().includes(term) ||
+          h.phone.includes(term) ||
+          h.email.toLowerCase().includes(term)
+      )
     );
-    setFilteredHandlers(filtered);
   }, [searchTerm, handlers]);
 
-  const handleEdit = () => {
-    setShowEditModal(true);
-  };
+  // ---------------- Vendor Actions ----------------
+  const handleEditVendor = () => setShowEditModal(true);
 
   const handleEditSubmit = (updatedVendor) => {
     setVendor(updatedVendor);
@@ -140,85 +128,64 @@ const VendorDetail = () => {
     setShowEditModal(false);
   };
 
+  // ---------------- Handler Actions ----------------
   const handleAddHandler = () => {
-    setShowAddHandlerModal(true);
+    setHandlerInfo(null);
+    setShowHandlerModal(true);
   };
+  const handleAddHandlerSubmit = async (handlerData) => {
+    try {
+      console.log("Handler data to submit:", handlerData);
 
-  const handleAddHandlerSubmit = (handlerData) => {
-    // Add new handlers to the existing handlers list
-    const newHandlers = handlerData.handlers.map((handler) => ({
-      id: Date.now() + Math.random(),
-      handlerName: handler.name,
-      phone: handler.phone,
-      email: handler.email,
-      productServices: handlerData.locationDetails.productName,
-      plantName: handlerData.locationDetails.plantName,
-      location: handlerData.locationDetails.address,
-      status: handler.status,
-      designation: handler.designation,
-    }));
+      // Step 1: Add location
+      const locationRes = await vendorService.addLocation(
+        handlerData.locationDetails
+      );
+      const newLocationId = locationRes.data.id;
+      console.log("Location added, ID:", newLocationId);
 
-    setHandlers((prev) => [...prev, ...newHandlers]);
-    setFilteredHandlers((prev) => [...prev, ...newHandlers]);
-    toast.success(`${newHandlers.length} handler(s) added successfully!`);
-    setShowAddHandlerModal(false);
+      // Step 2: Add handlers one by one
+      for (const handler of handlerData.handlers) {
+        const payload = {
+          locationId: newLocationId,
+          name: handler.name,
+          phone: handler.phone,
+          email: handler.email,
+        };
+        console.log("Submitting handler:", payload);
+        await vendorService.addHandlers(payload);
+      }
+
+      toast.success("Handler(s) added successfully");
+      setShowHandlerModal(false);
+    } catch (error) {
+      console.error("Error adding handler(s):", error);
+      toast.error("Failed to add handler(s)");
+    }
   };
+  
 
   const handleEditHandler = (handler) => {
-    console.log("Edit handler:", handler);
-
     setHandlerInfo(handler);
-    setShowAddHandlerModal(true);
+    setShowHandlerModal(true);
   };
 
   const handleDeleteHandler = (handler) => {
-    console.log("Delete handler:", handler);
-    toast.info("Delete handler functionality coming soon!");
+    toast.info(`Delete handler "${handler.handlerName}" coming soon!`);
   };
 
-  // Handler table columns
+  // ---------------- Table Config ----------------
   const handlerColumns = [
-    {
-      key: "handlerName",
-      header: "Handler name",
-      className: "font-medium",
-    },
-    {
-      key: "phone",
-      header: "Phone/E-mail",
-      render: (handler) => (
-        <div>
-          <div>handler.phone</div>
-          <div className="text-sm text-gray-500">handler.email</div>
-        </div>
-      ),
-    },
-    {
-      key: "productServices",
-      header: "Product/Services",
-    },
-    {
-      key: "plantName",
-      header: "Plant name",
-    },
-    {
-      key: "location",
-      header: "Location",
-      className: "max-w-xs truncate",
-    },
+    { key: "plantName", header: "Plant Name" },
+    { key: "productServices", header: "Product/Services" },
+    { key: "location", header: "Location", className: "max-w-xs truncate" },
     {
       key: "status",
       header: "Status",
       type: "badge",
       badgeConfig: {
-        Active: {
-          color: "#16A34A",
-          backgroundColor: "#D1FAE5",
-        },
-        Inactive: {
-          color: "#DC2626",
-          backgroundColor: "#FECACA",
-        },
+        Active: { color: "#16A34A", backgroundColor: "#D1FAE5" },
+        Inactive: { color: "#DC2626", backgroundColor: "#FECACA" },
       },
     },
   ];
@@ -236,31 +203,27 @@ const VendorDetail = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <FullPageLoader isVisible={loading} message="Loading vendor details..." />
-    );
-  }
+  // ---------------- Conditional Rendering ----------------
+  if (loading)
+    return <FullPageLoader isVisible message="Loading vendor details..." />;
 
-  if (!vendor) {
+  if (!vendor)
     return (
-      <div className="p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Vendor not found
-          </h2>
-          <Button onClick={() => navigate("/vendors")} variant="primary">
-            Back to Vendors
-          </Button>
-        </div>
+      <div className="p-6 text-center">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          Vendor not found
+        </h2>
+        <Button onClick={() => navigate("/vendors")} variant="primary">
+          Back to Vendors
+        </Button>
       </div>
     );
-  }
 
+  // ---------------- UI ----------------
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-8">
       {/* Breadcrumb */}
-      <div className="flex items-center text-sm text-gray-500 mb-6">
+      <div className="flex items-center text-sm text-gray-500">
         <button
           onClick={() => navigate("/vendors")}
           className="hover:text-gray-700"
@@ -270,158 +233,46 @@ const VendorDetail = () => {
         <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} className="mx-2" />
         <span className="text-gray-700">{vendor.name}</span>
         <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} className="mx-2" />
-        <span className="font-medium text-blue-600">{vendor.name} Detail</span>
+        <span className="font-medium text-blue-600">Details</span>
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">{vendor.name}</h1>
         <Button
-          onClick={handleEdit}
+          onClick={handleEditVendor}
           leftIcon={ICON_NAMES.EDIT}
           variant="secondary"
-          height={44}
           className="bg-transparent"
+          height={44}
         >
           Edit
         </Button>
       </div>
 
-      {/* Basic Details Card */}
-      <div className="bg-white rounded-lg border border-[#9BB3F4] shadow p-6 mb-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-6">
-          Basic details
-        </h2>
+      {/* Vendor Info */}
+      <VendorInfoCard vendor={vendor} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Owner's name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              Owner's name
-            </label>
-            <p className="text-gray-900">{vendor.contactPerson}</p>
-          </div>
+      {/* Handlers */}
+      <HandlerSection
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filteredHandlers={filteredHandlers}
+        handlerColumns={handlerColumns}
+        handlerActions={handlerActions}
+        handleAddHandler={handleAddHandler}
+      />
 
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              Phone
-            </label>
-            <p className="text-gray-900">{vendor.phone}</p>
-          </div>
-
-          {/* E-mail */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              E-mail
-            </label>
-            <p className="text-gray-900">{vendor.email}</p>
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              Address
-            </label>
-            <p className="text-gray-900">{vendor.address}</p>
-          </div>
-
-          {/* GST No. */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              GST No.
-            </label>
-            <p className="text-gray-900">{vendor.gstNumber}</p>
-          </div>
-
-          {/* PAN No. */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              PAN No.
-            </label>
-            <p className="text-gray-900">{vendor.panNumber}</p>
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">
-              Status
-            </label>
-            <span
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-              style={{
-                color: vendor.status === "Active" ? "#16A34A" : "#DC2626",
-                backgroundColor:
-                  vendor.status === "Active" ? "#D1FAE5" : "#FECACA",
-              }}
-            >
-              • {vendor.status}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Handlers Detail Section */}
-      <div className="bg-white rounded-lg  ">
-        {/* Handlers Header */}
-        <div className="p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">
-              Handlers Detail
-            </h2>
-            <div className="flex items-center gap-4">
-              {/* Search */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search by name"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-12 focus:outline-none"
-                />
-              </div>
-
-              {/* Add Button */}
-              <Button
-                onClick={handleAddHandler}
-                leftIcon={ICON_NAMES.PLUS}
-                variant="primary"
-                height={48}
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Handlers Table */}
-        <div className="overflow-hidden">
-          <Table
-            data={filteredHandlers}
-            columns={handlerColumns}
-            actions={handlerActions}
-            showPagination={false}
-            className="border-0 shadow-none"
-            emptyMessage="No handlers found"
-          />
-        </div>
-      </div>
-
-      {/* Edit Modal */}
+      {/* Modals */}
       <VendorModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         vendor={vendor}
         onSubmit={handleEditSubmit}
       />
-
-      {/* Add Handler Modal */}
       <HandlerModal
-        isOpen={showAddHandlerModal}
-        onClose={() => setShowAddHandlerModal(false)}
+        isOpen={showHandlerModal}
+        onClose={() => setShowHandlerModal(false)}
         onSubmit={handleAddHandlerSubmit}
         vendorId={vendor?.id}
         handler={handlerInfo}
@@ -429,5 +280,94 @@ const VendorDetail = () => {
     </div>
   );
 };
+
+// ---------------- Subcomponents ----------------
+const VendorInfoCard = ({ vendor }) => (
+  <div className="bg-white rounded-lg border border-[#9BB3F4] shadow p-6">
+    <h2 className="text-lg font-medium text-gray-900 mb-6">Basic Details</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[
+        ["Owner's Name", vendor.contactPerson],
+        ["Phone", vendor.phone],
+        ["E-mail", vendor.email],
+        ["Address", vendor.address],
+        ["GST No.", vendor.gstNumber],
+        ["PAN No.", vendor.panNumber],
+      ].map(([label, value]) => (
+        <div key={label}>
+          <label className="block text-sm font-medium text-gray-500 mb-1">
+            {label}
+          </label>
+          <p className="text-gray-900">{value || "—"}</p>
+        </div>
+      ))}
+      <div>
+        <label className="block text-sm font-medium text-gray-500 mb-1">
+          Status
+        </label>
+        <span
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+          style={{
+            color: vendor.isActive ? "#16A34A" : "#DC2626",
+            backgroundColor: vendor.isActive ? "#D1FAE5" : "#FECACA",
+          }}
+        >
+          • {vendor.status}
+        </span>
+      </div>
+    </div>
+  </div>
+);
+
+const HandlerSection = ({
+  searchTerm,
+  setSearchTerm,
+  filteredHandlers,
+  handlerColumns,
+  handlerActions,
+  handleAddHandler,
+}) => (
+  <div className="bg-white rounded-lg">
+    <div className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <h2 className="text-lg font-medium text-gray-900">Handlers Detail</h2>
+      <div className="flex gap-4">
+        <div className="relative">
+          <Icon
+            name={ICON_NAMES.SEARCH}
+            size={16}
+            color="#9CA3AF"
+            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+          />
+          <input
+            type="text"
+            placeholder="Search by name"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-12 focus:outline-none"
+          />
+        </div>
+        <Button
+          onClick={handleAddHandler}
+          leftIcon={ICON_NAMES.PLUS}
+          variant="primary"
+          height={48}
+        >
+          Add
+        </Button>
+      </div>
+    </div>
+
+    <div className="overflow-hidden">
+      <Table
+        data={filteredHandlers}
+        columns={handlerColumns}
+        actions={handlerActions}
+        showPagination={false}
+        className="border-0 shadow-none"
+        emptyMessage="No handlers found"
+      />
+    </div>
+  </div>
+);
 
 export default VendorDetail;
