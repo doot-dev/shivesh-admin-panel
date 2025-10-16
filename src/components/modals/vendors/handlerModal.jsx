@@ -6,14 +6,30 @@ import MapImage from "../../../assets/img/map.png";
 import { Icon, ICON_NAMES } from "../../icons";
 import HandlerSection from "./handlerSection";
 import productService from "../../../services/productService";
+import vendorService from "../../../services/vendorService";
 
-const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
+const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler, locationVendorId }) => {
+  const [formData, setFormData] = useState({
+    locationDetails: {
+      address: "",
+      plantName: "",
+      productServices: "",
+    },
+    handlers: [
+      {
+        name: "",
+        phone: "",
+        email: "",
+      },
+    ],
+  });
+  const [loading, setLoading] = useState(false);
   const [locationDetails, setLocationDetails] = useState({
     plantName: "",
     address: "",
     latitude: "",
     longitude: "",
-    vendorId: vendorId,
+    vendorId: vendorId.id,
   });
   const [handlers, setHandlers] = useState([]);
   const [currentHandler, setCurrentHandler] = useState({
@@ -88,13 +104,22 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
   // ---------- Submit ----------
   const handleSubmit = (e) => {
     e.preventDefault();
+
     // if (!validateLocation()) return;
     // if (handlers.length === 0)
     //   return setErrors({ general: "Please add at least one handler" });
-    onSubmit({ vendorId, locationDetails, handlers });
+
+    // Return collected data to parent
+    onSubmit({
+      locationDetails,
+      handlers,
+      handler,            // existing handler for edit mode (if any)
+      locationVendorId,   // existing location ID for edit mode
+    });
 
     handleClose();
   };
+
 
   const handleClose = () => {
     setLocationDetails({
@@ -114,28 +139,50 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
     onClose();
   };
 
+
+
   // ---------- Prefill Edit Data ----------
   useEffect(() => {
-    if (isEditMode && handler) {
-      setLocationDetails({
-        plantName: handler.plantName || "",
-        address: handler.address || "",
-        latitude: handler.latitude || "",
-        longitude: handler.longitude || "",
-        vendorId, // ✅ always attach vendorId
-      });
-      setHandlers(handler.handlers || []);
-    } else {
-      setLocationDetails({
-        plantName: "",
-        address: "",
-        latitude: "",
-        longitude: "",
-        vendorId, // ✅ attach vendorId even for new
-      });
-      setHandlers([]);
-    }
-  }, [isEditMode, handler]);
+    const fetchHandlerDetails = async () => {
+      console.log("DEBUG:", { isOpen, handler, locationVendorId });
+
+      if (!isOpen || !handler || !locationVendorId) return;
+
+      try {
+        setLoading(true);
+        const res = await vendorService.getLocationbyId(locationVendorId);
+        console.log("dfsdf", res.data)
+        setHandlers(res.data.handlers);
+        setLocationDetails(res.data);
+        if (res?.data) {
+          const h = res.data;
+
+          setFormData({
+            locationDetails: {
+              address: h.location || h.address || "",
+              plantName: h.plantName || "",
+              productServices: h.productServices || "",
+            },
+            handlers: [
+              {
+                name: h.name || "",
+                phone: h.phone || "",
+                email: h.email || "",
+              },
+            ],
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching handler details:", err);
+        toast.error("Failed to load handler details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHandlerDetails();
+  }, [isOpen, handler, locationVendorId]);
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -163,7 +210,7 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
     >
       <div className="mb-4">
         <h3 className="text-lg font-medium text-gray-900 mb-1">
-          Add Location and Handlers
+          {isEditMode ? "Edit Location and Handlers" : "Add Location and Handlers"}
         </h3>
         <p className="text-sm text-gray-500 mb-6">
           {isEditMode
@@ -220,9 +267,8 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
               onChange={(e) =>
                 updateField(setLocationDetails, "address", e.target.value)
               }
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none ${
-                errors.address ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none ${errors.address ? "border-red-500" : "border-gray-300"
+                }`}
               rows={3}
             />
             {errors.address && (
@@ -239,9 +285,8 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler }) => {
               onChange={(e) =>
                 updateField(setLocationDetails, "productName", e.target.value)
               }
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                errors.productName ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.productName ? "border-red-500" : "border-gray-300"
+                }`}
             >
               <option value="">Select product name</option>
               {productList?.map((prod, index) => (

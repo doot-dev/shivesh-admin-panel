@@ -71,7 +71,7 @@ const vendorService = {
   updateLocation: async (locationData) => {
     try {
       const response = await api.put(
-        "/api/v1/admin/vendor/location",
+        "/api/v1/admin/vendor/locations",
         locationData
       );
       return response.data;

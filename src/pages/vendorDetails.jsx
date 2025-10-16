@@ -20,7 +20,7 @@ const VendorDetail = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [handlerInfo, setHandlerInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [vendorLocationId, setVendorLocationId] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showHandlerModal, setShowHandlerModal] = useState(false);
 
@@ -133,46 +133,109 @@ const VendorDetail = () => {
     setHandlerInfo(null);
     setShowHandlerModal(true);
   };
-  const handleAddHandlerSubmit = async (handlerData) => {
-    try {
-      console.log("Handler data to submit:", handlerData);
 
+const handleHandlerSubmit = async ({
+  locationDetails,
+  handlers,
+  handler,
+  locationVendorId,
+}) => {
+  try {
+    const payload = {
+      location: {
+        id: locationVendorId || null, // null for add, id for edit
+        ...locationDetails,
+      },
+      handlers: handlers.map((h) => ({
+        id: h.id || null,
+        name: h.name,
+        phone: h.phone,
+        email: h.email,
+      })),
+    };
+
+    console.log("📦 Payload for add/edit:", payload);
+
+    if (locationVendorId) {
+      // ---------------- EDIT MODE ----------------
+      await vendorService.updateLocation(payload.location);
+      await vendorService.updateHandlers(payload.handlers);
+      toast.success("Handler(s) updated successfully");
+    } else {
+      // ---------------- ADD MODE ----------------
       // Step 1: Add location
-      const locationRes = await vendorService.addLocation(
-        handlerData.locationDetails
-      );
-      const newLocationId = locationRes.data.id;
-      console.log("Location added, ID:", newLocationId);
+      const locationRes = await vendorService.addLocation(payload.location);
+      const newLocationId = locationRes?.data?.id;
 
-      // Step 2: Add handlers one by one
-      for (const handler of handlerData.handlers) {
-        const payload = {
-          locationId: newLocationId,
-          name: handler.name,
-          phone: handler.phone,
-          email: handler.email,
-        };
-        console.log("Submitting handler:", payload);
-        await vendorService.addHandlers(payload);
-      }
+      // Step 2: Add handlers with locationId
+      const handlerPayload = payload.handlers.map((h) => ({
+        ...h,
+        locationId: newLocationId,
+      }));
+      await vendorService.addHandlers(handlerPayload);
 
       toast.success("Handler(s) added successfully");
-      setShowHandlerModal(false);
-    } catch (error) {
-      console.error("Error adding handler(s):", error);
-      toast.error("Failed to add handler(s)");
     }
-  };
-  
+
+    // ---------------- Refresh table ----------------
+    await refreshHandlerList();
+
+    // Close modal
+    setShowHandlerModal(false);
+  } catch (error) {
+    console.error("❌ Error in add/update handler flow:", error);
+    toast.error("Failed to add/update handler(s)");
+  }
+};
+
 
   const handleEditHandler = (handler) => {
+    setVendorLocationId(handler.id);
     setHandlerInfo(handler);
     setShowHandlerModal(true);
+
   };
 
-  const handleDeleteHandler = (handler) => {
+  const handleDeleteHandler = async (handler) => {
     toast.info(`Delete handler "${handler.handlerName}" coming soon!`);
+    try {
+      const res = await vendorService.deleteLocationbyId(handler.vendorLocationId);
+      console.log("✅ Deleted location:", res);
+
+      toast.success(res?.message);
+
+      // 🔁 Refresh handler/location table after deletion
+      await refreshHandlerList();
+    } catch (error) {
+      console.error("failed to deleted", error);
+      toast.error("Failed to delete location")
+    }
   };
+
+  const refreshHandlerList = async () => {
+    try {
+      const res = await vendorService.getLocationbyVendorId(vendor.id);
+      const mappedHandlers = (res.data || []).map((h, i) => ({
+        id: h.id || i + 1,
+        handlerName: h.name || h.handlerName,
+        phone: h.phone,
+        email: h.email,
+        productServices: h.productServices || h.product || "N/A",
+        plantName: h.plantName || "N/A",
+        location: h.location || h.address || "N/A",
+        status: h.isActive ? "Active" : "Inactive",
+        designation: h.designation || "Manager",
+        vendorLocationId: h.vendorLocationId,
+      }));
+
+      setHandlers(mappedHandlers);
+      setFilteredHandlers(mappedHandlers);
+    } catch (error) {
+      console.error("Error refreshing handler list:", error);
+      toast.error("Failed to refresh handlers");
+    }
+  };
+
 
   // ---------------- Table Config ----------------
   const handlerColumns = [
@@ -273,9 +336,10 @@ const VendorDetail = () => {
       <HandlerModal
         isOpen={showHandlerModal}
         onClose={() => setShowHandlerModal(false)}
-        onSubmit={handleAddHandlerSubmit}
+        onSubmit={handleHandlerSubmit}
         vendorId={vendor?.id}
         handler={handlerInfo}
+        locationVendorId={vendorLocationId}
       />
     </div>
   );
