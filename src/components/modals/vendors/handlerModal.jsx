@@ -29,7 +29,8 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler, locationVe
     address: "",
     latitude: "",
     longitude: "",
-    vendorId: vendorId.id,
+    productId: 0,
+    vendorId: vendorId,
   });
   const [handlers, setHandlers] = useState([]);
   const [currentHandler, setCurrentHandler] = useState({
@@ -40,8 +41,8 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler, locationVe
   const [errors, setErrors] = useState({});
   const [productList, setProductList] = useState([]);
 
-  const isEditMode = Boolean(handler);
-
+  const isEditMode = !!handler;
+  console.log("modal in which mode", isEditMode);
   // ---------- Helpers ----------
   const updateField = (setter, field, value) => {
     setter((prev) => ({ ...prev, [field]: value }));
@@ -281,22 +282,22 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler, locationVe
               Product Name
             </label>
             <select
-              value={locationDetails.productName}
+              value={locationDetails.productId}
               onChange={(e) =>
-                updateField(setLocationDetails, "productName", e.target.value)
+                updateField(setLocationDetails, "productId", e.target.value)
               }
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.productName ? "border-red-500" : "border-gray-300"
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${errors.productId ? "border-red-500" : "border-gray-300"
                 }`}
             >
               <option value="">Select product name</option>
               {productList?.map((prod, index) => (
-                <option key={index} value={prod.name}>
+                <option key={index} value={prod.id}>
                   {prod.name}
                 </option>
               ))}
             </select>
-            {errors.productName && (
-              <p className="text-red-500 text-xs mt-1">{errors.productName}</p>
+            {errors.productId && (
+              <p className="text-red-500 text-xs mt-1">{errors.productId}</p>
             )}
           </div>
         </section>

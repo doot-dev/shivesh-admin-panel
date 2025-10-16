@@ -20,7 +20,7 @@ const VendorDetail = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [handlerInfo, setHandlerInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [vendorLocationId, setVendorLocationId] = useState([]);
+  const [vendorLocationId, setVendorLocationId] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showHandlerModal, setShowHandlerModal] = useState(false);
 
@@ -77,7 +77,7 @@ const VendorDetail = () => {
           handlerName: h.name || h.handlerName,
           phone: h.phone,
           email: h.email,
-          productServices: h.productServices || h.product || "N/A",
+          productServices: h.product.name || "N/A",
           plantName: h.plantName || "N/A",
           location: h.location || h.address || "N/A",
           status: h.isActive ? "Active" : "Inactive",
@@ -134,72 +134,75 @@ const VendorDetail = () => {
     setShowHandlerModal(true);
   };
 
-const handleHandlerSubmit = async ({
-  locationDetails,
-  handlers,
-  handler,
-  locationVendorId,
-}) => {
-  try {
-    const payload = {
-      location: {
-        id: locationVendorId || null, // null for add, id for edit
-        ...locationDetails,
-      },
-      handlers: handlers.map((h) => ({
-        id: h.id || null,
-        name: h.name,
-        phone: h.phone,
-        email: h.email,
-      })),
-    };
+  const handleHandlerSubmit = async ({
+    locationDetails,
+    handlers,
+    handler,
+    locationVendorId,
+  }) => {
+    try {
+      const payload = {
+        location: {
+          id: Number(id) || null, // null for add, id for edit
+          ...locationDetails,
+          productId: Number(locationDetails.productId) || 0,
+          vendorId: Number(id) || 0,
+        },
+        handlers: handlers.map((h) => ({
+          locationId: locationVendorId || null, // null for add, id for edit
+          name: h.name,
+          phone: h.phone,
+          email: h.email,
+        })),
+      };
 
-    console.log("📦 Payload for add/edit:", payload);
+      console.log("📦 Payload for add/edit:", payload);
+      console.log("Location Vendor ID:", locationVendorId);
+      if (locationVendorId !== 0) {
+        // ---------------- EDIT MODE ----------------
+        await vendorService.updateLocation(payload.location);
+        await vendorService.updateHandlers(payload.handlers);
+        toast.success("Handler(s) updated successfully");
+      } else {
+        // ---------------- ADD MODE ----------------
+        // Step 1: Add location
+        const locationRes = await vendorService.addLocation(payload.location);
+        const newLocationId = locationRes?.data?.id;
 
-    if (locationVendorId) {
-      // ---------------- EDIT MODE ----------------
-      await vendorService.updateLocation(payload.location);
-      await vendorService.updateHandlers(payload.handlers);
-      toast.success("Handler(s) updated successfully");
-    } else {
-      // ---------------- ADD MODE ----------------
-      // Step 1: Add location
-      const locationRes = await vendorService.addLocation(payload.location);
-      const newLocationId = locationRes?.data?.id;
+        // Step 2: Add handlers with locationId
+        payload.handlers.forEach(async (h) => {
+          await vendorService.addHandlers({
+            ...h,
+            locationId: newLocationId,
+          });
+        });
 
-      // Step 2: Add handlers with locationId
-      const handlerPayload = payload.handlers.map((h) => ({
-        ...h,
-        locationId: newLocationId,
-      }));
-      await vendorService.addHandlers(handlerPayload);
+        toast.success("Handler(s) added successfully");
+      }
 
-      toast.success("Handler(s) added successfully");
+      // ---------------- Refresh table ----------------
+      await refreshHandlerList();
+
+      // Close modal
+      setShowHandlerModal(false);
+    } catch (error) {
+      console.error("Error in add/update handler flow:", error);
+      toast.error("Failed to add/update handler(s)");
     }
-
-    // ---------------- Refresh table ----------------
-    await refreshHandlerList();
-
-    // Close modal
-    setShowHandlerModal(false);
-  } catch (error) {
-    console.error("❌ Error in add/update handler flow:", error);
-    toast.error("Failed to add/update handler(s)");
-  }
-};
-
+  };
 
   const handleEditHandler = (handler) => {
     setVendorLocationId(handler.id);
     setHandlerInfo(handler);
     setShowHandlerModal(true);
-
   };
 
   const handleDeleteHandler = async (handler) => {
     toast.info(`Delete handler "${handler.handlerName}" coming soon!`);
     try {
-      const res = await vendorService.deleteLocationbyId(handler.vendorLocationId);
+      const res = await vendorService.deleteLocationbyId(
+        handler.vendorLocationId
+      );
       console.log("✅ Deleted location:", res);
 
       toast.success(res?.message);
@@ -208,7 +211,7 @@ const handleHandlerSubmit = async ({
       await refreshHandlerList();
     } catch (error) {
       console.error("failed to deleted", error);
-      toast.error("Failed to delete location")
+      toast.error("Failed to delete location");
     }
   };
 
@@ -220,7 +223,7 @@ const handleHandlerSubmit = async ({
         handlerName: h.name || h.handlerName,
         phone: h.phone,
         email: h.email,
-        productServices: h.productServices || h.product || "N/A",
+        productServices: h.product.name || "N/A",
         plantName: h.plantName || "N/A",
         location: h.location || h.address || "N/A",
         status: h.isActive ? "Active" : "Inactive",
@@ -235,7 +238,6 @@ const handleHandlerSubmit = async ({
       toast.error("Failed to refresh handlers");
     }
   };
-
 
   // ---------------- Table Config ----------------
   const handlerColumns = [
@@ -337,7 +339,7 @@ const handleHandlerSubmit = async ({
         isOpen={showHandlerModal}
         onClose={() => setShowHandlerModal(false)}
         onSubmit={handleHandlerSubmit}
-        vendorId={vendor?.id}
+        vendorId={id}
         handler={handlerInfo}
         locationVendorId={vendorLocationId}
       />

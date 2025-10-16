@@ -116,6 +116,7 @@ const vendorService = {
   },
   updateHandlers: async (handlerData) => {
     try {
+      console.log("Hnalder Data", handlerData);
       const response = await api.put(
         "/api/v1/admin/vendor/handlers",
         handlerData
