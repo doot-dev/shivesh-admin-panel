@@ -8,6 +8,8 @@ import VendorModal from "../components/modals/vendors/VendorModal";
 import HandlerModal from "../components/modals/vendors/handlerModal";
 import vendorService from "../services/vendorService";
 import FullPageLoader from "../components/ui/FullPageLoader";
+import AddHandlerModal from "../components/modals/vendors/addHandlerModal";
+import EditHandlerModal from "../components/modals/vendors/editHandlerModal";
 
 const VendorDetail = () => {
   const { id } = useParams();
@@ -335,14 +337,23 @@ const VendorDetail = () => {
         vendor={vendor}
         onSubmit={handleEditSubmit}
       />
-      <HandlerModal
+      {/* <HandlerModal
         isOpen={showHandlerModal}
         onClose={() => setShowHandlerModal(false)}
         onSubmit={handleHandlerSubmit}
         vendorId={id}
         handler={handlerInfo}
         locationVendorId={vendorLocationId}
-      />
+      /> */}
+      <AddHandlerModal isOpen={showHandlerModal && !handlerInfo}
+        onClose={() => setShowHandlerModal(false)}
+        onSubmit={handleHandlerSubmit}
+        vendorId={id} />
+      <EditHandlerModal isOpen={showHandlerModal && !!handlerInfo}
+        onClose={() => setShowHandlerModal(false)}
+        onSubmit={handleHandlerSubmit}
+        handler={handlerInfo}
+        locationVendorId={vendorLocationId} />
     </div>
   );
 };
