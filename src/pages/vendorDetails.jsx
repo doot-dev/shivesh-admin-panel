@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+
 import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
 import { Icon, ICON_NAMES } from "../components/icons";
-import VendorModal from "../components/modals/vendors/VendorModal";
-import HandlerModal from "../components/modals/vendors/handlerModal";
-import vendorService from "../services/vendorService";
 import FullPageLoader from "../components/ui/FullPageLoader";
+
+import VendorModal from "../components/modals/vendors/VendorModal";
 import AddHandlerModal from "../components/modals/vendors/addHandlerModal";
 import EditHandlerModal from "../components/modals/vendors/editHandlerModal";
 
+import vendorService from "../services/vendorService";
+
+/* ------------------------------ MAIN COMPONENT ------------------------------ */
 const VendorDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -20,228 +23,178 @@ const VendorDetail = () => {
   const [handlers, setHandlers] = useState([]);
   const [filteredHandlers, setFilteredHandlers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [handlerInfo, setHandlerInfo] = useState(null);
+
   const [loading, setLoading] = useState(true);
-  const [vendorLocationId, setVendorLocationId] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showHandlerModal, setShowHandlerModal] = useState(false);
 
-  // ---------------- Mock Data Fallback ----------------
-  const mockHandlers = [
-    {
-      id: 1,
-      handlerName: "Ravi Goyal",
-      phone: "9203463584",
-      email: "ravig@gmail.com",
-      productServices: "Cement",
-      plantName: "Plant A",
-      location: "A-243, Govind Marg, Jaipur, Rajasthan - 302015",
-      status: "Active",
-    },
-    {
-      id: 2,
-      handlerName: "Aman Seth",
-      phone: "9244567886",
-      email: "sethaman@gmail.com",
-      productServices: "Cement",
-      plantName: "Plant A",
-      location: "A-243, Govind Marg, Jaipur, Rajasthan - 302015",
-      status: "Active",
-    },
-  ];
+  const [handlerInfo, setHandlerInfo] = useState(null);
+  const [vendorLocationId, setVendorLocationId] = useState(null);
 
-  // ---------------- API: Load Vendor ----------------
-  useEffect(() => {
-    const loadVendorData = async () => {
-      try {
-        setLoading(true);
-        const vendorRes = await vendorService.getVendorById(id);
-        const vendorData = vendorRes.data;
+  /* ------------------------------ FETCH DATA ------------------------------ */
+  const loadVendorData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const vendorRes = await vendorService.getVendorById(id);
+      const vendorData = vendorRes.data;
 
-        const mappedVendor = {
-          id: vendorData.id,
-          name: vendorData.companyName,
-          contactPerson: vendorData.ownerName,
-          phone: vendorData.phone,
-          email: vendorData.email,
-          address: vendorData.address,
-          gstNumber: vendorData.gstNumber,
-          panNumber: vendorData.panNumber,
-          status: vendorData.isActive ? "Active" : "Inactive",
-          isActive: vendorData.isActive,
-        };
+      setVendor({
+        id: vendorData.id,
+        name: vendorData.companyName,
+        contactPerson: vendorData.ownerName,
+        phone: vendorData.phone,
+        email: vendorData.email,
+        address: vendorData.address,
+        gstNumber: vendorData.gstNumber,
+        panNumber: vendorData.panNumber,
+        isActive: vendorData.isActive,
+        status: vendorData.isActive ? "Active" : "Inactive",
+      });
 
-        setVendor(mappedVendor);
-
-        const handlerRes = await vendorService.getLocationbyVendorId(id);
-        const mappedHandlers = (handlerRes.data || []).map((h, i) => ({
-          id: h.id || i + 1,
-          handlerName: h.name || h.handlerName,
-          phone: h.phone,
-          email: h.email,
-          productServices: h.product.name || "N/A",
-          plantName: h.plantName || "N/A",
-          location: h.location || h.address || "N/A",
-          status: h.isActive ? "Active" : "Inactive",
-          designation: h.designation || "Manager",
-        }));
-
-        setHandlers(mappedHandlers.length ? mappedHandlers : mockHandlers);
-        setFilteredHandlers(
-          mappedHandlers.length ? mappedHandlers : mockHandlers
-        );
-      } catch (error) {
-        console.error("Error loading vendor data:", error);
-        toast.error("Failed to load vendor data");
-
-        // fallback to navigation state or mock
-        setVendor(location.state?.vendor || null);
-        setHandlers(location.state?.handlers || mockHandlers);
-        setFilteredHandlers(location.state?.handlers || mockHandlers);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadVendorData();
+      const handlerRes = await vendorService.getLocationbyVendorId(id);
+      const mappedHandlers = mapHandlers(handlerRes.data || []);
+      setHandlers(mappedHandlers);
+      setFilteredHandlers(mappedHandlers);
+    } catch (error) {
+      console.error("Error loading vendor data:", error);
+      toast.error("Failed to load vendor data");
+      fallbackToNavigationData();
+    } finally {
+      setLoading(false);
+    }
   }, [id, location.state]);
 
-  // ---------------- Search Filter ----------------
+  useEffect(() => {
+    loadVendorData();
+  }, [loadVendorData]);
+
+  /* ------------------------------ HELPERS ------------------------------ */
+  const fallbackToNavigationData = () => {
+    setVendor(location.state?.vendor || null);
+    setHandlers(location.state?.handlers || []);
+    setFilteredHandlers(location.state?.handlers || []);
+  };
+
+  const mapHandlers = (list) =>
+    list.map((h, i) => ({
+      id: h.id || i + 1,
+      handlerName: h.name || h.handlerName,
+      phone: h.phone,
+      email: h.email,
+      productServices: h.product?.name || "N/A",
+      plantName: h.plantName || "N/A",
+      location: h.location || h.address || "N/A",
+      status: h.isActive ? "Active" : "Inactive",
+      designation: h.designation || "Manager",
+      vendorLocationId: h.vendorLocationId || h.id,
+    }));
+
+  const refreshHandlerList = async () => {
+    try {
+      const res = await vendorService.getLocationbyVendorId(vendor.id);
+      const updatedHandlers = mapHandlers(res.data || []);
+      setHandlers(updatedHandlers);
+      setFilteredHandlers(updatedHandlers);
+    } catch (error) {
+      toast.error("Failed to refresh handlers");
+    }
+  };
+
+  /* ------------------------------ SEARCH ------------------------------ */
   useEffect(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return setFilteredHandlers(handlers);
 
-    setFilteredHandlers(
-      handlers.filter(
-        (h) =>
-          h.handlerName.toLowerCase().includes(term) ||
-          h.phone.includes(term) ||
-          h.email.toLowerCase().includes(term)
-      )
+    const filtered = handlers.filter(
+      (h) =>
+        h.handlerName?.toLowerCase().includes(term) ||
+        h.phone?.includes(term) ||
+        h.email?.toLowerCase().includes(term)
     );
+    setFilteredHandlers(filtered);
   }, [searchTerm, handlers]);
 
-  // ---------------- Vendor Actions ----------------
+  /* ------------------------------ VENDOR ACTIONS ------------------------------ */
   const handleEditVendor = () => setShowEditModal(true);
-
   const handleEditSubmit = (updatedVendor) => {
     setVendor(updatedVendor);
     toast.success("Vendor updated successfully");
     setShowEditModal(false);
   };
 
-  // ---------------- Handler Actions ----------------
+  /* ------------------------------ HANDLER ACTIONS ------------------------------ */
   const handleAddHandler = () => {
     setHandlerInfo(null);
     setShowHandlerModal(true);
   };
 
-  const handleHandlerSubmit = async ({
-    locationDetails,
-    handlers,
-    handler,
-    locationVendorId,
-  }) => {
-    try {
-      const payload = {
-        location: {
-          id: Number(id) || null, // null for add, id for edit
-          ...locationDetails,
-          productId: Number(locationDetails.productId) || 0,
-          vendorId: Number(id) || 0,
-        },
-        handlers: handlers.map((h) => ({
-          locationId: locationVendorId || null, // null for add, id for edit
-          name: h.name,
-          phone: h.phone,
-          email: h.email,
-        })),
-      };
-
-      console.log("📦 Payload for add/edit:", payload);
-      console.log("Location Vendor ID:", locationVendorId);
-      if (locationVendorId !== 0) {
-        // ---------------- EDIT MODE ----------------
-        await vendorService.updateLocation(payload.location);
-        await vendorService.updateHandlers(payload.handlers);
-        toast.success("Handler(s) updated successfully");
-      } else {
-        // ---------------- ADD MODE ----------------
-        // Step 1: Add location
-        const locationRes = await vendorService.addLocation(payload.location);
-        const newLocationId = locationRes?.data?.id;
-
-        // Step 2: Add handlers with locationId
-        payload.handlers.forEach(async (h) => {
-          await vendorService.addHandlers({
-            ...h,
-            locationId: newLocationId,
-          });
-        });
-
-        toast.success("Handler(s) added successfully");
-      }
-
-      // ---------------- Refresh table ----------------
-      await refreshHandlerList();
-
-      // Close modal
-      setShowHandlerModal(false);
-    } catch (error) {
-      console.error("Error in add/update handler flow:", error);
-      toast.error("Failed to add/update handler(s)");
-    }
-  };
-
   const handleEditHandler = (handler) => {
-    setVendorLocationId(handler.id);
+    setVendorLocationId(handler.vendorLocationId || handler.id);
     setHandlerInfo(handler);
     setShowHandlerModal(true);
   };
 
-  const handleDeleteHandler = async (handler) => {
-    toast.info(`Delete handler "${handler.handlerName}" coming soon!`);
+  const handleDeleteHandler = async (row) => {
     try {
-      const res = await vendorService.deleteLocationbyId(
-        handler.vendorLocationId
-      );
-      console.log("✅ Deleted location:", res);
-
-      toast.success(res?.message);
-
-      // 🔁 Refresh handler/location table after deletion
+      const res = await vendorService.deleteLocationbyId(row.id);
+      toast.success(res?.message || "Handler deleted");
       await refreshHandlerList();
     } catch (error) {
-      console.error("failed to deleted", error);
-      toast.error("Failed to delete location");
+      toast.error("Failed to delete handler");
     }
   };
 
-  const refreshHandlerList = async () => {
+  const handleAddHandlerSubmit = async ({ locationDetails, handlers }) => {
     try {
-      const res = await vendorService.getLocationbyVendorId(vendor.id);
-      const mappedHandlers = (res.data || []).map((h, i) => ({
-        id: h.id || i + 1,
-        handlerName: h.name || h.handlerName,
-        phone: h.phone,
-        email: h.email,
-        productServices: h.product.name || "N/A",
-        plantName: h.plantName || "N/A",
-        location: h.location || h.address || "N/A",
-        status: h.isActive ? "Active" : "Inactive",
-        designation: h.designation || "Manager",
-        vendorLocationId: h.vendorLocationId,
-      }));
+      const locationPayload = {
+        id: null,
+        ...locationDetails,
+        productId: Number(locationDetails.productId) || 0,
+        vendorId: Number(id),
+      };
 
-      setHandlers(mappedHandlers);
-      setFilteredHandlers(mappedHandlers);
-    } catch (error) {
-      console.error("Error refreshing handler list:", error);
-      toast.error("Failed to refresh handlers");
+      const locationRes = await vendorService.addLocation(locationPayload);
+      const newLocationId = locationRes?.data?.id;
+
+      const handlerPromises = handlers.map((h) =>
+        vendorService.addHandlers({
+          name: h.name,
+          phone: h.phone,
+          email: h.email,
+          locationId: newLocationId,
+        })
+      );
+
+      await Promise.all(handlerPromises);
+      toast.success("Handler(s) added successfully");
+      await refreshHandlerList();
+      setShowHandlerModal(false);
+    } catch {
+      toast.error("Failed to add handler(s)");
     }
   };
 
-  // ---------------- Table Config ----------------
+  const handleUpdateLocation = async ({
+    locationDetails,
+    locationVendorId,
+  }) => {
+    try {
+      const payload = {
+        id: Number(locationVendorId),
+        ...locationDetails,
+        productId: Number(locationDetails.productId) || 0,
+        vendorId: Number(id),
+      };
+
+      const res = await vendorService.updateLocation(payload);
+      toast.success(res?.message || "Location updated");
+      await refreshHandlerList();
+    } catch {
+      toast.error("Failed to update location");
+    }
+  };
+
+  /* ------------------------------ TABLE CONFIG ------------------------------ */
   const handlerColumns = [
     { key: "plantName", header: "Plant Name" },
     { key: "productServices", header: "Product/Services" },
@@ -270,40 +223,19 @@ const VendorDetail = () => {
     },
   ];
 
-  // ---------------- Conditional Rendering ----------------
+  /* ------------------------------ RENDER ------------------------------ */
   if (loading)
     return <FullPageLoader isVisible message="Loading vendor details..." />;
 
-  if (!vendor)
-    return (
-      <div className="p-6 text-center">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Vendor not found
-        </h2>
-        <Button onClick={() => navigate("/vendors")} variant="primary">
-          Back to Vendors
-        </Button>
-      </div>
-    );
+  if (!vendor) return <EmptyState onBack={() => navigate("/vendors")} />;
 
-  // ---------------- UI ----------------
   return (
     <div className="p-6 space-y-8">
-      {/* Breadcrumb */}
-      <div className="flex items-center text-sm text-gray-500">
-        <button
-          onClick={() => navigate("/vendors")}
-          className="hover:text-gray-700"
-        >
-          Vendor
-        </button>
-        <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} className="mx-2" />
-        <span className="text-gray-700">{vendor.name}</span>
-        <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} className="mx-2" />
-        <span className="font-medium text-blue-600">Details</span>
-      </div>
+      <Breadcrumb
+        vendorName={vendor.name}
+        onBack={() => navigate("/vendors")}
+      />
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">{vendor.name}</h1>
         <Button
@@ -317,48 +249,69 @@ const VendorDetail = () => {
         </Button>
       </div>
 
-      {/* Vendor Info */}
       <VendorInfoCard vendor={vendor} />
 
-      {/* Handlers */}
-      <HandlerSection
+      <HandlerTableSection
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         filteredHandlers={filteredHandlers}
         handlerColumns={handlerColumns}
         handlerActions={handlerActions}
-        handleAddHandler={handleAddHandler}
+        onAddHandler={handleAddHandler}
       />
 
-      {/* Modals */}
+      {/* -------- Modals -------- */}
       <VendorModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         vendor={vendor}
         onSubmit={handleEditSubmit}
       />
-      {/* <HandlerModal
-        isOpen={showHandlerModal}
+
+      <AddHandlerModal
+        isOpen={showHandlerModal && !handlerInfo}
         onClose={() => setShowHandlerModal(false)}
-        onSubmit={handleHandlerSubmit}
+        onSubmit={handleAddHandlerSubmit}
         vendorId={id}
+      />
+
+      <EditHandlerModal
+        isOpen={showHandlerModal && !!handlerInfo}
+        onClose={() => setShowHandlerModal(false)}
         handler={handlerInfo}
         locationVendorId={vendorLocationId}
-      /> */}
-      <AddHandlerModal isOpen={showHandlerModal && !handlerInfo}
-        onClose={() => setShowHandlerModal(false)}
-        onSubmit={handleHandlerSubmit}
-        vendorId={id} />
-      <EditHandlerModal isOpen={showHandlerModal && !!handlerInfo}
-        onClose={() => setShowHandlerModal(false)}
-        onSubmit={handleHandlerSubmit}
-        handler={handlerInfo}
-        locationVendorId={vendorLocationId} />
+        removeHandler={handleDeleteHandler}
+        onUpdateLocation={handleUpdateLocation}
+      />
     </div>
   );
 };
 
-// ---------------- Subcomponents ----------------
+/* ------------------------------ SUBCOMPONENTS ------------------------------ */
+
+const Breadcrumb = ({ vendorName, onBack }) => (
+  <div className="flex items-center text-sm text-gray-500">
+    <button onClick={onBack} className="hover:text-gray-700">
+      Vendor
+    </button>
+    <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} className="mx-2" />
+    <span className="text-gray-700">{vendorName}</span>
+    <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} className="mx-2" />
+    <span className="font-medium text-blue-600">Details</span>
+  </div>
+);
+
+const EmptyState = ({ onBack }) => (
+  <div className="p-6 text-center">
+    <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      Vendor not found
+    </h2>
+    <Button onClick={onBack} variant="primary">
+      Back to Vendors
+    </Button>
+  </div>
+);
+
 const VendorInfoCard = ({ vendor }) => (
   <div className="bg-white rounded-lg border border-[#9BB3F4] shadow p-6">
     <h2 className="text-lg font-medium text-gray-900 mb-6">Basic Details</h2>
@@ -396,13 +349,13 @@ const VendorInfoCard = ({ vendor }) => (
   </div>
 );
 
-const HandlerSection = ({
+const HandlerTableSection = ({
   searchTerm,
   setSearchTerm,
   filteredHandlers,
   handlerColumns,
   handlerActions,
-  handleAddHandler,
+  onAddHandler,
 }) => (
   <div className="bg-white rounded-lg">
     <div className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -424,7 +377,7 @@ const HandlerSection = ({
           />
         </div>
         <Button
-          onClick={handleAddHandler}
+          onClick={onAddHandler}
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
           height={48}

@@ -38,6 +38,7 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler, locationVe
     phone: "",
     email: "",
   });
+  const [editingIndex, setEditingIndex] = useState(null);
   const [errors, setErrors] = useState({});
   const [productList, setProductList] = useState([]);
 
@@ -88,15 +89,20 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler, locationVe
   const handleAddHandler = () => {
     if (!validateHandler()) return;
 
-    setHandlers((prev) => [
-      ...prev,
-      { id: Date.now(), ...currentHandler, status: "Active" },
-    ]);
-    setCurrentHandler({
-      name: "",
-      phone: "",
-      email: "",
-    });
+    // If editingIndex is set, update the existing handler
+    if (editingIndex !== null && editingIndex >= 0) {
+      setHandlers((prev) =>
+        prev.map((h, idx) => (idx === editingIndex ? { ...h, ...currentHandler } : h))
+      );
+      setEditingIndex(null);
+    } else {
+      setHandlers((prev) => [
+        ...prev,
+        { id: Date.now(), ...currentHandler, status: "Active" },
+      ]);
+    }
+
+    setCurrentHandler({ name: "", phone: "", email: "" });
   };
 
   const handleRemoveHandler = (id) =>
@@ -312,6 +318,15 @@ const HandlerModal = ({ isOpen, onClose, onSubmit, vendorId, handler, locationVe
           }
           handleAddHandler={handleAddHandler}
           handleRemoveHandler={handleRemoveHandler}
+          handleEditHandler={(handlerObj, idx) => {
+            // Populate current handler inputs for editing
+            setCurrentHandler({
+              name: handlerObj.name || "",
+              phone: handlerObj.phone || "",
+              email: handlerObj.email || "",
+            });
+            setEditingIndex(typeof idx === "number" ? idx : handlers.findIndex(h => (h.vendorLocationId || h.id) === (handlerObj.vendorLocationId || handlerObj.id)));
+          }}
         />
 
         {errors.general && (

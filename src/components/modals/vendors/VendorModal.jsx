@@ -223,18 +223,18 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           </label>
           <textarea
             placeholder="Enter registered address"
-            value={formData.address}
+            value={formData.registeredAddress}
             onChange={(e) =>
               handleInputChange("registeredAddress", e.target.value)
             }
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
-              errors.address ? "border-red-500" : "border-gray-300"
+              errors.registeredAddress ? "border-red-500" : "border-gray-300"
             }`}
             rows={3}
           />
-          {errors.address && (
+          {errors.registeredAddress && (
             <p className="text-red-500 text-xs mt-1">
-              {errors.address}
+              {errors.registeredAddress}
             </p>
           )}
         </div>
@@ -267,6 +267,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
             error={errors.panNumber}
             className="w-full"
           />
+
         </div>
 
         {/* Action Buttons */}
