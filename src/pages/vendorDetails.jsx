@@ -144,6 +144,28 @@ const VendorDetail = () => {
     }
   };
 
+  // ✅ Utility function to add multiple handlers for a specific location
+  const addHandlersForLocation = async (handlers, locationId) => {
+    try {
+      const handlerPromises = handlers.map((h) =>
+        vendorService.addHandlers({
+          name: h.name,
+          phone: h.phone,
+          email: h.email,
+          locationId,
+        })
+      );
+
+      await Promise.all(handlerPromises);
+      toast.success("Handler(s) added successfully");
+    } catch (error) {
+      console.error("Error adding handlers:", error);
+      toast.error("Failed to add handler(s)");
+      throw error; // rethrow to handle errors in parent function
+    }
+  };
+
+  // ✅ Main function that adds location and then calls the above
   const handleAddHandlerSubmit = async ({ locationDetails, handlers }) => {
     try {
       const locationPayload = {
@@ -156,24 +178,40 @@ const VendorDetail = () => {
       const locationRes = await vendorService.addLocation(locationPayload);
       const newLocationId = locationRes?.data?.id;
 
+      if (handlers?.length) {
+        await addHandlersForLocation(handlers, newLocationId);
+      }
+
+      await refreshHandlerList();
+      setShowHandlerModal(false);
+    } catch (error) {
+      console.error("Error in handleAddHandlerSubmit:", error);
+      toast.error("Failed to add location and handler(s)");
+    }
+  };
+
+  const handlersAddFunc = async (handlers) => {
+    try {
+      debugger;
       const handlerPromises = handlers.map((h) =>
         vendorService.addHandlers({
           name: h.name,
           phone: h.phone,
           email: h.email,
-          locationId: newLocationId,
+
+          locationId: h.locationId,
         })
       );
 
       await Promise.all(handlerPromises);
       toast.success("Handler(s) added successfully");
-      await refreshHandlerList();
-      setShowHandlerModal(false);
-    } catch {
+    } catch (error) {
+      console.error("Error adding handlers:", error);
       toast.error("Failed to add handler(s)");
+      throw error; // rethrow to handle errors in parent function
     }
   };
-
+  
   const handleUpdateLocation = async ({
     locationDetails,
     locationVendorId,
@@ -281,6 +319,7 @@ const VendorDetail = () => {
         handler={handlerInfo}
         locationVendorId={vendorLocationId}
         removeHandler={handleDeleteHandler}
+        addHandlers={handlersAddFunc}
         onUpdateLocation={handleUpdateLocation}
       />
     </div>

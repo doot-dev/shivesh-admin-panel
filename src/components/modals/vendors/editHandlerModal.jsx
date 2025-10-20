@@ -13,8 +13,8 @@ const EditHandlerModal = ({
   onClose,
   locationVendorId,
   onUpdateLocation,
-
   removeHandler,
+  addHandlers
 }) => {
   const [locationDetails, setLocationDetails] = useState(initialLocation());
   const [handlers, setHandlers] = useState([]);
@@ -97,17 +97,14 @@ const EditHandlerModal = ({
   };
 
   const handleAddHandler = () => {
-    if (
-      !currentHandler.name ||
-      !currentHandler.phone ||
-      !currentHandler.email
-    ) {
-      toast.warning("Please fill in all handler fields before adding.");
+    debugger;
+    if (!currentHandler.name || !currentHandler.phone) {
+      setErrors({ general: "Please fill all handler fields" });
       return;
     }
-
-    setHandlers((prev) => [...prev, { ...currentHandler }]);
-    setCurrentHandler(initialHandler());
+    setHandlers([...handlers, { id: Date.now(), ...currentHandler }]);
+    setCurrentHandler({ name: "", phone: "", email: "" });
+    addHandlers([{ ...currentHandler,  locationId: locationVendorId  }]);
   };
 
   const handleEditHandler = (handlerObj, idx) => {
