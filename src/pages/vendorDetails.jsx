@@ -134,16 +134,26 @@ const VendorDetail = () => {
     setShowHandlerModal(true);
   };
 
-  const handleDeleteHandler = async (row) => {
+  const handleDeleteLocation = async (row) => {
     try {
       const res = await vendorService.deleteLocationbyId(row.id);
-      toast.success(res?.message || "Handler deleted");
+      toast.success(res?.message);
       await refreshHandlerList();
     } catch (error) {
-      toast.error("Failed to delete handler");
+      toast.error("Failed to delete location");
     }
   };
 
+  const handleDeleteHandler = async (row) => {
+    try {
+      const res = await vendorService.deleteHandlers(row);
+      toast.success(res?.message);
+      await refreshHandlerList();
+    } catch (error) {
+      console.error("Error handling row action:", error);
+      toast.error("Failed to delete handler");
+    }
+  };
   // ✅ Utility function to add multiple handlers for a specific location
   const addHandlersForLocation = async (handlers, locationId) => {
     try {
@@ -211,7 +221,7 @@ const VendorDetail = () => {
       throw error; // rethrow to handle errors in parent function
     }
   };
-  
+
   const handleUpdateLocation = async ({
     locationDetails,
     locationVendorId,
@@ -237,15 +247,7 @@ const VendorDetail = () => {
     { key: "plantName", header: "Plant Name" },
     { key: "productServices", header: "Product/Services" },
     { key: "location", header: "Location", className: "max-w-xs truncate" },
-    {
-      key: "status",
-      header: "Status",
-      type: "badge",
-      badgeConfig: {
-        Active: { color: "#16A34A", backgroundColor: "#D1FAE5" },
-        Inactive: { color: "#DC2626", backgroundColor: "#FECACA" },
-      },
-    },
+    
   ];
 
   const handlerActions = [
@@ -256,7 +258,7 @@ const VendorDetail = () => {
     },
     {
       text: "Delete",
-      onClick: handleDeleteHandler,
+      onClick: handleDeleteLocation,
       textColor: "var(--color-error)",
     },
   ];

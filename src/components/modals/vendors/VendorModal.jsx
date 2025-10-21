@@ -9,7 +9,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     ownerName: "",
     phone: "",
     email: "",
-    registeredAddress: "",
+    address: "",
     gstNumber: "",
     panNumber: "",
   });
@@ -21,18 +21,25 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
 
   // Populate form when vendor changes (for edit mode)
   useEffect(() => {
-    if (vendor) {
+    console.log("🔍 VendorModal useEffect triggered, vendor:", vendor);
+    
+    if (vendor && isOpen) {
+      console.log("📝 Populating form with vendor data:");
+      console.log("  - address:", vendor.originalData.address);
+      console.log("  - gstNumber:", vendor.originalData.gstNumber);
+      console.log("  - panNumber:", vendor.originalData.panNumber);
+
       setFormData({
-        vendorCompanyName: vendor.name,
-        ownerName: vendor.contactPerson,
-        phone: vendor.phone,
-        email: vendor.email,
-        address: vendor.address,
-        gstNumber: vendor.gstNumber,
-        panNumber: vendor.panNumber,
+        vendorCompanyName: vendor.name || "",
+        ownerName: vendor.contactPerson || "",
+        phone: vendor.phone || "",
+        email: vendor.email || "",
+        address: vendor.originalData.address || "",
+        gstNumber: vendor.originalData.gstNumber || "",
+        panNumber: vendor.originalData.panNumber || "",
       });
-    } else {
-      // Reset form for add mode
+    } else if (!isOpen) {
+      // Reset form when modal closes
       setFormData({
         vendorCompanyName: "",
         ownerName: "",
@@ -43,12 +50,11 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         panNumber: "",
       });
     }
-  }, [vendor]);
+  }, [vendor, isOpen]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-
-    // Clear error when user starts typing
+    console.log("Form Data:", formData);
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -68,7 +74,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     if (!formData.address.trim()) {
       newErrors.address = "Please fill the field";
     }
-    
+
     // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
@@ -125,9 +131,9 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
       ownerName: "",
       phone: "",
       email: "",
-      registeredAddress: "",
-      gstNo: "",
-      panNo: "",
+      address: "",
+      gstNumber: "",
+      panNumber: "",
     });
     setErrors({});
     onClose();
@@ -223,18 +229,18 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           </label>
           <textarea
             placeholder="Enter registered address"
-            value={formData.registeredAddress}
+            value={formData.address}
             onChange={(e) =>
-              handleInputChange("registeredAddress", e.target.value)
+              handleInputChange("address", e.target.value)
             }
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
-              errors.registeredAddress ? "border-red-500" : "border-gray-300"
+              errors.address ? "border-red-500" : "border-gray-300"
             }`}
             rows={3}
           />
-          {errors.registeredAddress && (
+          {errors.address && (
             <p className="text-red-500 text-xs mt-1">
-              {errors.registeredAddress}
+              {errors.address}
             </p>
           )}
         </div>
@@ -267,7 +273,6 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
             error={errors.panNumber}
             className="w-full"
           />
-
         </div>
 
         {/* Action Buttons */}
