@@ -7,6 +7,7 @@ import vendorService from "../../../services/vendorService";
 import productService from "../../../services/productService";
 import HandlerSection from "./handlerSection";
 import { toast } from "react-toastify";
+import MapPicker from "../../ui/MapPicker";
 
 const EditHandlerModal = ({
   isOpen,
@@ -104,7 +105,7 @@ const EditHandlerModal = ({
     }
     setHandlers([...handlers, { id: Date.now(), ...currentHandler }]);
     setCurrentHandler({ name: "", phone: "", email: "" });
-    addHandlers([{ ...currentHandler,  locationId: locationVendorId  }]);
+    addHandlers([{ ...currentHandler, locationId: locationVendorId }]);
   };
 
   const handleEditHandler = (handlerObj, idx) => {
@@ -117,10 +118,10 @@ const EditHandlerModal = ({
       typeof idx === "number"
         ? idx
         : handlers.findIndex(
-            (h) =>
-              (h.vendorLocationId || h.id) ===
-              (handlerObj.vendorLocationId || handlerObj.id)
-          )
+          (h) =>
+            (h.vendorLocationId || h.id) ===
+            (handlerObj.vendorLocationId || handlerObj.id)
+        )
     );
   };
 
@@ -259,6 +260,15 @@ const EditHandlerModal = ({
             ))}
           </select>
         </section>
+
+        <MapPicker
+          latitude={locationDetails.latitude}
+          longitude={locationDetails.longitude}
+          onSelect={(latlng) => {
+            updateField(setLocationDetails, "latitude", latlng.lat);
+            updateField(setLocationDetails, "longitude", latlng.lng);
+          }}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <Input
