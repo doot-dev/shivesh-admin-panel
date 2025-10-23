@@ -84,110 +84,120 @@ const AddHandlerModal = ({ isOpen, onClose, onSubmit, vendorId }) => {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Add New Handler"
+      title="Add New Vendor"
       size="lg"
       maxWidth="700px"
-      headerIcon={ICON_NAMES.PRODUCT_MODAL}
+      headerIcon={ICON_NAMES.ADD_NEW_USER}
     >
       <div className="mb-4">
         <h3 className="text-lg font-medium text-gray-900 mb-1">
-          Vendor details
+          Add Location and Handlers
         </h3>
         <p className="text-sm text-gray-500 mb-6">
-          Fill in the details below to Add Handler Modal
+          Add location and handlers under this vendor.
         </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Location Details
-          </label>
-          <Input
-            type="text"
-            placeholder="Enter full name"
-            label="Plant Name"
-            value={locationDetails.plantName}
-            onChange={(e) =>
-              updateField(setLocationDetails, "plantName", e.target.value)
-            }
-            error={errors.plantName}
-            className="w-full"
-          />
-        </div>
-        <div>
-          <MapPicker onSelect={(latlng) => {
-            updateField(setLocationDetails, "latitude", latlng.lat);
-            updateField(setLocationDetails, "longitude", latlng.lng);
-          }} />
-          <div className="flex mt-2 gap-2">
+        <label className="block text-[18px] font-semibold text-gray-700 mb-1">
+          Location Details
+        </label>
+        <div className="border-border border py-4 px-6 rounded-[14px] hover:border-opacity-75">
+          <div>
             <Input
-              placeholder="Latitude"
-              value={locationDetails.latitude}
+              type="text"
+              placeholder="Enter full name"
+              label="Plant Name"
+              value={locationDetails.plantName}
               onChange={(e) =>
-                updateField(setLocationDetails, "latitude", e.target.value)
+                updateField(setLocationDetails, "plantName", e.target.value)
               }
-            />
-            <Input
-              placeholder="Longitude"
-              value={locationDetails.longitude}
-              onChange={(e) =>
-                updateField(setLocationDetails, "longitude", e.target.value)
-              }
+              error={errors.plantName}
+              className="w-full"
             />
           </div>
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
+            <MapPicker
+              onSelect={(latlng) => {
+                updateField(setLocationDetails, "latitude", latlng.lat);
+                updateField(setLocationDetails, "longitude", latlng.lng);
+              }}
+            />
+            <div className="flex mt-2 gap-2">
+              <Input
+                placeholder="Latitude"
+                value={locationDetails.latitude}
+                onChange={(e) =>
+                  updateField(setLocationDetails, "latitude", e.target.value)
+                }
+              />
+              <Input
+                placeholder="Longitude"
+                value={locationDetails.longitude}
+                onChange={(e) =>
+                  updateField(setLocationDetails, "longitude", e.target.value)
+                }
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <textarea
+              type="text"
+              placeholder="Address"
+              value={locationDetails.address}
+              onChange={(e) =>
+                updateField(setLocationDetails, "address", e.target.value)
+              }
+              className="w-full border rounded-lg border-border hover:border-opacity-75 p-2 outline-0"
+            />
+          </div>
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Name
+            </label>
+            <select
+              value={locationDetails.productId}
+              onChange={(e) =>
+                updateField(setLocationDetails, "productId", e.target.value)
+              }
+              className="w-full px-3 py-2 border rounded-lg outline-0 border-border hover:border-opacity-75"
+            >
+              <option value="">Select product</option>
+              {productList.map((prod) => (
+                <option key={prod.id} value={prod.id}>
+                  {prod.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address
-          </label>
-          <textarea
-            type="text"
-            placeholder="Address"
-            value={locationDetails.address}
-            onChange={(e) =>
-              updateField(setLocationDetails, "address", e.target.value)
+        <h4 className="text-md font-medium text-gray-900 mb-4">
+          Handler Details
+        </h4>
+        <div className="border-border border py-6 px-4 rounded-[14px] hover:border-opacity-75">
+          <HandlerSection
+            handlers={handlers}
+            currentHandler={currentHandler}
+            updateField={(field, value) =>
+              setCurrentHandler((prev) => ({ ...prev, [field]: value }))
             }
-            className="w-full border rounded-lg"
+            handleAddHandler={handleAddHandler}
+            handleRemoveHandler={handleRemoveHandler}
+            errors={errors}
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Product
-          </label>
-          <select
-            value={locationDetails.productId}
-            onChange={(e) =>
-              updateField(setLocationDetails, "productId", e.target.value)
-            }
-            className="w-full px-3 py-2 border rounded-lg"
-          >
-            <option value="">Select product</option>
-            {productList.map((prod) => (
-              <option key={prod.id} value={prod.id}>
-                {prod.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-
-
-        <HandlerSection
-          handlers={handlers}
-          currentHandler={currentHandler}
-          updateField={(field, value) =>
-            setCurrentHandler((prev) => ({ ...prev, [field]: value }))
-          }
-          handleAddHandler={handleAddHandler}
-          handleRemoveHandler={handleRemoveHandler}
-          errors={errors}
-        />
-
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={handleClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            width={150}
+            onClick={handleClose}
+          >
             Cancel
           </Button>
-          <Button type="submit" variant="primary">
+          <Button type="submit" variant="primary" width={150}>
             Add Handler
           </Button>
         </div>

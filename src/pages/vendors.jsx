@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
@@ -6,75 +6,76 @@ import Table from "../components/ui/Table";
 import { Icon, ICON_NAMES } from "../components/icons";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import VendorModal from "../components/modals/vendors/VendorModal";
-import DeleteVendorModal from "../components/modals/vendors/DeleteVendorModal";
+import DeleteModal from "../components/modals/DeleteModal";
 import vendorService from "../services/vendorService";
+import { useFetch } from "../hooks/useFetch";
 
 const Vendors = () => {
   const navigate = useNavigate();
-  const [vendors, setVendors] = useState([]);
+  
+  // Transform vendor data from API response
+  const transformVendorData = useCallback(async () => {
+    const response = await vendorService.getVendors();
+    console.log("Vendors response:", response);
+
+    let rawData = [];
+    if (Array.isArray(response.data)) {
+      rawData = response.data;
+    } else if (response && Array.isArray(response.data)) {
+      rawData = response.data;
+    } else if (response && Array.isArray(response.products)) {
+      rawData = response.products;
+    } else {
+      console.warn("Unexpected response structure:", response);
+    }
+
+    return rawData.map((vendor, index) => ({
+      id: vendor.id,
+      sNo: index + 1,
+      name: vendor.companyName,
+      contactPerson: vendor.ownerName,
+      contactPersonDesignation: vendor.designation,
+      phone: vendor.phone,
+      email: vendor.email,
+      address: vendor.address || "",
+      gstNumber: vendor.gstNumber || "",
+      panNumber: vendor.panNumber || "",
+      status: vendor.isActive ? "Active" : "Inactive",
+      isActive: vendor.isActive,
+      originalData: vendor,
+    }));
+  }, []);
+
+  const { data: vendors, loading, setData: setVendors, refetch: loadVendors } = useFetch(
+    transformVendorData,
+    [],
+    {
+      autoFetch: true,
+      showToast: true,
+    }
+  );
+
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
-
-  useEffect(() => {
-    loadVendors();
-  }, []);
-
-  // 🔹 Load Vendors (Mock)
-  const loadVendors = async () => {
-    try {
-      setLoading(true);
-
-      const response = await vendorService.getVendors();
-      console.log("Vendors response:", response);
-      let rawData = [];
-      if (Array.isArray(response.data)) {
-        rawData = response.data;
-      } else if (response && Array.isArray(response.data)) {
-        rawData = response.data;
-      } else if (response && Array.isArray(response.products)) {
-        rawData = response.products;
-      } else {
-        console.warn("Unexpected response structure:", response);
-        // rawData = mockProducts; // Fallback to mock data
-      }
-
-      const vendorsData = rawData.map((vendor, index) => ({
-        id: vendor.id,
-        sNo: index + 1,
-        name: vendor.companyName,
-        contactPerson: vendor.ownerName,
-        contactPersonDesignation: vendor.designation,
-        phone: vendor.phone,
-        email: vendor.email,
-        status: vendor.isActive ? "Active" : "Inactive",
-        isActive: vendor.isActive,
-        originalData: vendor,
-      }));
-
-      setVendors(vendorsData);
-      setFilteredVendors(vendorsData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading vendors:", error);
-      toast.error("Failed to load vendors");
-      setLoading(false);
-    }
-  };
+  const [deleteConfig, setDeleteConfig] = useState({
+    onConfirm: null,
+    title: "",
+    message: "",
+  });
 
   // 🔹 Search filter
   useEffect(() => {
     if (!searchTerm.trim()) {
-      setFilteredVendors(vendors);
+      setFilteredVendors(vendors || []);
       return;
     }
 
-    const filtered = vendors.filter(
+    const filtered = (vendors || []).filter(
       (vendor) =>
         vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -179,21 +180,21 @@ const Vendors = () => {
   };
 
   const handleDelete = (vendor) => {
-    setSelectedVendor(vendor);
+    setDeleteConfig({
+      onConfirm: async () => {
+        try {
+          const response = await vendorService.deleteVendor(vendor.id);
+          toast.success(response.message || "Vendor deleted successfully");
+          await loadVendors();
+        } catch (error) {
+          console.error("Error deleting vendor:", error);
+          toast.error("Failed to delete vendor");
+        }
+      },
+      title: "",
+      message: `Are you sure you want to delete the vendor? This action is permanent and cannot be undone.`,
+    });
     setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async (vendor) => {
-    try {
-      const response = await vendorService.deleteVendor(vendor.id);
-  
-      toast.success(response.message);
-      setShowDeleteModal(false);
-      loadVendors();
-    } catch (error) {
-      console.error("Error deleting vendor:", error);
-      toast.error("Failed to delete vendor");
-    }
   };
 
   // 🔹 Table Columns
@@ -313,14 +314,12 @@ const Vendors = () => {
           loading={submitting}
         />
 
-        <DeleteVendorModal
+        <DeleteModal
           isOpen={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedVendor(null);
-          }}
-          onConfirm={handleConfirmDelete}
-          vendor={selectedVendor}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={deleteConfig.onConfirm}
+          title={deleteConfig.title}
+          message={deleteConfig.message}
         />
       </div>
     </>

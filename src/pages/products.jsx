@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Button from "../components/ui/Button";
@@ -10,11 +10,49 @@ import AddProductModal from "../components/modals/product/AddProductModal";
 import DeleteProductModal from "../components/modals/product/DeleteProductModal";
 import productService from "../services/productService";
 import EditProductModal from "../components/modals/product/EditProductModal";
+import { useFetch } from "../hooks/useFetch";
 
 const Products = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  
+  // Transform product data from API response
+  const transformProductData = useCallback(async () => {
+    const response = await productService.getAllProducts(
+      1,
+      100,
+      ""
+    );
+    console.log("Fetched Products:", response);
+
+    let rawData = [];
+    if (Array.isArray(response.data)) {
+      rawData = response.data;
+    } else if (response && Array.isArray(response.data)) {
+      rawData = response.data;
+    } else if (response && Array.isArray(response.products)) {
+      rawData = response.products;
+    } else {
+      console.warn("Unexpected response structure:", response);
+      rawData = [];
+    }
+
+    return rawData.map((item, index) => ({
+      id: item.id,
+      sNo: String(index + 1).padStart(2, "0"),
+      product: item.name,
+      gradeSize: item.sizeCount,
+      status: item.isActive ? "Active" : "Inactive",
+      isActive: item.isActive,
+      name: item.name,
+    }));
+  }, []);
+
+  const { data: products, loading, refetch: loadProducts } = useFetch(
+    transformProductData,
+    [],
+    { autoFetch: true, showToast: true }
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [page, setPage] = useState({
@@ -35,34 +73,9 @@ const Products = () => {
   const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
 
-  // Mock data - replace with actual API call
-  const mockProducts = [
-    {
-      id: 1,
-      sNo: "01",
-      product: "RMC",
-      gradeSize: "30",
-      status: "Active",
-    },
-    {
-      id: 2,
-      sNo: "02",
-      product: "RMC",
-      gradeSize: "50",
-      status: "Active",
-    },
-    {
-      id: 3,
-      sNo: "03",
-      product: "XYZ",
-      gradeSize: "30",
-      status: "Inactive",
-    },
-  ];
-
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [loadProducts]);
 
   const handleSearch = () => {
     if (searchTerm.trim() === "") {
@@ -79,11 +92,11 @@ const Products = () => {
 
   useEffect(() => {
     if (!searchTerm.trim()) {
-      setFilteredProducts(products);
+      setFilteredProducts(products || []);
       return;
     }
 
-    const filtered = products.filter(
+    const filtered = (products || []).filter(
       (product) =>
         (product?.product?.toLowerCase?.() || "").includes(
           searchTerm.toLowerCase()
@@ -99,62 +112,6 @@ const Products = () => {
 
     setFilteredProducts(filtered);
   }, [searchTerm, products]);
-
-  // Load products from API
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const response = await productService.getAllProducts(
-        page.current,
-        length.limit,
-        searchTerm
-      );
-      console.log("Fetched Products:", response);
-
-      // Handle different response structures
-      let rawData = [];
-      if (Array.isArray(response.data)) {
-        rawData = response.data;
-      } else if (response && Array.isArray(response.data)) {
-        rawData = response.data;
-      } else if (response && Array.isArray(response.products)) {
-        rawData = response.products;
-      } else {
-        console.warn("Unexpected response structure:", response);
-        rawData = mockProducts; // Fallback to mock data
-      }
-
-      // Map API data to table format
-      const productData = rawData.map((item, index) => ({
-        id: item.id,
-        sNo: String(index + 1).padStart(2, "0"),
-        product: item.name,
-        gradeSize: item.sizeCount,
-        status: item.isActive ? "Active" : "Inactive",
-        isActive: item.isActive, // Keep boolean for operations
-        name: item.name, // Keep original name for operations
-      }));
-      setPage((prev) => ({
-        current: response.meta.page,
-        total: response.meta.totalPages || 1,
-      }));
-      setLength((prev) => ({
-        ...prev,
-        totalLength: response.totalItems || 1,
-      }));
-      console.log("Mapped Products:", productData);
-      setProducts(productData);
-      setFilteredProducts(productData);
-    } catch (error) {
-      console.error("Error loading products:", error);
-      toast.error("Failed to load products");
-      // Fallback to mock data on error
-      setProducts(mockProducts);
-      setFilteredProducts(mockProducts);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Handle add product
   const handleAddProduct = () => {

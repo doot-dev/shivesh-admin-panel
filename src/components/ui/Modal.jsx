@@ -18,7 +18,8 @@ const Modal = ({
   maxWidth = '',
   maxHeight = '',
   headerIcon = ICON_NAMES.USER,
-  showHeaderIcon = true
+  showHeaderIcon = true,
+  hideHeader = false
 }) => {
   const modalRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -113,7 +114,7 @@ const Modal = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          {(title || showCloseButton) && (
+          {!hideHeader && (title || showCloseButton) && (
             <div 
               className={`
                 flex items-center justify-between px-6 py-4 border-b border-[#EAEAEA]

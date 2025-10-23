@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Icon, ICON_NAMES } from "../components/icons";
 import { Button, Table, Dropdown } from "../components/ui";
 import {
@@ -16,7 +16,33 @@ import {
   resetPassword,
 } from "../services/userService";
 import { toast } from "react-toastify";
+import { useFetch } from "../hooks/useFetch";
 const Users = () => {
+  // Transform users data from API response
+  const transformUsersData = useCallback(async () => {
+    const response = await getUsers();
+    console.log("API Response Data:", response);
+
+    let users = [];
+    if (Array.isArray(response)) {
+      users = response;
+    } else if (response && Array.isArray(response.data)) {
+      users = response.data;
+    } else if (response && Array.isArray(response.users)) {
+      users = response.users;
+    } else if (response && typeof response === "object") {
+      users = [response];
+    }
+
+    return users;
+  }, []);
+
+  const { data: usersData, loading, refetch: loadUsers } = useFetch(
+    transformUsersData,
+    [],
+    { autoFetch: true, showToast: true }
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -28,9 +54,6 @@ const Users = () => {
   const [loadingUserData, setLoadingUserData] = useState(false);
   const [resetPasswordModal, setResetPasswordModal] = useState(false);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
-  const [usersData, setUsersData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   // Dropdown options
   const roleOptions = [
     { value: "", label: "All Roles" },
@@ -72,16 +95,7 @@ const Users = () => {
       console.log("User updated successfully:", updatedUser);
 
       // Refresh the users list
-      const response = await getUsers();
-      let users = [];
-      if (Array.isArray(response)) {
-        users = response;
-      } else if (response && Array.isArray(response.data)) {
-        users = response.data;
-      } else if (response && Array.isArray(response.users)) {
-        users = response.users;
-      }
-      setUsersData(users);
+      await loadUsers();
 
       // Close modal
       setShowEditModal(false);
@@ -146,16 +160,7 @@ const Users = () => {
       toast.success("User deleted successfully!");
 
       // Refresh the users list
-      const response = await getUsers();
-      let users = [];
-      if (Array.isArray(response)) {
-        users = response;
-      } else if (response && Array.isArray(response.data)) {
-        users = response.data;
-      } else if (response && Array.isArray(response.users)) {
-        users = response.users;
-      }
-      setUsersData(users);
+      await loadUsers();
 
       // Close modal
       setShowDeleteModal(false);
@@ -181,24 +186,13 @@ const Users = () => {
     try {
       console.log("Add new user:", userData);
       // Refresh the users list after adding
-      const response = await getUsers();
+      await loadUsers();
 
-      // Handle different response structures
-      let users = [];
-      if (Array.isArray(response)) {
-        users = response;
-      } else if (response && Array.isArray(response.data)) {
-        users = response.data;
-      } else if (response && Array.isArray(response.users)) {
-        users = response.users;
-      }
-
-      setUsersData(users);
       setShowAddModal(false);
       toast.success("User added successfully");
     } catch (error) {
       console.error("Error refreshing users after add:", error);
-      toast.error("Failed to  new user");
+      toast.error("Failed to add new user");
     }
   };
 
@@ -311,40 +305,6 @@ const Users = () => {
       title: "Delete",
     },
   ];
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await getUsers();
-        console.log("API Response Data:", response);
-
-        // Handle different response structures
-        let users = [];
-        if (Array.isArray(response)) {
-          users = response;
-        } else if (response && Array.isArray(response.data)) {
-          users = response.data;
-        } else if (response && Array.isArray(response.users)) {
-          users = response.users;
-        } else if (response && typeof response === "object") {
-          // If response is a single object, wrap it in an array
-          users = [response];
-        }
-
-        setUsersData(users);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        setError("Failed to load users");
-        setUsersData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, []);
 
   return (
     <div className="p-4 md:p-6 w-full">

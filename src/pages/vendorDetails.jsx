@@ -10,8 +10,10 @@ import FullPageLoader from "../components/ui/FullPageLoader";
 import VendorModal from "../components/modals/vendors/VendorModal";
 import AddHandlerModal from "../components/modals/vendors/addHandlerModal";
 import EditHandlerModal from "../components/modals/vendors/editHandlerModal";
+import DeleteModal from "../components/modals/DeleteModal";
 
 import vendorService from "../services/vendorService";
+import { useFetch } from "../hooks/useFetch";
 
 /* ------------------------------ MAIN COMPONENT ------------------------------ */
 const VendorDetail = () => {
@@ -27,9 +29,16 @@ const VendorDetail = () => {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showHandlerModal, setShowHandlerModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [handlerInfo, setHandlerInfo] = useState(null);
   const [vendorLocationId, setVendorLocationId] = useState(null);
+  const [deleteConfig, setDeleteConfig] = useState({
+    onConfirm: null,
+    title: "",
+    message:
+      "Are you sure you want to delete this vendor? This action is permanent and cannot be undone.",
+  });
 
   /* ------------------------------ FETCH DATA ------------------------------ */
   const loadVendorData = useCallback(async () => {
@@ -134,23 +143,34 @@ const VendorDetail = () => {
     setShowHandlerModal(true);
   };
 
-  const handleDeleteLocation = async (row) => {
-    try {
-      const res = await vendorService.deleteLocationbyId(row.id);
-      toast.success(res?.message);
-      await refreshHandlerList();
-    } catch (error) {
-      toast.error("Failed to delete location");
-    }
+  const handleDeleteLocation = (row) => {
+    setDeleteConfig({
+      onConfirm: async () => {
+        try {
+          const res = await vendorService.deleteLocationbyId(row.id);
+          toast.success(res?.message || "Location deleted successfully");
+          await refreshHandlerList();
+        } catch (error) {
+          toast.error("Failed to delete location");
+        }
+      },
+      title: "",
+      message:
+        "Are you sure you want to delete this vendor? This action is permanent and cannot be undone.",
+    });
+    setShowDeleteModal(true);
   };
 
-  const handleDeleteHandler = async (row) => {
+
+
+  // Handler deletion from within EditHandlerModal (direct API call, no modal)
+  const handleDeleteHandlerDirect = async (handlerId) => {
     try {
-      const res = await vendorService.deleteHandlers(row);
-      toast.success(res?.message);
+      const res = await vendorService.deleteHandlers(handlerId);
+      toast.success(res?.message || "Handler deleted successfully");
       await refreshHandlerList();
     } catch (error) {
-      console.error("Error handling row action:", error);
+      console.error("Error deleting handler:", error);
       toast.error("Failed to delete handler");
     }
   };
@@ -247,7 +267,6 @@ const VendorDetail = () => {
     { key: "plantName", header: "Plant Name" },
     { key: "productServices", header: "Product/Services" },
     { key: "location", header: "Location", className: "max-w-xs truncate" },
-    
   ];
 
   const handlerActions = [
@@ -320,9 +339,17 @@ const VendorDetail = () => {
         onClose={() => setShowHandlerModal(false)}
         handler={handlerInfo}
         locationVendorId={vendorLocationId}
-        removeHandler={handleDeleteHandler}
+        removeHandler={handleDeleteHandlerDirect}
         addHandlers={handlersAddFunc}
         onUpdateLocation={handleUpdateLocation}
+      />
+
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={deleteConfig.onConfirm}
+        title={deleteConfig.title}
+        message={deleteConfig.message}
       />
     </div>
   );

@@ -147,9 +147,7 @@ const HandlerSection = ({
 
   return (
     <section>
-      <h4 className="text-md font-medium text-gray-900 mb-4">
-        Handler Details
-      </h4>
+     
 
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         {/* Header */}

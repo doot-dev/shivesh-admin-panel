@@ -21,22 +21,15 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
 
   // Populate form when vendor changes (for edit mode)
   useEffect(() => {
-    console.log("🔍 VendorModal useEffect triggered, vendor:", vendor);
-    
     if (vendor && isOpen) {
-      console.log("📝 Populating form with vendor data:");
-      console.log("  - address:", vendor.originalData.address);
-      console.log("  - gstNumber:", vendor.originalData.gstNumber);
-      console.log("  - panNumber:", vendor.originalData.panNumber);
-
       setFormData({
         vendorCompanyName: vendor.name || "",
         ownerName: vendor.contactPerson || "",
         phone: vendor.phone || "",
         email: vendor.email || "",
-        address: vendor.originalData.address || "",
-        gstNumber: vendor.originalData.gstNumber || "",
-        panNumber: vendor.originalData.panNumber || "",
+        address: vendor.address || "",
+        gstNumber: vendor.gstNumber || "",
+        panNumber: vendor.panNumber || "",
       });
     } else if (!isOpen) {
       // Reset form when modal closes
@@ -54,7 +47,6 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    console.log("Form Data:", formData);
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -106,6 +98,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         ...formData,
         name: formData.vendorCompanyName,
         contactPerson: formData.ownerName,
+        registeredAddress: formData.address,
       };
       onSubmit(updatedVendor, "edit");
     } else {
@@ -116,6 +109,7 @@ const VendorModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         sNo: String(Date.now()).slice(-2),
         name: formData.vendorCompanyName,
         contactPerson: formData.ownerName,
+        registeredAddress: formData.address,
         designation: "Owner", // Default designation
         status: "Active", // Default status
       };
