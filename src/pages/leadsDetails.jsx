@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LogsActivityModal from "../components/modals/leads/logActivityModal";
 const LeadsDetailsPage = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [showlogsModal, setShowlogsModal] = useState(false);
+  const handleAddActivity = () => {
+    setShowlogsModal(true);
+  }
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       {/* Breadcrumb */}
       <div className="text-sm text-gray-500 mb-4">
-        <span className="hover:underline cursor-pointer" onClick={() => navigate("/leads")} >Lead</span> 
+        <span className="hover:underline cursor-pointer" onClick={() => navigate("/leads")} >Lead</span>
         <span className="hover:underline cursor-pointer">Lodha Group</span> &gt;{" "}
         <span className="text-blue-600 font-medium">Lead detail</span>
       </div>
@@ -18,7 +23,7 @@ const LeadsDetailsPage = () => {
           <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition">
             ✏️ Edit
           </button>
-          <button className="px-4 py-2 bg-primary hover:bg-blue-800 text-white rounded-lg text-sm font-medium transition">
+          <button onClick={handleAddActivity} className="px-4 py-2 bg-primary hover:bg-blue-800 text-white rounded-lg text-sm font-medium transition">
             Add Activity
           </button>
         </div>
@@ -88,6 +93,10 @@ const LeadsDetailsPage = () => {
           </div>
         </div>
       </div>
+      <LogsActivityModal 
+        isOpen={showlogsModal}
+        handleClose={() => setShowlogsModal(false)}
+      />
     </div>
   );
 };

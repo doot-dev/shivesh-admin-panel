@@ -14,7 +14,7 @@
   --color-table-bg: #fafafa;
   --color-success: #2e7d32;
   --color-warning: #f9a825;
-  
+
   --color-error: #d32f2f;
   --color-error-light: #ffebee;
   --color-success-light: #e8f5e8;
@@ -35,8 +35,8 @@
 
 /* width */
 ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+  width: 4px;
+  height: 4px;
 }
 
 /* Track */
@@ -52,4 +52,30 @@
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #688bec88;
+}
+
+/* Add this in your global CSS or Tailwind global styles */
+/* .custom-datepicker .MuiOutlinedInput-root {
+  height: 30px !important;
+  min-height: 30px !important;
+  border-radius: 12px !important;
+}
+
+.custom-datepicker .MuiOutlinedInput-input {
+  padding: 4px 14px !important;
+  height: 100% !important;
+  box-sizing: border-box;
+} */
+.MuiPickersInputBase-root{
+  border-radius: 8px !important;
+
+}
+.MuiPickersSectionList-root {
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 5px 0 !important;
+  align-items: center !important; 
+}
+.MuiInputLabel-root{
+  transform: translate(14px, 10px) scale(1) !important;
 }
