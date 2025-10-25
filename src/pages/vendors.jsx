@@ -12,7 +12,7 @@ import { useFetch } from "../hooks/useFetch";
 
 const Vendors = () => {
   const navigate = useNavigate();
-  
+
   // Transform vendor data from API response
   const transformVendorData = useCallback(async () => {
     const response = await vendorService.getVendors();
@@ -46,14 +46,15 @@ const Vendors = () => {
     }));
   }, []);
 
-  const { data: vendors, loading, setData: setVendors, refetch: loadVendors } = useFetch(
-    transformVendorData,
-    [],
-    {
-      autoFetch: true,
-      showToast: true,
-    }
-  );
+  const {
+    data: vendors,
+    loading,
+    setData: setVendors,
+    refetch: loadVendors,
+  } = useFetch(transformVendorData, [], {
+    autoFetch: true,
+    showToast: true,
+  });
 
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,7 +96,6 @@ const Vendors = () => {
     setSelectedVendor(vendor);
     setShowVendorModal(true);
     console.log("Editing vendor:", vendor);
-
   };
 
   // 🔹 Handle Vendor Submit (both add and edit)
@@ -290,6 +290,9 @@ const Vendors = () => {
             onClick={handleAddVendor}
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
+            size="md"
+            height="40px"
+            className="md:!h-[50px] md:!px-6 md:!py-3 md:!text-base text-sm px-4 py-2"
           >
             Add Vendor
           </Button>

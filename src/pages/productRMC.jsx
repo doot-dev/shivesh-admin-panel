@@ -131,11 +131,11 @@ const ProductSubcategory = () => {
       // Close modal and refresh data
       setShowDeleteModal(false);
       setSelectedGrade(null);
-      toast.success("Grade/Size deleted successfully");
+      toast.success(deleteResponse.message || "Grade/Size deleted successfully");
       await loadProductData();
     } catch (error) {
       console.error("Error in handleConfirmDelete:", error);
-      toast.error("Failed to delete grade");
+      toast.error(error?.response?.data?.message || "Failed to delete grade");
     } finally {
       setLoading(false);
     }
@@ -158,10 +158,10 @@ const ProductSubcategory = () => {
       await loadProductData();
 
       setShowAddModal(false);
-      toast.success("Grade added successfully");
+      toast.success(response.message || "Grade added successfully");
     } catch (error) {
       console.error("Error adding grade:", error);
-      toast.error("Failed to add grade");
+      toast.error(error?.response?.data?.message || "Failed to add grade");
     } finally {
       setIsAddingProduct(false);
     }
@@ -181,10 +181,10 @@ const ProductSubcategory = () => {
 
       setShowEditModal(false);
       setSelectedGrade(null);
-      toast.success("Grade updated successfully");
+      toast.success(response.message || "Grade updated successfully");
     } catch (error) {
       console.error("Error updating grade:", error);
-      toast.error("Failed to update grade");
+      toast.error(error?.response?.data?.message || "Failed to update grade");
     } finally {
       setLoading(false);
     }

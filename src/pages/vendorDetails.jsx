@@ -116,9 +116,7 @@ const VendorDetail = () => {
 
     const filtered = handlers.filter(
       (h) =>
-        h.handlerName?.toLowerCase().includes(term) ||
-        h.phone?.includes(term) ||
-        h.email?.toLowerCase().includes(term)
+        h.plantName?.toLowerCase().includes(term) 
     );
     setFilteredHandlers(filtered);
   }, [searchTerm, handlers]);

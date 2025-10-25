@@ -195,7 +195,7 @@ const EditUserModal = ({
       console.log("Update user API response:", response);
 
       // Show success message
-      toast.success("User updated successfully!");
+      toast.success(response.message || "User updated successfully" );
 
       // Call the parent onSave handler if provided (for any additional logic)
       if (onSave) {

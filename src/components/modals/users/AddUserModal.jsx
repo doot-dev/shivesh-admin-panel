@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Input, Dropdown, Checkbox, Button } from "../../ui";
 import { Icon, ICON_NAMES } from "../../icons";
 import { addUser } from "../../../services/userService";
+import { toast } from "react-toastify";
 
 const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -139,7 +140,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         // Make API call
         const response = await addUser(userData);
         console.log('Add user response:', response);
-
+        toast.success(response.message || 'User created successfully');
         // Call parent onSubmit handler
         onSubmit?.(response);
         
@@ -147,6 +148,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         handleClose();
       } catch (error) {
         console.error('Error adding user:', error);
+        toast.error('Failed to create user. Please try again.');
         // You can add error handling here, maybe set an error state
         setErrors(prev => ({
           ...prev,

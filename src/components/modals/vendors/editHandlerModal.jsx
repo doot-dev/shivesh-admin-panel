@@ -154,6 +154,7 @@ const EditHandlerModal = ({
 
     await handleUpdateHandlers(payload); // call API update
     setEditingIndex(null);
+    
   };
 
   // 🔹 Step 3: Update multiple handlers (API call)
@@ -182,13 +183,20 @@ const EditHandlerModal = ({
       toast.error(msg);
     }
   };
-  const handleRemoveHandler = (index) => {
-    const handlerToRemove = handlers[index];
-    if (handlerToRemove?.id) {
-      removeHandler(handlerToRemove.id); // parent API deletion
+  const handleRemoveHandler = async (index) => {
+  const handlerToRemove = handlers[index];
+
+  if (handlerToRemove?.id) {
+    try {
+      await removeHandler(handlerToRemove.id); // wait for API delete
+    } catch (err) {
+      console.error("Failed to delete handler:", err);
     }
-    setHandlers((prev) => prev.filter((_, i) => i !== index));
-  };
+  }
+
+  setHandlers((prev) => prev.filter((_, i) => i !== index));
+};
+
 
   /** ------------------------------
    *  LOCATION LOGIC
@@ -331,14 +339,12 @@ const EditHandlerModal = ({
       </div>
       {/* FOOTER BUTTONS */}
       <div className="flex justify-end gap-3 mt-6">
-        <Button type="button" variant="secondary" width={150} onClick={onClose}>
-          Cancel
-        </Button>
+      
         <Button
           type="button"
           variant="primary"
           width={150}
-          onClick={applyHandlerEdit}
+          onClick={onClose}
         >
           Update Handler
         </Button>

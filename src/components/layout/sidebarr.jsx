@@ -110,6 +110,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       );
     }
 
+    // Special case for vendors - should be active for /vendors and /vendors/:id
+    if (path === "/vendors") {
+      return (
+        location.pathname === "/vendors" ||
+        location.pathname.startsWith("/vendors/")
+      );
+    }
+
     // Default exact match for other paths
     return location.pathname === path;
   };

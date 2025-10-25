@@ -37,11 +37,11 @@ const Users = () => {
     return users;
   }, []);
 
-  const { data: usersData, loading, refetch: loadUsers } = useFetch(
-    transformUsersData,
-    [],
-    { autoFetch: true, showToast: true }
-  );
+  const {
+    data: usersData,
+    loading,
+    refetch: loadUsers,
+  } = useFetch(transformUsersData, [], { autoFetch: true, showToast: true });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -125,7 +125,10 @@ const Users = () => {
       console.log("Reset password response:", response);
 
       // Show success message from API response
-      const successMessage = response?.message || response?.data?.message || "Password reset successfully";
+      const successMessage =
+        response?.message ||
+        response?.data?.message ||
+        "Password reset successfully";
       toast.success(successMessage);
 
       // Close modal
@@ -133,13 +136,14 @@ const Users = () => {
       setSelectedUser(null);
     } catch (error) {
       console.error("Error resetting password:", error);
-      
+
       // Show error message from API response or default message
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          "Failed to reset password. Please try again.";
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to reset password. Please try again.";
       toast.error(errorMessage);
-      
+
       throw error; // Re-throw to let modal handle the error state
     }
   };
@@ -154,10 +158,10 @@ const Users = () => {
       console.log("Deleting user:", user.id);
 
       // Make API call to delete user
-      await deleteUser(user.id);
+      const response = await deleteUser(user.id);
 
       // Show success message
-      toast.success("User deleted successfully!");
+      toast.success(response.message || "User deleted successfully!");
 
       // Refresh the users list
       await loadUsers();
@@ -189,7 +193,7 @@ const Users = () => {
       await loadUsers();
 
       setShowAddModal(false);
-      toast.success("User added successfully");
+      // toast.success("User added successfully");
     } catch (error) {
       console.error("Error refreshing users after add:", error);
       toast.error("Failed to add new user");
@@ -377,18 +381,6 @@ const Users = () => {
       {loading ? (
         <div className="flex justify-center items-center py-12 bg-white rounded-lg shadow-sm">
           <div className="text-text-secondary">Loading users...</div>
-        </div>
-      ) : error ? (
-        <div className="flex flex-col justify-center items-center py-12 bg-white rounded-lg shadow-sm">
-          <div className="text-error mb-2">{error}</div>
-          <Button
-            onClick={() => window.location.reload()}
-            variant="outline"
-            size="sm"
-            className="text-xs sm:text-sm px-3 py-1.5 sm:px-3 sm:py-1.5"
-          >
-            Retry
-          </Button>
         </div>
       ) : (
         <Table

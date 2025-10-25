@@ -129,7 +129,7 @@ const Products = () => {
 
       // Close modal and show success message
       setShowAddModal(false);
-      toast.success("Product added successfully");
+      toast.success(response.message || "Product added successfully");
     } catch (error) {
       console.error("Error adding product:", error);
       toast.error("Failed to add product");
@@ -176,10 +176,10 @@ const Products = () => {
 
       setShowEditModal(false);
       setSelectedProduct(null);
-      toast.success("Product updated successfully");
+      toast.success(response.message || "Product updated successfully");
     } catch (error) {
       console.error("Error updating product:", error);
-      toast.error("Failed to update product");
+      toast.error(error?.response?.data?.message || "Failed to update product");
     } finally {
       setIsEditingProduct(false);
     }
@@ -206,10 +206,10 @@ const Products = () => {
 
       setShowDeleteModal(false);
       setSelectedProduct(null);
-      toast.success("Product deleted successfully");
+      toast.success(deleteResponse.message || "Product deleted successfully");
     } catch (error) {
       console.error("Error deleting product:", error);
-      toast.error("Failed to delete product");
+      toast.error(error?.response?.data?.message || "Failed to delete product");
     } finally {
       setIsDeletingProduct(false);
     }
