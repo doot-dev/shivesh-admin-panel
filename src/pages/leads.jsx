@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Icon, ICON_NAMES } from "../components/icons";
 import { Button, Table, Dropdown } from "../components/ui";
 import { toast } from "react-toastify";
@@ -6,59 +6,53 @@ import FullPageLoader from "../components/ui/FullPageLoader";
 import { useNavigate } from "react-router-dom";
 import LeadsModal from "../components/modals/leads/leadsModal";
 import DeleteModal from "../components/modals/leads/deleteModal";
+import leadService from "../services/leadService";
+import { useFetch } from "../hooks/useFetch";
 const LeadsPage = () => {
-  const [leads, setLeads] = useState([]);
+  // `leads` and `loading` are provided by useFetch below, avoid local duplicates
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showLeadsModal, setShowLeadsModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const navigate = useNavigate();
-  const mockLeads = [
-    {
-      id: 1,
-      name: "John Doe",
-      company: "ABC Company",
-      phone: "123-456-7890",
-      email: "0A2eA@example.com",
-      requirement: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      source: "website",
-      status: "Active",
-      assignedTo: "John Doe",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      company: "XYZ Company",
-      phone: "987-654-3210",
-      email: "0A2eA@example.com",
-      requirement: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      source: "website",
-      status: "Active",
-      assignedTo: "John Doe",
-    },
-  ];
 
-  useEffect(() => {
-    loadLeads();
+
+  const leadsData = useCallback(async () => {
+    const response = await leadService.getAllLeads();
+    console.log("Leads response:", response);
+    let rawData = [];
+    if (Array.isArray(response.data)) {
+      rawData = response.data;
+    } else if (response && Array.isArray(response.data)) {
+      rawData = response.data;
+    } else {
+      console.warn("Unexpected response structure:", response);
+    }
+    return rawData.map((lead, index) => ({
+      id: lead.id,
+      sNo: index + 1,
+      name: lead.contactPerson,
+      company: lead.companyName,
+      phone: lead.phone,
+      email: lead.email,
+      requirement: lead.requirement,
+      source: lead.source,
+      status: lead.isActive ? "Active" : "Inactive",
+      assignedTo: lead.assignedToId,
+      originalData: lead,
+    }));
   }, []);
 
-  const loadLeads = async () => {
-    try {
-      setLoading(true);
-      // Simulate API
-      setTimeout(() => {
-        setLeads(mockLeads);
-        setFilteredLeads(mockLeads);
-        setLoading(false);
-      }, 800);
-    } catch (error) {
-      console.error("Error loading leads:", error);
-      toast.error("Failed to load leads");
-      setLoading(false);
-    }
-  };
+  const {
+    data: leads,
+    loading,
+    setData: setLeads,
+    refetch: loadLeads,
+  } = useFetch(leadsData, [], {
+    autoFetch: true,
+    showToast: true,
+  });
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -80,7 +74,8 @@ const LeadsPage = () => {
 
   const handleEditLead = (lead) => {
     setSelectedLead(lead);
-    setShowLeadsModal(true);
+    // setShowLeadsModal(true);
+    navigate(`/leads/${lead.id}`);
   };
 
   const handleLeadSubmit = (leadsData, mode) => {
@@ -108,31 +103,28 @@ const LeadsPage = () => {
     setShowDeleteModal(false);
   };
 
-  const handleViewLead = (lead) => {
-    console.log("Viewing lead:", lead);
-    navigate(`/leads/${lead.id}`);
-  };
+
 
   const columns = [
-    { key: "sNo", label: "S.No." },
-    { key: "name", label: "Name" },
-    { key: "company", label: "Company" },
+    { key: "sNo", header: "S.No." },
+    { key: "name", header: "Name" },
+    { key: "company", header: "Company" },
     {
       key: "phone",
-      label: "Contact",
-      render: (leadContact) => {
+      header: "Contact",
+      render: (value, row) => (
         <div>
-          <div className="font-semibold">{leadContact.phone}</div>
-          <div className="text-sm text-gray-500">{leadContact.email}</div>
-        </div>;
-      },
+          <div className="font-semibold">{row?.phone}</div>
+          <div className="text-sm text-gray-500">{row?.email}</div>
+        </div>
+      ),
     },
 
-    { key: "requirement", label: "Requirement" },
-    { key: "source", label: "Source" },
+    { key: "requirement", header: "Requirement" },
+    { key: "source", header: "Source" },
     {
       key: "status",
-      label: "Status",
+      header: "Status",
       type: "badge",
       badgeConfig: {
         Active: {
@@ -145,17 +137,11 @@ const LeadsPage = () => {
         },
       },
     },
-    { key: "assignedTo", label: "Assigned To" },
-    { key: "actions", label: "Actions" },
+    { key: "assignedTo", header: "Assigned To" },
   ];
 
   const actions = [
-    {
-      text: "View",
-      onClick: handleViewLead,
-      textColor: "var(--color-primary)",
-      hoverBackgroundColor: "var(--color-primary-light)",
-    },
+   
     {
       text: "Edit",
       onClick: handleEditLead,
@@ -198,6 +184,9 @@ const LeadsPage = () => {
             onClick={handleAddLead}
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
+            size="md"
+            height="40px"
+            className="md:!h-[50px] md:!px-6 md:!py-3 md:!text-base text-sm px-4 py-2"
           >
             Add Lead
           </Button>

@@ -1,19 +1,58 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import LogsActivityModal from "../components/modals/leads/logActivityModal";
+import leadService from "../services/leadService";
+import { toast } from "react-toastify";
 const LeadsDetailsPage = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showlogsModal, setShowlogsModal] = useState(false);
+  const [leadData, setLeadData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const loadLeadsData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const leadRes = await leadService.getLeadsById(id);
+      const leadData = leadRes.data;
+      console.log("Lead details data:", leadData);
+      setLeadData({
+        id: leadData.id,
+        name: leadData.contactPerson,
+        company: leadData.companyName,
+        phone: leadData.phone,
+        email: leadData.email,
+        requirement: leadData.requirement,
+        source: leadData.source,
+        status: leadData.isActive ? "Active" : "Inactive",
+        assignedTo: leadData.assignedToId,
+      });
+    } catch (error) {
+      console.error("Error loading lead details:", error);
+      toast.error("Failed to load lead details. Please try again.");
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, location.state]);
+  useEffect(() => {
+    loadLeadsData();
+  }, [loadLeadsData]);
   const handleAddActivity = () => {
     setShowlogsModal(true);
-  }
+  };
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       {/* Breadcrumb */}
       <div className="text-sm text-gray-500 mb-4">
-        <span className="hover:underline cursor-pointer" onClick={() => navigate("/leads")} >Lead</span>
-        <span className="hover:underline cursor-pointer">Lodha Group</span> &gt;{" "}
-        <span className="text-blue-600 font-medium">Lead detail</span>
+        <span
+          className="hover:underline cursor-pointer"
+          onClick={() => navigate("/leads")}
+        >
+          Lead
+        </span>
+        &gt; <span className="hover:underline cursor-pointer">{leadData?.name}</span>{" "}
+        &gt; <span className="text-blue-600 font-medium">Lead detail</span>
       </div>
 
       {/* Header Section */}
@@ -23,7 +62,10 @@ const LeadsDetailsPage = () => {
           <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition">
             ✏️ Edit
           </button>
-          <button onClick={handleAddActivity} className="px-4 py-2 bg-primary hover:bg-blue-800 text-white rounded-lg text-sm font-medium transition">
+          <button
+            onClick={handleAddActivity}
+            className="px-4 py-2 bg-primary hover:bg-blue-800 text-white rounded-lg text-sm font-medium transition"
+          >
             Add Activity
           </button>
         </div>
@@ -33,7 +75,9 @@ const LeadsDetailsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lead Details Card */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-[#9BB3F4] p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Lead details</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Lead details
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-3 text-sm text-gray-700">
             <div>
               <p className="text-gray-500">Assigned to</p>
@@ -62,7 +106,9 @@ const LeadsDetailsPage = () => {
 
         {/* Reminders Card */}
         <div className="bg-white rounded-xl shadow-sm border border-[#9BB3F4] p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Reminders</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Reminders
+          </h2>
           <div className="flex items-start gap-3">
             <span className="mt-1 w-2.5 h-2.5 rounded-full bg-red-500"></span>
             <div>
@@ -74,7 +120,9 @@ const LeadsDetailsPage = () => {
 
         {/* Activity History */}
         <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-[#9BB3F4] p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Activity history</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Activity history
+          </h2>
           <div className="space-y-6 text-sm text-gray-700">
             <div className="relative pl-5 border-l-2 border-blue-500">
               <div className="absolute -left-1.5 top-0 w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -93,7 +141,7 @@ const LeadsDetailsPage = () => {
           </div>
         </div>
       </div>
-      <LogsActivityModal 
+      <LogsActivityModal
         isOpen={showlogsModal}
         handleClose={() => setShowlogsModal(false)}
       />

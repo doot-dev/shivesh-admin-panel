@@ -118,6 +118,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       );
     }
 
+    if (path === "/leads") {
+      return (
+        location.pathname === "/leads" ||
+        location.pathname.startsWith("/leads/")
+      );
+    }
     // Default exact match for other paths
     return location.pathname === path;
   };
