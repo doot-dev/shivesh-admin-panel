@@ -53,7 +53,7 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-6 text-left justify-center">
-            <img src={Logo} alt="Shivesh Logo" className=" w-50" />
+            {/* <img src={Logo} alt="Shivesh Logo" className=" w-50" /> */}
             <h1 className=" text-2xl md:text-[42px] font-semibold mt-4 text-primary tracking-wide leading-11 ">
               Welcome back!
             </h1>

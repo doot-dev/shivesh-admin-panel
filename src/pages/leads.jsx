@@ -78,14 +78,22 @@ const LeadsPage = () => {
     navigate(`/leads/${lead.id}`);
   };
 
-  const handleLeadSubmit = (leadsData, mode) => {
+  const handleLeadSubmit = async (leadsData, mode) => {
     if (mode === "add") {
       setLeads((prev) => [...prev, leadsData]);
+      console.log("form data values of add lead", leadsData)
+      try {
+        const leadsRes = await leadService.addNewLead(leadsData);
+        console.log("Leads add Reesponse", leadsRes);
+      } catch (error) {
+        console.error("Leads Error", error);
+      }
       toast.success("Lead added successfully");
     } else if (mode === "edit") {
       const updated = leads.map((lead) =>
         lead.id === leadsData.id ? leadsData : lead
       );
+      console.log("form data values of update lead", updated)
       setLeads(updated);
       toast.success("Lead updated successfully");
     }
@@ -141,7 +149,7 @@ const LeadsPage = () => {
   ];
 
   const actions = [
-   
+
     {
       text: "Edit",
       onClick: handleEditLead,

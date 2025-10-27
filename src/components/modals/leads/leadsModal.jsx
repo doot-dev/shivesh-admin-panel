@@ -1,150 +1,141 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Modal from "../../ui/Modal";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import { ICON_NAMES } from "../../icons";
 import { Dropdown } from "../../ui";
+import { getUsers } from "../../../services/userService";
+import { useFetch } from "../../../hooks/useFetch";
+
+const INITIAL_FORM = {
+  contactPerson: "",
+  companyName: "",
+  email: "",
+  phone: "",
+  address: "",
+  source: "",
+  requirement: "",
+  status: "",
+  reAssigneeLead: "",
+  assignedToId: 0,
+};
+
 const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
-  const statusOptions = [
-    { value: "open", label: "Open" },
-    { value: "closed", label: "Closed" },
-  ];
-  const reAssigneeLeadOptions = [
-    { value: "lead1", label: "Lead 1" },
-    { value: "lead2", label: "Lead 2" },
-    { value: "lead3", label: "Lead 3" },
-  ];
-  const sourceOptions = [
-    { value: "website", label: "Website" },
-    { value: "email", label: "Email" },
-    { value: "phone", label: "Phone" },
-  ];
-
-  const [formData, setFormData] = useState({
-    leadName: "",
-    companyName: "",
-    email: "",
-    phone: "",
-    source: "",
-    requirement: "",
-    status: "",
-    reAssigneeLead: "",
-  });
-  const [errors, setErrors] = useState({});
   const isEditMode = !!leads;
+  const [formData, setFormData] = useState(INITIAL_FORM);
+  const [errors, setErrors] = useState({});
 
+  // --- Static dropdown options
+  const statusOptions = useMemo(
+    () => [
+      { value: "open", label: "Open" },
+      { value: "closed", label: "Closed" },
+    ],
+    []
+  );
+
+  const reAssigneeLeadOptions = useMemo(
+    () => [
+      { value: "lead1", label: "Lead 1" },
+      { value: "lead2", label: "Lead 2" },
+      { value: "lead3", label: "Lead 3" },
+    ],
+    []
+  );
+
+
+  const sourceOptions = useMemo(
+    () => [
+      { value: "REFERRAL", label: "Referral" },
+      { value: "WEBSITE", label: "Website" },
+      { value: "COLD_CALL", label: "Cold Call" },
+      { value: "ADVERTISEMENT", label: "Advertisement" },
+      { value: "SOCIAL_MEDIA", label: "Social Media" },
+    ],
+    []
+  );
+
+  // --- Transform users data
+  const transformUsersData = useCallback(async () => {
+    const response = await getUsers();
+
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.users)) return response.users;
+    if (response && typeof response === "object") return [response];
+
+    return [];
+  }, []);
+
+  const { data: usersData = [], loading } = useFetch(transformUsersData, [], {
+    autoFetch: true,
+    showToast: true,
+  });
+
+  // --- Initialize form for edit mode
   useEffect(() => {
     if (leads) {
-      setFormData({
-        leadName: leads.leadName,
-        companyName: leads.companyName,
-        email: leads.email,
-        phone: leads.phone,
-        source: leads.source,
-        requirement: leads.requirement,
-        status: leads.status,
-        reAssigneeLead: leads.reAssigneeLead,
-      });
+      setFormData((prev) => ({ ...prev, ...leads }));
     } else {
-      setFormData({
-        leadName: "",
-        companyName: "",
-        email: "",
-        phone: "",
-        source: "",
-        requirement: "",
-        status: "",
-        reAssigneeLead: "",
-      });
+      setFormData(INITIAL_FORM);
     }
   }, [leads]);
 
+  // --- Handlers
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
+
   const validateForm = () => {
     const newErrors = {};
 
-    // Required field validations
-    if (!formData.leadName.trim()) {
-      newErrors.leadName = "Please fill the field";
-    }
-    if (!formData.companyName.trim()) {
+    if (!formData.contactPerson.trim()) newErrors.contactPerson = "Please fill the field";
+    if (!formData.companyName.trim())
       newErrors.companyName = "Please fill the field";
-    }
-
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Please enter a valid email address";
-    }
-    if (
-      formData.phone &&
-      !/^\d{10}$/.test(formData.phone.replace(/\s+/g, ""))
-    ) {
+    if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\s+/g, "")))
       newErrors.phone = "Please enter a valid 10-digit phone number";
-    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return;
-    }
+    const leadData = {
+      ...formData,
+      // id: isEditMode ? leads.id : Date.now(),
+      // sNo: isEditMode ? leads.sNo : String(Date.now()).slice(-2),
+    };
 
-    if (isEditMode) {
-      const updatedLead = {
-        ...leads,
-        ...formData,
-        leadName: formData.leadName,
-        companyName: formData.companyName,
-        email: formData.email,
-        phone: formData.phone,
-        source: formData.source,
-        requirement: formData.requirement,
-        status: formData.status,
-        reAssigneeLead: formData.reAssigneeLead,
-      };
-      onSubmit(updatedLead, "edit");
-    } else {
-      const newLead = {
-        ...formData,
-        id: Date.now(),
-        sNo: String(Date.now()).slice(-2),
-        leadName: formData.leadName,
-        companyName: formData.companyName,
-        email: formData.email,
-        phone: formData.phone,
-        source: formData.source,
-        requirement: formData.requirement,
-        status: formData.status,
-        reAssigneeLead: formData.reAssigneeLead,
-      };
-      onSubmit(newLead, "add");
-    }
+    onSubmit(leadData, isEditMode ? "edit" : "add");
     handleClose();
   };
 
   const handleClose = () => {
-    setFormData({
-      leadName: "",
-      companyName: "",
-      email: "",
-      phone: "",
-      source: "",
-      requirement: "",
-      status: "",
-      reAssigneeLead: "",
-    });
+    setFormData(INITIAL_FORM);
     setErrors({});
     onClose();
   };
+
+  // --- Reusable Input Field Renderer
+  const renderInput = (label, field, type = "text", placeholder = "") => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <Input
+        type={type}
+        placeholder={placeholder}
+        value={formData[field]}
+        onChange={(e) => handleInputChange(field, e.target.value)}
+        className="w-full"
+        error={errors[field]}
+      />
+    </div>
+  );
 
   return (
     <Modal
@@ -157,109 +148,114 @@ const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
     >
       <div className="mb-4">
         <h3 className="text-lg font-medium text-gray-900 mb-1">
-          Vendor details
+          Vendor Details
         </h3>
         <p className="text-sm text-gray-500 mb-6">
           {isEditMode
-            ? "Update the details below to edit the Leads"
-            : "Fill in the details below to add a new Leads"}
+            ? "Update the details below to edit the lead."
+            : "Fill in the details below to add a new lead."}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Lead Name
-          </label>
-          <Input
-            type="text"
-            placeholder="Enter lead name"
-            value={formData.leadName}
-            onChange={(e) => handleInputChange("leadName", e.target.value)}
-            error={errors.leadName}
-            className="w-full"
-          />
+        {renderInput("Lead Name", "contactPerson", "text", "Enter lead name")}
+        {renderInput("Company Name", "companyName", "text", "Enter company name")}
+
+        <div className="grid grid-cols-2 gap-4">
+          {renderInput("Email", "email", "email", "Enter email")}
+          {renderInput("Phone", "phone", "text", "Enter phone number")}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Company Name
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Address
           </label>
-          <Input
-            type="text"
-            placeholder="Enter company name"
-            value={formData.companyName}
-            onChange={(e) => handleInputChange("companyName", e.target.value)}
-            className="w-full"
-            error={errors.companyName}
+          <textarea
+            placeholder="Enter  address"
+            value={formData.address}
+            onChange={(e) =>
+              handleInputChange("address", e.target.value)
+            }
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${errors.address ? "border-red-500" : "border-gray-300"
+              }`}
+            rows={3}
           />
+          {errors.address && (
+            <p className="text-red-500 text-xs mt-1">
+              {errors.address}
+            </p>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <Input
-              type="email"
-              placeholder="Enter email"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              className="w-full"
-              error={errors.email}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Phone
-            </label>
-            <Input
-              type="text"
-              placeholder="Enter phone number"
-              value={formData.phone}
-              onChange={(e) => handleInputChange("phone", e.target.value)}
-              className="w-full"
-              error={errors.phone}
-            />
-          </div>
-        </div>
+
+        {/* Source */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Source
-          </label>
-          <Dropdown
-            options={sourceOptions}
+          <label className="block text-sm font-medium text-gray-700">Source</label>
+          <select
+            className="w-full border border-gray-300 rounded-md p-2"
             value={formData.source}
             onChange={(e) => handleInputChange("source", e.target.value)}
-            placeholder="Select Source"
-            width="100%"
-            height="42px"
-            error={!!errors.role}
-            backgroundColor="input-bg"
-          />
+          >
+            <option value="">Select Source</option>
+            {loading ? (
+              <option>Loading...</option>
+            ) : (
+              sourceOptions?.map((source, i) => (
+                <option key={i} value={source.value}>
+                  {source.label}
+                </option>
+              ))
+            )}
+          </select>
           {errors.source && (
             <p className="text-red-500 text-xs mt-1">{errors.source}</p>
           )}
         </div>
+
+        {renderInput("Requirement", "requirement", "text", "Enter requirement")}
+
+        {/* Assigned To */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Requirement
-          </label>
-          <Input
-            type="text"
-            placeholder="Enter requirement"
-            value={formData.requirement}
-            onChange={(e) => handleInputChange("requirement", e.target.value)}
-            className="w-full"
-            error={errors.requirement}
-          />
+          <label className="block text-sm font-medium text-gray-700">Assigned To</label>
+          <select
+            className="w-full border border-gray-300 rounded-md p-2"
+            value={formData.assignedToId}
+            onChange={(e) =>
+              handleInputChange("assignedToId", e.target.value ? Number(e.target.value) : "")
+            }
+          >
+            <option value="">Select user</option>
+            {loading ? (
+              <option>Loading...</option>
+            ) : (
+              usersData?.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))
+            )}
+          </select>
+
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Status</label>
+          <select
+            className="w-full border border-gray-300 rounded-md p-2"
+            value={formData.status}
+            onChange={(e) => handleInputChange("status", e.target.value)}
+          >
+
+            <option value="">Select Status</option>
+            <option value="NEW">New</option>
+            <option value="IN_PROGRESS">IN Progress</option>
+            <option value="CONVERTED">Converted</option>
+            <option value="LOST">Lost</option>
+          </select>
         </div>
 
-        {isEditMode ? (
+        {isEditMode && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Status
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
               <Dropdown
                 options={statusOptions}
                 value={formData.status}
@@ -267,13 +263,13 @@ const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
                 placeholder="Select Status"
                 width="100%"
                 height="42px"
-                error={!!errors.role}
                 backgroundColor="input-bg"
               />
               {errors.status && (
                 <p className="text-red-500 text-xs mt-1">{errors.status}</p>
               )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Re-Assignee Lead
@@ -287,7 +283,6 @@ const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
                 placeholder="Select Re-Assignee Lead"
                 width="100%"
                 height="42px"
-                error={!!errors.role}
                 backgroundColor="input-bg"
               />
               {errors.reAssigneeLead && (
@@ -297,8 +292,9 @@ const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
               )}
             </div>
           </>
-        ) : null}
-        {/* Action Buttons */}
+        )}
+
+        {/* Buttons */}
         <div className="flex gap-3 pt-4">
           <Button
             type="button"
@@ -316,4 +312,5 @@ const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
     </Modal>
   );
 };
+
 export default LeadsModal;

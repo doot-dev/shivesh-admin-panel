@@ -17,6 +17,8 @@ import {
 } from "../services/userService";
 import { toast } from "react-toastify";
 import { useFetch } from "../hooks/useFetch";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUsers } from "../features/user/userSlice";
 const Users = () => {
   // Transform users data from API response
   const transformUsersData = useCallback(async () => {
@@ -42,6 +44,12 @@ const Users = () => {
     loading,
     refetch: loadUsers,
   } = useFetch(transformUsersData, [], { autoFetch: true, showToast: true });
+
+  // const dispatch = useDispatch();
+  // const {list, loading, error} = useSelector((state) => state.users);
+  //  useEffect(() => {
+  //   dispatch(fetchUsers());
+  // }, [dispatch]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -205,7 +213,7 @@ const Users = () => {
     const roleOption = roleOptions.find((option) => option.value === roleValue);
     return roleOption ? roleOption.label : roleValue;
   };
-
+// console.log("list of users in list", usersData)
   // Filter users based on search and filters
   const filteredUsers = (Array.isArray(usersData) ? usersData : [])
     .filter((user) => {
