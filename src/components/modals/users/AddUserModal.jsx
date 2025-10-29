@@ -3,8 +3,12 @@ import { Modal, Input, Dropdown, Checkbox, Button } from "../../ui";
 import { Icon, ICON_NAMES } from "../../icons";
 import { addUser } from "../../../services/userService";
 import { toast } from "react-toastify";
-
+import { useDispatch, useSelector } from "react-redux";
+import { createUser } from "../../../features/user/userSlice";
 const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
+  const dispatch = useDispatch();
+  const { loading, error, list: users } = useSelector((state) => state.users);
+
   const [formData, setFormData] = useState({
     employeeName: "",
     employeeId: "",
@@ -130,7 +134,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
           employeeId: formData.employeeId,
           userName: formData.username,
           password: formData.password,
-        //   token: getToken(),
+          //   token: getToken(),
           role: formData.role.toUpperCase(), // Convert to uppercase like "ADMIN"
           menuAccess: selectedMenuAccess
         };
@@ -138,12 +142,12 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         console.log('Sending user data:', userData);
 
         // Make API call
-        const response = await addUser(userData);
+        const response = await dispatch(createUser(userData)).unwrap();
         console.log('Add user response:', response);
         toast.success(response.message || 'User created successfully');
         // Call parent onSubmit handler
         onSubmit?.(response);
-        
+
         // Close modal on success
         handleClose();
       } catch (error) {
@@ -183,9 +187,9 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
 
   const modalFooter = (
     <>
-      <Button 
-        variant="outline" 
-        onClick={handleClose} 
+      <Button
+        variant="outline"
+        onClick={handleClose}
         className="mr-3 text-sm sm:text-base px-4 sm:px-6"
         width="180px"
         height="40px"
@@ -193,8 +197,8 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
       >
         Cancel
       </Button>
-      <Button 
-        variant="primary" 
+      <Button
+        variant="primary"
         onClick={handleSubmit}
         className="text-sm sm:text-base px-4 sm:px-6"
         width="180px"
@@ -313,7 +317,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
             className="border rounded-[12px] p-4 max-h-60 overflow-y-auto space-y-3 bg-input-bg"
             style={{
               borderColor: "var(--color-border)",
-            
+
             }}
           >
             {menuAccessOptions.map((option) => (
@@ -330,11 +334,11 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
 
         {/* Submit Error */}
         {errors.submit && (
-          <div 
+          <div
             className="p-3 rounded-lg text-sm"
-            style={{ 
-              backgroundColor: 'var(--color-error-light)', 
-              color: 'var(--color-error)' 
+            style={{
+              backgroundColor: 'var(--color-error-light)',
+              color: 'var(--color-error)'
             }}
           >
             {errors.submit}

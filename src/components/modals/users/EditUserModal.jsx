@@ -3,7 +3,8 @@ import { Modal, Button, Input, Checkbox, Dropdown } from "../../ui";
 import { ICON_NAMES } from "../../icons";
 import { updateUsers } from "../../../services/userService";
 import { toast } from "react-toastify";
-
+import { useDispatch, useSelector } from "react-redux";
+import { editUser } from "../../../features/user/userSlice";
 const EditUserModal = ({
   isOpen,
   onClose,
@@ -31,6 +32,7 @@ const EditUserModal = ({
   });
 
   console.log("EditUserModal user prop:", user);
+  const dispatch = useDispatch();
   const [errors, setErrors] = useState({});
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -191,11 +193,11 @@ const EditUserModal = ({
       console.log("Updating user with data:", userData);
 
       // Call the updateUsers API directly
-      const response = await updateUsers(userData);
+      const response = await dispatch(editUser(userData)).unwrap();
       console.log("Update user API response:", response);
 
       // Show success message
-      toast.success(response.message || "User updated successfully" );
+      toast.success(response.message || "User updated successfully");
 
       // Call the parent onSave handler if provided (for any additional logic)
       if (onSave) {
@@ -229,10 +231,10 @@ const EditUserModal = ({
         variant="outline"
         onClick={handleClose}
         className="mr-3 px-4 sm:px-6 text-sm sm:text-base"
-        width="180px"
+        width="160px"
         height="40px"
         disabled={isSubmitting || loading}
-        
+
       >
         Cancel
       </Button>
@@ -240,7 +242,7 @@ const EditUserModal = ({
         variant="primary"
         onClick={handleSave}
         className="px-4 sm:px-6 text-sm sm:text-base"
-        width="180px"
+        width="160px"
         height="40px"
         disabled={isSubmitting || loading}
         style={{
@@ -417,8 +419,7 @@ const EditUserModal = ({
             >
               {menuAccessOptions.map((option) => {
                 console.log(
-                  `Rendering checkbox for ${option.key}: checked=${
-                    formData.menuAccess[option.key]
+                  `Rendering checkbox for ${option.key}: checked=${formData.menuAccess[option.key]
                   }`
                 );
                 return (

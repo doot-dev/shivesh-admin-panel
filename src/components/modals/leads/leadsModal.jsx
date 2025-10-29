@@ -25,25 +25,6 @@ const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
 
-  // --- Static dropdown options
-  const statusOptions = useMemo(
-    () => [
-      { value: "open", label: "Open" },
-      { value: "closed", label: "Closed" },
-    ],
-    []
-  );
-
-  const reAssigneeLeadOptions = useMemo(
-    () => [
-      { value: "lead1", label: "Lead 1" },
-      { value: "lead2", label: "Lead 2" },
-      { value: "lead3", label: "Lead 3" },
-    ],
-    []
-  );
-
-
   const sourceOptions = useMemo(
     () => [
       { value: "REFERRAL", label: "Referral" },
@@ -223,7 +204,7 @@ const LeadsModal = ({ isOpen, onClose, leads, onSubmit }) => {
               handleInputChange("assignedToId", e.target.value ? Number(e.target.value) : "")
             }
           >
-            <option value="">Select user</option>
+            <option value="">Select Lead</option>
             {loading ? (
               <option>Loading...</option>
             ) : (

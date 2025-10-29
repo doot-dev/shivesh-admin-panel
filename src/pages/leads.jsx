@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import { useNavigate } from "react-router-dom";
 import LeadsModal from "../components/modals/leads/leadsModal";
-import DeleteModal from "../components/modals/leads/deleteModal";
+import DeleteModal from "../components/modals/DeleteModal";
 import leadService from "../services/leadService";
 import { useFetch } from "../hooks/useFetch";
 const LeadsPage = () => {
@@ -15,6 +15,11 @@ const LeadsPage = () => {
   const [showLeadsModal, setShowLeadsModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [deleteConfig, setDeleteConfig] = useState({
+    onConfirm: null,
+    title: "",
+    message: "",
+  })
   const navigate = useNavigate();
 
 
@@ -38,7 +43,7 @@ const LeadsPage = () => {
       email: lead.email,
       requirement: lead.requirement,
       source: lead.source,
-      status: lead.isActive ? "Active" : "Inactive",
+      status: lead.status ,
       assignedTo: lead.assignedToId,
       originalData: lead,
     }));
@@ -101,16 +106,22 @@ const LeadsPage = () => {
   };
 
   const handleDeleteLead = (lead) => {
-    setSelectedLead(lead);
+    setDeleteConfig({
+      onConfirm: async () => {
+        try {
+          const response = await leadService.deleteLead(lead.id);
+          toast.success(response.message || "Vendor deleted successfully");
+          await loadLeads();
+        } catch (error) {
+          console.error("Error deleting vendor:", error);
+          toast.error("Failed to delete vendor");
+        }
+      },
+      title: "",
+      message: `Are you sure you want to delete the vendor? This action is permanent and cannot be undone.`,
+    })
     setShowDeleteModal(true);
   };
-
-  const handleConfirmDelete = () => {
-    setLeads((prev) => prev.filter((lead) => lead.id !== selectedLead.id));
-    toast.success("Lead deleted successfully");
-    setShowDeleteModal(false);
-  };
-
 
 
   const columns = [
@@ -220,8 +231,9 @@ const LeadsPage = () => {
         <DeleteModal
           isOpen={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleConfirmDelete}
-          leads={selectedLead}
+          onConfirm={deleteConfig.onConfirm}
+          title={deleteConfig.title}
+          message={deleteConfig.message}
         />
       </div>
     </>

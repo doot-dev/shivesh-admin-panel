@@ -3,7 +3,7 @@ import Layout from "../components/layout/layouts";
 import Dashboard from "../pages/dashboard";
 import Users from "../pages/userss";
 import Products from "../pages/products";
-import ProductRMC from "../pages/productRMC";
+import ProductDetails from "../pages/productDetails";
 import Login from "../pages/login";
 import ProtectedRoute from "./protectedRoutess";
 import { useParams } from "react-router";
@@ -12,6 +12,7 @@ import VendorDetail from "../pages/vendorDetails";
 import ComingSoon from "../pages/comingSoonn";
 import LeadsPage from "../pages/leads";
 import LeadsDetailsPage from "../pages/leadsDetails";
+import Client from "../pages/client";
 
 export default function AppRoutes() {
   return (
@@ -27,10 +28,10 @@ export default function AppRoutes() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<Users />} />
             <Route path="products" element={<Products />} />
-            <Route path="products/:id" element={<ProductRMC />} />
+            <Route path="products/:id" element={<ProductDetails />} />
             <Route path="vendors" element={<Vendors />} />
             <Route path="vendors/:id" element={<VendorDetail />} />
-            <Route path="clients" element={<ComingSoon />} />
+            <Route path="clients" element={<Client />} />
             <Route path="leads" element={<LeadsPage />} />
             <Route path="leads/:id" element={<LeadsDetailsPage />} />
             <Route path="projects" element={<ComingSoon />} />

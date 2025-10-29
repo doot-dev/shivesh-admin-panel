@@ -63,7 +63,6 @@ const userSlice = createSlice({
   name: "users",
   initialState: {
     list: [],
-
     loading: false,
     error: null,
   },

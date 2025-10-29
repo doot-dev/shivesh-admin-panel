@@ -26,6 +26,25 @@ const leadService = {
       console.error("Error while adding new lead", error);
       throw error;
     }
-  } 
+  },
+  updateActivityLog: async(leadId, logData) => {
+    try{
+      const response = await api.put(`/api/v1/admin/leads/log?leadId=${leadId}`, logData);
+      return response.data;
+    }catch(error) {
+      console.error("Error while adding new lead", error);
+      throw error;
+    }
+  } ,
+  deleteLead: async(leadId) => {
+    try{
+      const response = await api.delete(`/api/v1/admin/leads?leadId=${leadId}`);
+      return response.data;
+    }catch(error) {
+      console.error("Error while delete lead", error);
+      throw error;
+    }
+  }
+
 };
 export default leadService;
