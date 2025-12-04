@@ -1,25 +1,25 @@
+
+"use client";
 import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Icon, ICON_NAMES } from "../components/icons";
 import { Button, Table, Dropdown } from "../components/ui";
 import {
   AddUserModal,
-  ViewUserModal,
   EditUserModal,
   DeleteUserModal,
   ResetPasswordModal,
 } from "../components/modals/users";
 import {
-  getUsers,
-  getUserById,
-  updateUsers,
-  deleteUser,
-  resetPassword,
-} from "../services/userService";
-import { toast } from "react-toastify";
-import { useFetch } from "../hooks/useFetch";
-import { fetchUserById, fetchUsers } from "../features/user/userSlice";
+  fetchUsers,
+  fetchUserById,
+  removeUser,
+  changePassword,
+} from "../features/user/userSlice";
 
+// -----------------------------
+// Constants
+// -----------------------------
 const roleOptions = [
   { value: "", label: "All Roles" },
   { value: "FIELD_TECHNICIAN", label: "Field Technician" },
@@ -33,46 +33,32 @@ const statusOptions = [
   { value: "Inactive", label: "Inactive" },
 ];
 
+// -----------------------------
+// Component
+// -----------------------------
 const Users = () => {
-  /** -----------------------------
-   *   State & Data Fetch
-   *  ----------------------------- */
   const dispatch = useDispatch();
+  const { list: usersData = [], loading } = useSelector((state) => state.users);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-
+  // UI States
+  const [filters, setFilters] = useState({
+    search: "",
+    role: "",
+    status: "",
+  });
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalState, setModalState] = useState({
     add: false,
     edit: false,
     delete: false,
     resetPassword: false,
-    view: false,
   });
-
   const [loadingUserData, setLoadingUserData] = useState(false);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
 
-  // Fetch user list
-  const transformUsersData = useCallback(async () => {
-    const response = await getUsers();
-    if (Array.isArray(response)) return response;
-    if (response?.data) return response.data;
-    if (response?.users) return response.users;
-    return [];
-  }, []);
-  
-  const { data: usersData = dispatch(fetchUsers()), loading, refetch: loadUsers } = useFetch(
-    transformUsersData,
-    [],
-    { autoFetch: true, showToast: true }
-  );
-
-  /** -----------------------------
-   *   Utility Functions
-   *  ----------------------------- */
+  // -----------------------------
+  // Helpers
+  // -----------------------------
   const getRoleLabel = (value) =>
     roleOptions.find((r) => r.value === value)?.label || value;
 
@@ -82,125 +68,93 @@ const Users = () => {
       edit: false,
       delete: false,
       resetPassword: false,
-      view: false,
     });
     setSelectedUser(null);
-    setLoadingUserData(false);
   };
 
-  /** -----------------------------
-   *   Handlers
-   *  ----------------------------- */
+  const refreshUsers = useCallback(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  // -----------------------------
+  // Handlers
+  // -----------------------------
   const handleEdit = async (user) => {
     setLoadingUserData(true);
     try {
       const userData = await dispatch(fetchUserById(user.id)).unwrap();
       setSelectedUser(userData);
-      setModalState((prev) => ({ ...prev, edit: true }));
-    } catch (err) {
-      toast.error("Failed to load user data");
+      setModalState((p) => ({ ...p, edit: true }));
     } finally {
       setLoadingUserData(false);
     }
   };
 
   const handleSaveEdit = async () => {
-    try {
-      await loadUsers();
-      // toast.success("User updated successfully");
-    } catch {
-      toast.error("User updated but failed to refresh list");
-    } finally {
-      closeAllModals();
-    }
+    await refreshUsers();
+    closeAllModals();
   };
 
   const handleDelete = (user) => {
     setSelectedUser(user);
-    setModalState((prev) => ({ ...prev, delete: true }));
+    setModalState((p) => ({ ...p, delete: true }));
   };
 
   const handleConfirmDelete = async (user) => {
     setIsDeletingUser(true);
     try {
-      await deleteUser(user.id);
-      toast.success("User deleted successfully");
-      await loadUsers();
-    } catch {
-      toast.error("Failed to delete user");
+      await dispatch(removeUser(user.id)).unwrap();
+      await refreshUsers();
     } finally {
       setIsDeletingUser(false);
       closeAllModals();
     }
   };
 
-  const handleAddUser = async (userData) => {
-    try {
-      await loadUsers();
-      // toast.success("User added successfully");
-    } catch {
-      toast.error("Failed to add new user");
-    } finally {
-      closeAllModals();
-    }
+  const handleAddUser = async () => {
+    await refreshUsers();
+    closeAllModals();
   };
 
   const handleResetPassword = (user) => {
     setSelectedUser(user);
-    setModalState((prev) => ({ ...prev, resetPassword: true }));
+    setModalState((p) => ({ ...p, resetPassword: true }));
   };
 
   const handleConfirmResetPassword = async (passwordData) => {
-    try {
-      const response = await resetPassword(passwordData);
-      toast.success(
-        response?.message ||
-        response?.data?.message ||
-        "Password reset successfully"
-      );
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-        "Failed to reset password. Please try again."
-      );
-    } finally {
-      closeAllModals();
-    }
+    await dispatch(changePassword(passwordData)).unwrap();
+    closeAllModals();
   };
 
-  /** -----------------------------
-   *   Data Filtering
-   *  ----------------------------- */
-  const filteredUsers = (usersData || []).filter((user) => {
-    const search = searchTerm.toLowerCase();
-    const matchesSearch =
-      !search ||
-      user.name?.toLowerCase().includes(search) ||
-      user.employeeId?.toLowerCase().includes(search) ||
-      user.userName?.toLowerCase().includes(search);
+  // -----------------------------
+  // Data
+  // -----------------------------
+  const filteredUsers = usersData
+    .filter((user) => {
+      const s = filters.search.toLowerCase();
+      const matchesSearch =
+        !s ||
+        user.name?.toLowerCase().includes(s) ||
+        user.employeeId?.toLowerCase().includes(s) ||
+        user.userName?.toLowerCase().includes(s);
+      const matchesRole = !filters.role || user.role === filters.role;
+      const matchesStatus =
+        !filters.status ||
+        (filters.status === "Active" && user.status) ||
+        (filters.status === "Inactive" && !user.status);
 
-    const matchesRole = !roleFilter || user.role === roleFilter;
-    const matchesStatus =
-      !statusFilter ||
-      (statusFilter === "Active" && user.status === true) ||
-      (statusFilter === "Inactive" && user.status === false);
-
-    return matchesSearch && matchesRole && matchesStatus;
-  })
-    .map((user, index) => ({
-      ...user,
-      sno: user.sno || (index + 1).toString().padStart(2, "0"),
-      employeeName: user.name,
-      username: user.userName,
+      return matchesSearch && matchesRole && matchesStatus;
+    })
+    .map((u, i) => ({
+      ...u,
+      sno: (i + 1).toString().padStart(2, "0"),
+      employeeName: u.name,
+      username: u.userName,
       password: "••••••••",
-      role: getRoleLabel(user.role),
-      status: user.status ? "Active" : "Inactive",
+      role: getRoleLabel(u.role),
+      status: u.status ? "Active" : "Inactive",
     }));
 
-  console.log("Flitered Users", filteredUsers)
-  /** -----------------------------
-   *   Table Configuration
-   *  ----------------------------- */
   const columns = [
     { key: "sno", header: "S.No" },
     { key: "employeeName", header: "Employee name" },
@@ -224,9 +178,16 @@ const Users = () => {
     { text: "Delete", onClick: handleDelete, textColor: "var(--color-error)" },
   ];
 
-  /** -----------------------------
-   *   Render
-   *  ----------------------------- */
+  // -----------------------------
+  // Effects
+  // -----------------------------
+  useEffect(() => {
+    refreshUsers();
+  }, [refreshUsers]);
+
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <div className="p-4 md:p-6 w-full">
       {/* Header */}
@@ -236,9 +197,8 @@ const Users = () => {
       </header>
 
       {/* Filters */}
-      <section className="mb-6 bg-white py-4 px-0 rounded-lg">
+      <section className="mb-6 bg-white py-4 rounded-lg">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-3 flex-1">
             <div className="relative flex-1 md:max-w-[30%]">
               <Icon
@@ -250,33 +210,34 @@ const Users = () => {
               <input
                 type="text"
                 placeholder="Search by name or ID"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, search: e.target.value }))
+                }
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <Dropdown
               options={roleOptions}
-              value={roleFilter}
-              onChange={setRoleFilter}
+              value={filters.role}
+              onChange={(v) => setFilters((p) => ({ ...p, role: v }))}
               placeholder="Role"
               width="200px"
               height="50px"
             />
             <Dropdown
               options={statusOptions}
-              value={statusFilter}
-              onChange={setStatusFilter}
+              value={filters.status}
+              onChange={(v) => setFilters((p) => ({ ...p, status: v }))}
               placeholder="Status"
               width="150px"
               height="50px"
             />
           </div>
 
-          {/* Add User */}
           <Button
-            onClick={() => setModalState((prev) => ({ ...prev, add: true }))}
+            onClick={() => setModalState((p) => ({ ...p, add: true }))}
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
             size="md"
@@ -309,7 +270,6 @@ const Users = () => {
         onClose={closeAllModals}
         onSubmit={handleAddUser}
       />
-
       <EditUserModal
         isOpen={modalState.edit}
         onClose={closeAllModals}
@@ -318,14 +278,12 @@ const Users = () => {
         onSave={handleSaveEdit}
         handleResetPassword={handleResetPassword}
       />
-
       <ResetPasswordModal
         isOpen={modalState.resetPassword}
         onClose={closeAllModals}
         user={selectedUser}
         onResetPassword={handleConfirmResetPassword}
       />
-
       <DeleteUserModal
         isOpen={modalState.delete}
         onClose={closeAllModals}
@@ -338,3 +296,4 @@ const Users = () => {
 };
 
 export default Users;
+

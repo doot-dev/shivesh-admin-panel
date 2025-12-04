@@ -24,13 +24,23 @@ const EditProductModal = ({
     if (product) {
         console.log("Product data:", product);
       setFormData({
-        id: product.id || "",
-        name: product.name || "",
-        isActive: product.isActive || true,
+        id: product?.id ,
+        name: product?.name ,
+        isActive: product?.isActive,
       });
       setErrors({});
     }
   }, [product]);
+
+useEffect(() => {
+  if (!isOpen) {
+    setFormData({
+      name: "",
+      isActive: true,
+    });
+    setErrors({});
+  }
+}, [isOpen]);
 
   const handleChange = (name, value) => {
     setFormData((prev) => ({

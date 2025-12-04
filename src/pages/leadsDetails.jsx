@@ -35,16 +35,26 @@ const LeadsDetailsPage = () => {
 
   const handleSubmit = async (logData) => {
     try {
-      console.log("Log Data submitted:", logData)
+      console.log("Log Data submitted:", logData);
       const logRes = await leadService.updateActivityLog(id, logData);
 
       console.log("Updates the log activity", logRes);
-      setShowlogsModal(true);
+
+      // Close modal on success
+      setShowlogsModal(false);
+
+      // Refresh the page data so the activity appears instantly
+      await loadLeadsData();
+
+      toast.success("Activity added successfully");
     } catch (error) {
       console.error("Failed to add log details", error);
-      toast.error(error?.response?.data?.message || "Failed to Add Activity Log");
+      toast.error(
+        error?.response?.data?.message || "Failed to Add Activity Log"
+      );
     }
-  }
+  };
+
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">

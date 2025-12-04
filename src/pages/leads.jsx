@@ -43,9 +43,8 @@ const LeadsPage = () => {
       email: lead.email,
       requirement: lead.requirement,
       source: lead.source,
-      status: lead.status ,
+      status: lead.status,
       assignedTo: lead.assignedToId,
-      originalData: lead,
     }));
   }, []);
 

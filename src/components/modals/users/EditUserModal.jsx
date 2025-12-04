@@ -197,7 +197,7 @@ const EditUserModal = ({
       console.log("Update user API response:", response);
 
       // Show success message
-      toast.success(response.message || "User updated successfully");
+      // toast.success(response.message || "User updated successfully");
 
       // Call the parent onSave handler if provided (for any additional logic)
       if (onSave) {
@@ -208,7 +208,7 @@ const EditUserModal = ({
       onClose();
     } catch (error) {
       console.error("Error updating user:", error);
-      toast.error("Failed to update user. Please try again.");
+      // toast.error("Failed to update user. Please try again.");
       setErrors((prev) => ({
         ...prev,
         submit: "Failed to update user. Please try again.",

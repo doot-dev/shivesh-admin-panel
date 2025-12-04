@@ -2,9 +2,38 @@ import { useEffect, useState } from "react";
 import { Icon, ICON_NAMES } from "../components/icons";
 import Button from "../components/ui/Button";
 import { Table } from "../components/ui";
+import ClientDetailModal from "../components/modals/clients/clientDetailModal";
 const ClientPage = () => {
     const [filteredClient, setFilteredClient] = useState([]);
+    const [showClientModal, setShowClientModal] = useState(false);
+    const [clients, setClients] = useState([]);
+    const handleClientSubmit = async (clientData, mode) => {
+        if (mode === "add") {
+            // setClients((prev) => [...prev, clientData]);
+            // console.log("form data values of add lead", clientData)
+            // try {
+            //     const leadsRes = await leadService.addNewLead(clientData);
+            //     console.log("Leads add Reesponse", leadsRes);
+            // } catch (error) {
+            //     console.error("Leads Error", error);
+            // }
+            // toast.success("Lead added successfully");
+            console.log("Added data", clients)
+        } else if (mode === "edit") {
+            // const updated = clients.map((client) =>
+            //     client.id === clientData.id ? clientData : lead
+            // );
+            // console.log("form data values of update lead", updated)
+            // setClients(updated);
+            // toast.success("Lead updated successfully");
+            console.log("updated data", clients)
+        }
+        setShowClientModal(false);
+    }
 
+    const handleAddClient = () => {
+        setShowClientModal(true);
+    }
 
     const columns = [
         { key: "sNo", header: "S.No" },
@@ -143,7 +172,7 @@ const ClientPage = () => {
                     </div>
 
                     <Button
-                        // onClick={handleAddVendor}
+                        onClick={handleAddClient}
                         leftIcon={ICON_NAMES.PLUS}
                         variant="primary"
                         size="md"
@@ -155,6 +184,7 @@ const ClientPage = () => {
                 </div>
 
                 <Table data={filteredClient} columns={columns} actions={actions} itemsPerPage={10} emptyMessage="No Client found" />
+                <ClientDetailModal isOpen={showClientModal} onClose={() => setShowClientModal(false)} onSubmit={handleClientSubmit} />
             </div>
         </>
     )

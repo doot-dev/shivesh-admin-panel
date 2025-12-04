@@ -144,7 +144,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         // Make API call
         const response = await dispatch(createUser(userData)).unwrap();
         console.log('Add user response:', response);
-        toast.success(response.message || 'User created successfully');
+        // toast.success(response.message || 'User created successfully');
         // Call parent onSubmit handler
         onSubmit?.(response);
 

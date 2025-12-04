@@ -39,7 +39,9 @@ const productService = {
   // Update product
   updateProduct: async (id, productData) => {
     try {
+      console.log("productData", productData)
       const response = await api.put(`/api/v1/admin/product/`, productData);
+      console.log("response og edit product", response.data)
       return response.data;
     } catch (error) {
       console.error("Error updating product:", error);
@@ -50,7 +52,9 @@ const productService = {
   // Delete product
   deleteProduct: async (id) => {
     try {
+      console.log("delete product Id", id)
       const response = await api.delete(`/api/v1/admin/product/${id}`);
+      console.log("response.data", response.data)
       return response.data;
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -98,6 +102,7 @@ const productService = {
 
   deleteGradeSize: async (id) => {
     try {
+      debugger;
       const response = await api.delete(`/api/v1/admin/product/size/${id}`);
       return response.data;
     } catch (error) {

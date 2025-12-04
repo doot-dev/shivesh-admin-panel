@@ -43,6 +43,7 @@ const LogsActivityModal = ({ isOpen, handleClose, onSubmit, leadId }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(logData);
+
     }
 
     return (
@@ -60,7 +61,7 @@ const LogsActivityModal = ({ isOpen, handleClose, onSubmit, leadId }) => {
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 className="custom-datepicker"
-                                label="Select date"
+                                
                                 value={logData.date ? dayjs(logData.date) : null}
                                 onChange={(newValue) =>
                                     handleInputChange(

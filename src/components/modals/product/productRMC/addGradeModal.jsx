@@ -92,11 +92,9 @@ const AddGradeModal = ({
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-
+     e.preventDefault();
     if (validateForm()) {
       console.log("Form Data of grade Submitted:", formData);
-
       // Just pass the form data to parent - let parent handle API call
       onSubmit(formData);
     }
@@ -173,7 +171,7 @@ const AddGradeModal = ({
             width="180px"
             height="40px"
             className="sm:!w-[180px] sm:!h-[45px] text-sm sm:text-base"
-            disabled={loading}
+            
           >
             Cancel
           </Button>
@@ -182,10 +180,9 @@ const AddGradeModal = ({
             width="180px"
             height="40px"
             className="sm:!w-[180px] sm:!h-[45px] text-sm sm:text-base"
-            disabled={loading}
-            loading={loading}
+           
           >
-            {loading ? "Adding..." : "Add Grade/Size"}
+             Add Grade/Size
           </Button>
         </div>
       </form>

@@ -1,60 +1,62 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Button from "../components/ui/Button";
-import Table from "../components/ui/Table";
-import Input from "../components/ui/Input";
+import { Button, Table } from "../components/ui";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import { Icon, ICON_NAMES } from "../components/icons";
 import AddProductModal from "../components/modals/product/AddProductModal";
+import EditProductModal from "../components/modals/product/EditProductModal";
 import DeleteProductModal from "../components/modals/product/DeleteProductModal";
 import productService from "../services/productService";
-import EditProductModal from "../components/modals/product/EditProductModal";
 import { useFetch } from "../hooks/useFetch";
+import { useDispatch, useSelector } from "react-redux";
+import { createProduct, fetchProducts } from "../features/product/productSlice";
 
 const Products = () => {
   const navigate = useNavigate();
-  
+  const dispatch = useDispatch();
+  const { productList: productData = [], loading } = useSelector((state) => state.products)
+  console.log("Product List", productData)
   // Transform product data from API response
-  const transformProductData = useCallback(async () => {
-    const response = await productService.getAllProducts(
-      1,
-      100,
-      ""
-    );
-    console.log("Fetched Products:", response);
+  // const transformProductData = useCallback(async () => {
+  //   const response = await productService.getAllProducts(
+  //     1,
+  //     100,
+  //     ""
+  //   );
+  //   console.log("Fetched Products:", response);
 
-    let rawData = [];
-    if (Array.isArray(response.data)) {
-      rawData = response.data;
-    } else if (response && Array.isArray(response.data)) {
-      rawData = response.data;
-    } else if (response && Array.isArray(response.products)) {
-      rawData = response.products;
-    } else {
-      console.warn("Unexpected response structure:", response);
-      rawData = [];
-    }
+  //   let rawData = [];
+  //   if (Array.isArray(response.data)) {
+  //     rawData = response.data;
+  //   } else if (response && Array.isArray(response.data)) {
+  //     rawData = response.data;
+  //   } else if (response && Array.isArray(response.products)) {
+  //     rawData = response.products;
+  //   } else {
+  //     console.warn("Unexpected response structure:", response);
+  //     rawData = [];
+  //   }
 
-    return rawData.map((item, index) => ({
-      id: item.id,
-      sNo: String(index + 1).padStart(2, "0"),
-      product: item.name,
-      gradeSize: item.sizeCount,
-      status: item.isActive ? "Active" : "Inactive",
-      isActive: item.isActive,
-      name: item.name,
-    }));
-  }, []);
+  //   return rawData.map((item, index) => ({
+  //     id: item.id,
+  //     sNo: String(index + 1).padStart(2, "0"),
+  //     product: item.name,
+  //     gradeSize: item.sizeCount,
+  //     status: item.isActive ? "Active" : "Inactive",
+  //     isActive: item.isActive,
+  //     name: item.name,
+  //   }));
+  // }, []);
 
-  const { data: products, loading, refetch: loadProducts } = useFetch(
-    transformProductData,
-    [],
-    { autoFetch: true, showToast: true }
-  );
+  // const { data: products, loading, refetch: loadProducts } = useFetch(
+  //   transformProductData,
+  //   [],
+  //   { autoFetch: true, showToast: true }
+  // );
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  // const [filteredProducts, setFilteredProducts] = useState([]);
   const [page, setPage] = useState({
     current: 1,
     total: 1,
@@ -72,46 +74,29 @@ const Products = () => {
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+  const [filters, setFilters] = useState({
+    search: "",
+    product: "",
+    gradeSize: "",
+    status: "",
+  })
 
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+  const refreshProducts = useCallback(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
-  const handleSearch = () => {
-    if (searchTerm.trim() === "") {
-      toast.info("Please enter a search term");
-      return;
-    }
-    loadProducts();
-  };
-  // useEffect(() => {
-  //   if (searchTerm.trim() === "") {
-  //     loadProducts();
-  //   }
-  // }, [searchTerm]);
-
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredProducts(products || []);
-      return;
-    }
-
-    const filtered = (products || []).filter(
-      (product) =>
-        (product?.product?.toLowerCase?.() || "").includes(
-          searchTerm.toLowerCase()
-        ) ||
-        (product?.gradeSize?.toString?.() || "").includes(
-          searchTerm.toLowerCase()
-        ) ||
-        (product?.status?.toLowerCase?.() || "").includes(
-          searchTerm.toLowerCase()
-        )
-    );
-    console.log("Filtered Products:", filtered);
-
-    setFilteredProducts(filtered);
-  }, [searchTerm, products]);
+  const filteredProducts = productData.filter((prod) => {
+    const s = filters.search.toLowerCase();
+    const matchesSearch = !s || prod.product?.toLowerCase().includes(s) || prod.gradeSize?.toLowerCase().includes(s) || prod.status?.toLowerCase().includes(s);
+    const matchesStatus = !filters.status || (filters.status === "Active" && prod.status) || (filters.status === "Inactive" && !prod.status);
+    return matchesSearch && matchesStatus;
+  }).map((u, i) => ({
+    ...u,
+    sNo: (i + 1).toString().padStart(2, "0"),
+    product: u.name,
+    gradeSize: u.sizeCount,
+    status: u.isActive ? "Active" : "Inactive",
+  }));
 
   // Handle add product
   const handleAddProduct = () => {
@@ -121,15 +106,15 @@ const Products = () => {
   const handleAddSubmit = async (productData) => {
     try {
       setIsAddingProduct(true);
-      const response = await productService.createProduct(productData);
+      const response = await dispatch(createProduct(productData)).unwrap;
       console.log("Add Product Response:", response);
 
       // Refresh product list
-      await loadProducts();
+      await refreshProducts();
 
       // Close modal and show success message
       setShowAddModal(false);
-      toast.success(response.message || "Product added successfully");
+      // toast.success(response.message || "Product added successfully");
     } catch (error) {
       console.error("Error adding product:", error);
       toast.error("Failed to add product");
@@ -172,7 +157,7 @@ const Products = () => {
       console.log("Update Product Response:", response);
 
       // Refresh products list
-      await loadProducts();
+      await refreshProducts();
 
       setShowEditModal(false);
       setSelectedProduct(null);
@@ -202,7 +187,7 @@ const Products = () => {
       console.log("Delete Product Response:", deleteResponse);
 
       // Reload the products table to get fresh data from the API
-      await loadProducts();
+      await refreshProducts();
 
       setShowDeleteModal(false);
       setSelectedProduct(null);
@@ -289,6 +274,16 @@ const Products = () => {
     return "Processing...";
   };
 
+  // -----------------------------
+  // Effects
+  // -----------------------------
+  useEffect(() => {
+    refreshProducts();
+  }, [refreshProducts]);
+
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <>
       {/* Full Page Loader */}
@@ -319,13 +314,10 @@ const Products = () => {
             <input
               type="text"
               placeholder="Search by name"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={filters.search}
+              onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))}
               className="w-full pl-10 pr-4 py-2   md:h-[50px] focus:outline-none"
             />
-            {/* <button onClick={handleSearch} className="mr-3">
-              Search
-            </button> */}
           </div>
 
           <Button
@@ -346,26 +338,9 @@ const Products = () => {
           data={filteredProducts}
           columns={columns}
           actions={actions}
-          showPagination={true}
+          showPagination
           itemsPerPage={10}
-          // onPageChange={(value) => {
-          //   setPage((prev) => ({
-          //     current: value || 1,
-          //     total: prev.total,
-          //   }));
-          //   console.log("Page changed to:", value);
-          // }}
-          // onItemPerPageChange={(value) => {
-          //   setLength((prev) => ({
-          //     ...prev,
-          //     limit: value || 10,
-          //   }));
-          //   console.log("Items per page changed to:", value);
-          // }}
-          // mainTotalItems={length.totalLength}
-          // mainTotalPages={page.total}
           emptyMessage="No products found matching your criteria"
-          className="shadow-sm"
         />
 
         {/* Modals */}
