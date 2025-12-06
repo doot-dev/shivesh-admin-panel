@@ -3,7 +3,9 @@ import { Icon, ICON_NAMES } from "../components/icons";
 import Button from "../components/ui/Button";
 import { Table } from "../components/ui";
 import ClientDetailModal from "../components/modals/clients/clientDetailModal";
+import { useNavigate } from "react-router-dom";
 const ClientPage = () => {
+    const navigate = useNavigate();
     const [filteredClient, setFilteredClient] = useState([]);
     const [showClientModal, setShowClientModal] = useState(false);
     const [clients, setClients] = useState([]);
@@ -33,6 +35,11 @@ const ClientPage = () => {
 
     const handleAddClient = () => {
         setShowClientModal(true);
+    }
+
+    const handleView = (vendor) => {
+        console.log("viewing vendor:", vendor);
+        navigate(`/clients/${vendor.sNo}`);
     }
 
     const columns = [
@@ -81,7 +88,7 @@ const ClientPage = () => {
     const actions = [
         {
             text: "View",
-            //   onClick: (vendor) => handleView(vendor),
+            onClick: handleView,
             textColor: "var(--color-primary)",
         },
         {
