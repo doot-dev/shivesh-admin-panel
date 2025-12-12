@@ -1,33 +1,52 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Icon, ICON_NAMES } from "../components/icons";
 import Button from "../components/ui/Button";
 import { Table } from "../components/ui";
 import ClientDetailModal from "../components/modals/clients/clientDetailModal";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchClients } from "../features/clients/clientsSlice";
 const ClientPage = () => {
+    const dispatch = useDispatch();
+    const { list: clientsData = [], loading } = useSelector((state) => state.client);
     const navigate = useNavigate();
-    const [filteredClient, setFilteredClient] = useState([]);
+    const [filters, setFilters] = useState({
+        search: "",
+        role: "",
+        status: "",
+    });
     const [showClientModal, setShowClientModal] = useState(false);
     const [clients, setClients] = useState([]);
+    const refreshClients = useCallback(() => {
+        dispatch(fetchClients());
+    }, [dispatch]);
+
+    useEffect(() => {
+        refreshClients();
+    }, [refreshClients]);
+
+    const filteredClients = clientsData.filter((client) => {
+        const s = filters.search.toLowerCase();
+        const matchesSearch = !s || client.name?.toLowerCase().includes(s) || client.companyName?.toLowerCase().includes(s);
+        const matchesStatus = !filters.status || (filters.status === "ACTIVE" && client.status) || (filters.status === "INACTIVE" && client.status);
+
+        return matchesSearch  && matchesStatus;
+    }).map((u, i) => ({
+        ...u,
+        sno: (i + 1).toString().padStart(2, "0"),
+        name: u.companyName,
+        email: u.email,
+        phone: u.contactNumber,
+        status: u.status ? "ACTIVE" : "INACTIVE",
+    }));
+
+
     const handleClientSubmit = async (clientData, mode) => {
         if (mode === "add") {
-            // setClients((prev) => [...prev, clientData]);
-            // console.log("form data values of add lead", clientData)
-            // try {
-            //     const leadsRes = await leadService.addNewLead(clientData);
-            //     console.log("Leads add Reesponse", leadsRes);
-            // } catch (error) {
-            //     console.error("Leads Error", error);
-            // }
-            // toast.success("Lead added successfully");
+
             console.log("Added data", clients)
         } else if (mode === "edit") {
-            // const updated = clients.map((client) =>
-            //     client.id === clientData.id ? clientData : lead
-            // );
-            // console.log("form data values of update lead", updated)
-            // setClients(updated);
-            // toast.success("Lead updated successfully");
+
             console.log("updated data", clients)
         }
         setShowClientModal(false);
@@ -102,58 +121,7 @@ const ClientPage = () => {
             textColor: "var(--color-error)",
         },
     ];
-    useEffect(() => {
-        // fake data
-        const clients = [
-            {
-                sNo: 1,
-                name: "TechNova Solutions",
-                contactPerson: "Rohit Mehra",
-                contactPersonDesignation: "Project Manager",
-                phone: "+91 98765 43210",
-                email: "rohit.mehra@technova.com",
-                status: "Active",
-            },
-            {
-                sNo: 2,
-                name: "PixelWave Media",
-                contactPerson: "Anita Verma",
-                contactPersonDesignation: "Marketing Head",
-                phone: "+91 99887 66554",
-                email: "anita@pixelwave.in",
-                status: "Inactive",
-            },
-            {
-                sNo: 3,
-                name: "UrbanBuild Constructions",
-                contactPerson: "Sandeep Patil",
-                contactPersonDesignation: "Operations Manager",
-                phone: "+91 88990 11223",
-                email: "sandeep.patil@urbanbuild.com",
-                status: "Active",
-            },
-            {
-                sNo: 4,
-                name: "CloudVerse IT",
-                contactPerson: "Megha Sharma",
-                contactPersonDesignation: "CTO",
-                phone: "+91 97234 55678",
-                email: "megha@cloudverse.io",
-                status: "Active",
-            },
-            {
-                sNo: 5,
-                name: "Evergreen Retail Pvt. Ltd.",
-                contactPerson: "Ravi Nair",
-                contactPersonDesignation: "Procurement Lead",
-                phone: "+91 90012 34567",
-                email: "ravi.nair@evergreenretail.in",
-                status: "Inactive",
-            },
-        ];
 
-        setFilteredClient(clients);
-    }, []);
     return (
         <>
             <div className="p-6">
@@ -190,7 +158,7 @@ const ClientPage = () => {
                     </Button>
                 </div>
 
-                <Table data={filteredClient} columns={columns} actions={actions} itemsPerPage={10} emptyMessage="No Client found" />
+                <Table data={filteredClients} columns={columns} actions={actions} itemsPerPage={10} emptyMessage="No Client found" />
                 <ClientDetailModal isOpen={showClientModal} onClose={() => setShowClientModal(false)} onSubmit={handleClientSubmit} />
             </div>
         </>
