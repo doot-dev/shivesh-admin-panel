@@ -35,7 +35,7 @@ export const ICON_NAMES = {
   TICK: "tick",
   PRODUCT_MODAL: "product-modal",
   DELETE: "delete",
-
+  UPLOAD: 'upload',
   // UI Icons (inline SVG)
   SEARCH: "search",
   PLUS: "plus",

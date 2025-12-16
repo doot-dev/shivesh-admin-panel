@@ -58,7 +58,8 @@ const ClientPage = () => {
 
     const handleView = (vendor) => {
         console.log("viewing vendor:", vendor);
-        navigate(`/clients/${vendor.sNo}`);
+        console.log("viewing vendor:", `/clients/${vendor.clientId}`);
+        navigate(`/clients/${vendor.clientId}`);
     }
 
     const columns = [

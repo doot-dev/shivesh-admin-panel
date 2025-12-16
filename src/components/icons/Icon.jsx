@@ -21,7 +21,7 @@ import EditDetailIcon from "../../assets/icons/editUser.svg?url";
 import TickIcon from "../../assets/icons/tick.svg?url";
 import ProductModalIcon from "../../assets/icons/productModal.svg?url";
 import DeleteIcon from "../../assets/icons/delete.svg?url";
-
+import UploadIcon from "../../assets/icons/upload.svg?url";
 const Icon = ({ 
   name, 
   size = 24, 
@@ -63,7 +63,7 @@ const Icon = ({
     'tick': TickIcon,
     'product-modal': ProductModalIcon,
     'delete': DeleteIcon,
-
+    'upload':UploadIcon,
     // UI icons - using inline SVG for common UI elements
     'search': (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} {...props}>
