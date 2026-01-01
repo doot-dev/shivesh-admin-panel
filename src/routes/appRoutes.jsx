@@ -14,6 +14,7 @@ import LeadsPage from "../pages/leads";
 import LeadsDetailsPage from "../pages/leadsDetails";
 import Client from "../pages/client";
 import ClientDetails from "../pages/clientDetails";
+import ProjectsPage from "../pages/projects";
 
 export default function AppRoutes() {
   return (
@@ -36,7 +37,7 @@ export default function AppRoutes() {
             <Route path="clients/:id" element={<ClientDetails />} />
             <Route path="leads" element={<LeadsPage />} />
             <Route path="leads/:id" element={<LeadsDetailsPage />} />
-            <Route path="projects" element={<ComingSoon />} />
+            <Route path="projects" element={<ProjectsPage />} />
             <Route path="orders" element={<ComingSoon />} />
             <Route path="orders/all" element={<ComingSoon />} />
             <Route path="orders/pending" element={<ComingSoon />} />

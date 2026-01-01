@@ -3,6 +3,10 @@ import { ICON_NAMES } from "../../icons";
 import { Modal } from "../../ui"
 import { useState } from "react";
 const ClientKYCModal = ({ isOpen, onClose, onSubmit }) => {
+
+    // TODO: documents will be .
+    //?  IF no GST , owner aadhar and pan card.
+    //? IF yes GST , company aadhar , pan card and GST document.
     const [aadharFile, setAadharFile] = useState(null);
     const [panFile, setPanFile] = useState(null);
     const [lightBillFile, setLightBillFile] = useState(null);
