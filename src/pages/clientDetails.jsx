@@ -1,8 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Tabs from "../components/ui/Tabs";
 import { Table } from "../components/ui";
 import ClientKYCModal from "../components/modals/clients/clientKycModal";
+import ClientDetailModal from "../components/modals/clients/clientDetailModal";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchClientsById, uploadClientKycDocuments, updateClient } from "../features/clients/clientsSlice";
 
 /* -------------------- TAB COMPONENTS -------------------- */
 
@@ -46,19 +49,36 @@ const BillingTab = () => {
 const ClientDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { currentClient, loading } = useSelector((state) => state.client);
   const [isKycOpen, setIsKycOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Temporary mock data (replace with API/Redux later)
-  const client = {
-    name: "ABC Pvt Ltd",
-    phone: "9876543210",
-    email: "contact@abc.com",
-    status: "ACTIVE",
-    address: "Mumbai, India",
-    gst: "27ABCDE1234F1Z5",
-    pan: "ABCDE1234F",
-    kyc: "Completed",
-  };
+  const loadClient = useCallback(() => {
+    if (id) {
+      dispatch(fetchClientsById(id));
+    }
+  }, [dispatch, id]);
+
+  const closeEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    loadClient();
+  }, [loadClient]);
+ 
+
+
+  useEffect(() => {
+    loadClient();
+  }, [loadClient]);
+
+  const client = currentClient || {};
+  console.log("client", client);
+  const isClientLoading = loading && !currentClient;
+  const clientStatus = client.status === undefined
+    ? "—"
+    : client.status
+      ? "ACTIVE"
+      : "INACTIVE";
 
   const tabs = [
     { label: "Projects", content: <ProjectsTab /> },
@@ -66,9 +86,31 @@ const ClientDetailsPage = () => {
     { label: "Billing", content: <BillingTab /> },
   ];
 
-  const handleKycSubmit = () => {
-    console.log("KYC submitted");
-    setIsKycOpen(false);
+  const handleKycSubmit = async (documents) => {
+    if (!id) {
+      return false;
+    }
+    console.log("Submitting KYC for client ID:", id, documents);
+    const resultAction = await dispatch(
+      uploadClientKycDocuments({ clientId: id, documents })
+    );
+
+    if (uploadClientKycDocuments.fulfilled.match(resultAction)) {
+      loadClient();
+      return true;
+    }
+
+    return false;
+  };
+
+  const handleClientUpdate = async (updatedClientData) => {
+    const resultAction =  dispatch(updateClient(updatedClientData));
+    if (updateClient.fulfilled.match(resultAction)) {
+      closeEditModal();
+      const updatedClient = resultAction.payload?.data ?? resultAction.payload;
+      return { success: true, client: updatedClient };
+    }
+    return { success: false };
   };
 
   return (
@@ -89,10 +131,13 @@ const ClientDetailsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <h1 className="text-2xl font-semibold text-gray-800">
-            {client.name}
+            {client.companyName || client.name || "Client Details"}
           </h1>
           <div className="flex gap-3 mt-3 sm:mt-0">
-            <button className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-800">
+            <button
+              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-800"
+              onClick={() => setIsEditModalOpen(true)}
+            >
               Edit
             </button>
             <button
@@ -110,16 +155,23 @@ const ClientDetailsPage = () => {
             Client Details
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 text-sm">
-            <Detail label="Client Name" value={client.name} />
-            <Detail label="Phone" value={client.phone} />
-            <Detail label="E-mail" value={client.email} />
-            <Detail label="Status" value={client.status} />
-            <Detail label="Address" value={client.address} />
-            <Detail label="GST No." value={client.gst} />
-            <Detail label="PAN No." value={client.pan} />
-            <Detail label="KYC Status" value={client.kyc} />
-          </div>
+          {isClientLoading ? (
+            <p className="text-sm text-gray-500">Loading client details...</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 text-sm">
+              <Detail label="Client Name" value={client.companyName || "—"} />
+              <Detail label="Phone" value={client.contactNumber || "—"} />
+              <Detail label="E-mail" value={client.email || "—"} />
+              <Detail label="Status" value={clientStatus} />
+              <Detail label="Address" value={client.address || "—"} />
+              <Detail label="GST No." value={client.gstNumber || "—"} />
+              <Detail
+                label="PAN No."
+                value={client.companyPan || client.ownerPan || "—"}
+              />
+              <Detail label="KYC Status" value={client.kycStatus || "Pending"} />
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
@@ -131,6 +183,14 @@ const ClientDetailsPage = () => {
         isOpen={isKycOpen}
         onClose={() => setIsKycOpen(false)}
         onSubmit={handleKycSubmit}
+        hasGST={!!client.hasGST}
+      />
+
+      <ClientDetailModal
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        vendor={client}
+        onSubmit={handleClientUpdate}
       />
     </>
   );

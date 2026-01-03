@@ -73,7 +73,7 @@ const FileUploadField = ({ label, accept, onChange, file, onRemove }) => {
       ) : (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <Icon name={ICON_NAMES.FILE_TEXT} className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-800 truncate">
                 {file.name}

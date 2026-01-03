@@ -1,15 +1,15 @@
 import FileUploadField from "../../clients/FileUploadField";
 import { ICON_NAMES } from "../../icons";
-import { Modal } from "../../ui"
+import { Modal } from "../../ui";
 import { useState } from "react";
-const ClientKYCModal = ({ isOpen, onClose, onSubmit }) => {
 
-    // TODO: documents will be .
-    //?  IF no GST , owner aadhar and pan card.
-    //? IF yes GST , company aadhar , pan card and GST document.
+const ClientKYCModal = ({ isOpen, onClose, onSubmit, hasGST = false }) => {
+
     const [aadharFile, setAadharFile] = useState(null);
     const [panFile, setPanFile] = useState(null);
     const [lightBillFile, setLightBillFile] = useState(null);
+    const [gstCertificateFile, setGstCertificateFile] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     const handleFileChange = (setter) => (file) => {
         if (file.size <= 10 * 1024 * 1024) { // 10 MB limit
@@ -19,28 +19,52 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit }) => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!aadharFile || !panFile || !lightBillFile) {
             alert('Please upload all required documents');
             return;
         }
-
+        if (hasGST && !gstCertificateFile) {
+            alert('Please upload the GST certificate');
+            return;
+        }
         const formData = {
             aadhar: aadharFile,
             pan: panFile,
-            lightBill: lightBillFile
+            lightBill: lightBillFile,
+            ...(hasGST && gstCertificateFile
+                ? { gstCertificate: gstCertificateFile }
+                : {}),
         };
+        console.log("Submitting KYC documents", formData);
+        let shouldClose = true;
+        try {
+            setSubmitting(true);
+            if (onSubmit) {
+                const result = await onSubmit(formData);
+                console.log("KYC submit result", result);
+                shouldClose = result !== false;
+            }
+        } catch (error) {
+            console.error("Error submitting KYC documents", error);
+            shouldClose = false;
+        } finally {
+            setSubmitting(false);
+        }
 
-        onSubmit(formData);
-        onClose();
+        if (shouldClose) {
+            resetForm();
+            onClose();
+        }
     };
 
     const resetForm = () => {
         setAadharFile(null);
         setPanFile(null);
         setLightBillFile(null);
+        setGstCertificateFile(null);
     };
 
     return (
@@ -84,6 +108,16 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit }) => {
                         onRemove={() => setLightBillFile(null)}
                     />
 
+                    {hasGST && (
+                        <FileUploadField
+                            label="GST Certificate (PDF)"
+                            accept=".pdf"
+                            file={gstCertificateFile}
+                            onChange={handleFileChange(setGstCertificateFile)}
+                            onRemove={() => setGstCertificateFile(null)}
+                        />
+                    )}
+
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-4">
                         <button
@@ -98,13 +132,24 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit }) => {
                         </button>
                         <button
                             type="submit"
-                            disabled={!aadharFile || !panFile || !lightBillFile}
-                            className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${aadharFile && panFile && lightBillFile
+                            disabled={
+                                submitting ||
+                                !aadharFile ||
+                                !panFile ||
+                                !lightBillFile ||
+                                (hasGST && !gstCertificateFile)
+                            }
+                            className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                                aadharFile &&
+                                panFile &&
+                                lightBillFile &&
+                                (!hasGST || gstCertificateFile) &&
+                                !submitting
                                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                 }`}
                         >
-                            Submit 
+                            {submitting ? 'Submitting...' : 'Submit'}
                         </button>
                     </div>
                 </form>
