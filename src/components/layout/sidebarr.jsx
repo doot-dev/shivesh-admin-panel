@@ -124,6 +124,14 @@ const Sidebar = ({ isOpen, onClose }) => {
         location.pathname.startsWith("/leads/")
       );
     }
+
+    if (path === "/clients") {
+      return (
+        location.pathname === "/clients" ||
+        location.pathname.startsWith("/clients/")
+      );
+    }
+
     // Default exact match for other paths
     return location.pathname === path;
   };

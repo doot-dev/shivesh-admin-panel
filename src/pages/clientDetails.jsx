@@ -164,7 +164,7 @@ const ClientDetailsPage = () => {
               <Detail label="E-mail" value={client.email || "—"} />
               <Detail label="Status" value={clientStatus} />
               <Detail label="Address" value={client.address || "—"} />
-              <Detail label="GST No." value={client.gstNumber || "—"} />
+              {client.gstNumber && <Detail label="GST No." value={client.gstNumber} />}
               <Detail
                 label="PAN No."
                 value={client.companyPan || client.ownerPan || "—"}
