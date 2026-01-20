@@ -3,11 +3,8 @@ import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
 import { useState, useEffect } from "react";
 import Input from "../../ui/Input";
-import { useDispatch } from "react-redux";
-import { updateClient } from "../../../features/clients/clientsSlice";
 
 const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
-  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     vendorCompanyName: "",
     ownerName: "",
@@ -23,7 +20,7 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  const clientIdentifier = vendor?._id || vendor?.id || vendor?.clientId;
+  const clientIdentifier = vendor?.clientId || vendor?.id || vendor?._id;
 
   const populateForm = (clientData) => {
     if (!clientData) {
@@ -72,7 +69,7 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
   // No additional effect: parent passes the latest client snapshot when editing
 
   const handleInputChange = (field, value) => {
-      let updatedValue = value;
+    let updatedValue = value;
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (field === "phone") {
       updatedValue = value.replace(/\D/g, "").slice(0, 10);
@@ -135,6 +132,11 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
 
     try {
       setSubmitting(true);
+      if (!onSubmit) {
+        console.warn("onSubmit handler missing for client details modal");
+        handleClose();
+        return;
+      }
 
       if (isEditMode) {
         if (!clientIdentifier) {
@@ -144,8 +146,6 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
 
         const updatePayload = {
           ...formData,
-          _id: clientIdentifier,
-          id: clientIdentifier,
           name: formData.vendorCompanyName,
           companyName: formData.vendorCompanyName,
           contactPerson: formData.ownerName,
@@ -153,25 +153,20 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           contactNumber: formData.phone,
           registeredAddress: formData.address,
           address: formData.address,
+          clientId: clientIdentifier,
         };
-        console.log("Updating client with data", updatePayload);
-        const resultAction = dispatch(updateClient(updatePayload));
-        console.log("Update resultAction", resultAction);
-        handleClose();
-        if (updateClient.fulfilled.match(resultAction)) {
-          onSubmit?.(
-            resultAction.payload?.data ?? resultAction.payload,
-            "edit"
-          );
-          handleClose();
+
+        if (!formData.hasGST) {
+          delete updatePayload.gstNumber;
         }
-      } else {
-        if (!onSubmit) {
-          console.warn("onSubmit handler missing for add client flow");
-          handleClose();
+
+        const submitResult = await onSubmit(updatePayload, "edit");
+        if (submitResult?.success === false) {
           return;
         }
 
+        handleClose();
+      } else {
         const submitPayload = {
           ...formData,
           id: Date.now(),

@@ -1,11 +1,17 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import { AiFillFilePdf } from "react-icons/ai";
+import api from "../services/api";
 import Tabs from "../components/ui/Tabs";
 import { Table } from "../components/ui";
 import ClientKYCModal from "../components/modals/clients/clientKycModal";
 import ClientDetailModal from "../components/modals/clients/clientDetailModal";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchClientsById, uploadClientKycDocuments, updateClient } from "../features/clients/clientsSlice";
+import {
+  fetchClientsById,
+  uploadClientKycDocuments,
+  updateClient,
+} from "../features/clients/clientsSlice";
 
 /* -------------------- TAB COMPONENTS -------------------- */
 
@@ -64,8 +70,6 @@ const ClientDetailsPage = () => {
     setIsEditModalOpen(false);
     loadClient();
   }, [loadClient]);
- 
-
 
   useEffect(() => {
     loadClient();
@@ -74,11 +78,8 @@ const ClientDetailsPage = () => {
   const client = currentClient || {};
   console.log("client", client);
   const isClientLoading = loading && !currentClient;
-  const clientStatus = client.status === undefined
-    ? "—"
-    : client.status
-      ? "ACTIVE"
-      : "INACTIVE";
+  const clientStatus =
+    client.status === undefined ? "—" : client.status ? "ACTIVE" : "INACTIVE";
 
   const tabs = [
     { label: "Projects", content: <ProjectsTab /> },
@@ -92,7 +93,7 @@ const ClientDetailsPage = () => {
     }
     console.log("Submitting KYC for client ID:", id, documents);
     const resultAction = await dispatch(
-      uploadClientKycDocuments({ clientId: id, documents })
+      uploadClientKycDocuments({ clientId: id, documents }),
     );
 
     if (uploadClientKycDocuments.fulfilled.match(resultAction)) {
@@ -104,7 +105,8 @@ const ClientDetailsPage = () => {
   };
 
   const handleClientUpdate = async (updatedClientData) => {
-    const resultAction =  dispatch(updateClient(updatedClientData));
+    console.log("Updating client with data:", updatedClientData);
+    const resultAction = await dispatch(updateClient(updatedClientData));
     if (updateClient.fulfilled.match(resultAction)) {
       closeEditModal();
       const updatedClient = resultAction.payload?.data ?? resultAction.payload;
@@ -164,12 +166,18 @@ const ClientDetailsPage = () => {
               <Detail label="E-mail" value={client.email || "—"} />
               <Detail label="Status" value={clientStatus} />
               <Detail label="Address" value={client.address || "—"} />
-              {client.gstNumber && <Detail label="GST No." value={client.gstNumber} />}
+              {client.gstNumber && (
+                <Detail label="GST No." value={client.gstNumber} />
+              )}
               <Detail
                 label="PAN No."
                 value={client.companyPan || client.ownerPan || "—"}
               />
-              <Detail label="KYC Status" value={client.kycStatus || "Pending"} />
+              <Detail
+                label="KYC Status"
+                value={client.kycStatus || "Pending"}
+              />
+              <KycDocumentsDetail documents={client.kycDocuments} />
             </div>
           )}
         </div>
@@ -204,5 +212,65 @@ const Detail = ({ label, value }) => (
     <p className="font-medium text-gray-800">{value}</p>
   </div>
 );
+
+const KycDocumentsDetail = ({ documents }) => {
+  const kycDocuments = Array.isArray(documents) ? documents : [];
+
+  const getDocUrl = (doc) => {
+    if (!doc) return null;
+
+    let url = null;
+
+    if (typeof doc === "string") {
+      url = doc;
+    } else {
+      url = doc.url || doc.fileUrl || doc.path || doc.location || null;
+    }
+
+    if (!url) return null;
+
+    // If already absolute (http/https), use as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+
+    // Otherwise, treat as backend-relative path and prefix with API base URL
+    const base = api?.defaults?.baseURL?.replace(/\/+$/, "") || "";
+    const normalizedPath = url.startsWith("/") ? url : `/${url}`;
+
+    return base ? `${base}${normalizedPath}` : url;
+  };
+
+  const handleOpen = (url) => {
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div>
+      <p className="text-gray-500">Upload KYC</p>
+      <div className="flex items-center gap-2">
+        {kycDocuments.length === 0 && (
+          <p className="text-sm text-gray-500">No KYC documents uploaded</p>
+        )}
+        {kycDocuments.map((doc, index) => {
+          const url = getDocUrl(doc);
+          if (!url) return null;
+          return (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handleOpen(url)}
+              className="text-red-500 hover:text-red-600"
+              aria-label={`Open KYC document ${index + 1}`}
+            >
+              <AiFillFilePdf className="w-5 h-5" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export default ClientDetailsPage;

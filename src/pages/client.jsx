@@ -9,11 +9,12 @@ import {
   fetchClients,
   createClient,
   deleteClient,
+  updateClient,
 } from "../features/clients/clientsSlice";
 const ClientPage = () => {
   const dispatch = useDispatch();
   const { list: clientsData = [], loading } = useSelector(
-    (state) => state.client
+    (state) => state.client,
   );
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
@@ -36,7 +37,7 @@ const ClientPage = () => {
       const matchesSearch =
         !s ||
         client.email?.toLowerCase().includes(s) ||
-        client.companyName?.toLowerCase().includes(s) ;
+        client.companyName?.toLowerCase().includes(s);
       const matchesStatus =
         !filters.status ||
         (filters.status === "Active" && client.status) ||
@@ -79,8 +80,32 @@ const ClientPage = () => {
         return { success: true, client: createdClient };
       }
     } else if (mode === "edit") {
-      // TODO: integrate client update API when available
-      console.log("updated data", clientData);
+      const identifier =
+        clientData?.clientId || clientData?.id || clientData?._id;
+
+      if (!identifier) {
+        console.warn("Client identifier missing for update", clientData);
+        return { success: false };
+      }
+
+      const { _id, ...restClientData } = clientData || {};
+
+      const payload = {
+        ...restClientData,
+        clientId: identifier,
+      };
+
+      if (!payload.hasGST) {
+        delete payload.gstNumber;
+      }
+
+      const resultAction = await dispatch(updateClient(payload));
+      if (updateClient.fulfilled.match(resultAction)) {
+        refreshClients();
+        const updatedClient =
+          resultAction.payload?.data ?? resultAction.payload;
+        return { success: true, client: updatedClient };
+      }
     }
 
     return { success: false };
@@ -189,7 +214,9 @@ const ClientPage = () => {
               type="text"
               placeholder="Search by name or contact"
               value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, search: e.target.value })
+              }
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
