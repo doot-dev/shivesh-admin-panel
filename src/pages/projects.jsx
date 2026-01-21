@@ -1,34 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Icon, ICON_NAMES } from "../components/icons";
 import Button from "../components/ui/Button";
 import { Table } from "../components/ui";
 import AddProjectModal from "../components/modals/project/addProjectModal";
 import { useDispatch, useSelector } from "react-redux";
-import { useCallback } from "react";
-import { fetchProjects } from "../features/projects/projectSlice";
+import {
+  addProjectDetails,
+  fetchProjects,
+} from "../features/projects/projectSlice";
+import { fetchClients } from "../features/clients/clientsSlice";
 
 const ProjectsPage = () => {
   const dispatch = useDispatch();
   const { list: projectsData = [], loading } = useSelector(
-    (state) => state.project
+    (state) => state.project,
   ); // Replace with actual selector
+  const { list: clients = [] } = useSelector((state) => state.client);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
 
   const refreshProjects = useCallback(() => {
     dispatch(fetchProjects());
   }, [dispatch]);
+  const refreshClients = useCallback(() => {
+    dispatch(fetchClients());
+  }, [dispatch]);
+
   useEffect(() => {
     refreshProjects();
-  }, [refreshProjects]);
-
-//   const clients = useSelector((state) => state.client.list || []);
-
-const clients = [
-    { id: "1", companyName: "Client A" },
-    { id: "2", companyName: "Client B" },
-    { id: "3", companyName: "Client C" },
-  ];
+    refreshClients();
+  }, [refreshProjects, refreshClients]);
 
   const columns = [
     { key: "sNo", header: "S.No" },
@@ -64,8 +65,24 @@ const clients = [
       textColor: "var(--color-error)",
     },
   ];
-  console.log('projectsData', projectsData);
-  const filteredProjects = projectsData.filter((project) => {
+  console.log("projectsData", projectsData);
+
+  const projectsWithClientName = projectsData.map((project, index) => {
+    const client = clients.find(
+      (c) =>
+        c.clientId === project.clientId ||
+        c._id === project.clientId ||
+        c.id === project.clientId,
+    );
+
+    return {
+      ...project,
+      sNo: (index + 1).toString().padStart(2, "0"),
+      clientName: client?.companyName || client?.name || "—",
+    };
+  });
+
+  const filteredProjects = projectsWithClientName.filter((project) => {
     const s = searchTerm.toLowerCase();
     return (
       !s ||
@@ -75,13 +92,14 @@ const clients = [
     );
   });
 
-  const handleAddProject = async (projectData) => {
+  const handleAddProject = (projectData) => {
     console.log("Adding project:", projectData);
-    // TODO: Integrate with API
-    // const resultAction = await dispatch(createProject(projectData));
-    // if (createProject.fulfilled.match(resultAction)) {
-    //   refreshProjects();
-    // }
+
+    const resultAction = dispatch(addProjectDetails(projectData));
+    console.log("resultAction", resultAction);
+    if (addProjectDetails.fulfilled.match(resultAction)) {
+      refreshProjects();
+    }
   };
 
   return (

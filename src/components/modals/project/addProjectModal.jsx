@@ -29,6 +29,37 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Basic validation
+    const newErrors = {};
+    if (!formData.projectName)
+      newErrors.projectName = "Project Name is required";
+    if (!formData.clientId) newErrors.clientId = "Client is required";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setSubmitting(true);
+    onSubmit(formData);
+    setSubmitting(false);
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setFormData({
+      projectName: "",
+      latitude: "19.1985175",
+      longitude: "72.9509778",
+      projectLocation: "",
+      siteName: "",
+      clientId: "",
+    });
+    setErrors({});
+    setSubmitting(false);
+    onClose();
+  };
+
   const handleMarkerMove = (lat, lng) => {
     setFormData((prev) => ({
       ...prev,
@@ -44,8 +75,8 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
-        )}`
+          query,
+        )}`,
       );
       const data = await res.json();
 
@@ -71,22 +102,23 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
   };
   const debouncedSearch = useMemo(
     () => debounce(fetchLatLngFromSearch, 800),
-    []
+    [],
   );
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Add new project"
       size="lg"
       maxWidth="550px"
-      headerIcon={ICON_NAMES.BRIEFCASE}
+      headerIcon={ICON_NAMES.PROJECT}
     >
-      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         {/* Project Name */}
         <Input
           type="text"
+          label="Project Name"
           placeholder="Project Name"
           value={formData.projectName}
           onChange={(e) => handleInputChange("projectName", e.target.value)}
@@ -108,6 +140,7 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
         {showSearch && (
           <Input
             type="text"
+            label="Search Location"
             placeholder="Enter location to search"
             value={searchLocation}
             onChange={(e) => {
@@ -135,39 +168,47 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
         {/* Project Location for submission (not map search) */}
         <Input
           type="text"
+          label="Project Location"
           placeholder="Project Location (form data)"
           value={formData.projectLocation}
-          onChange={(e) =>
-            handleInputChange("projectLocation", e.target.value)
-          }
+          onChange={(e) => handleInputChange("projectLocation", e.target.value)}
         />
 
         {/* Site name */}
         <Input
           type="text"
+          label="Site Name"
           placeholder="Site Name"
           value={formData.siteName}
           onChange={(e) => handleInputChange("siteName", e.target.value)}
         />
-
+        <label
+          className="block text-sm font-medium mb-2"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          Client
+        </label>
         {/* Client */}
         <Dropdown
           options={clients.map((c) => ({
-            value: c._id || c.id,
+            value: c.clientId || c._id || c.id,
             label: c.companyName || c.name,
           }))}
           value={formData.clientId}
+          placeholder="Select Client"
+          width="100%"
+          height="40px"
           onChange={(val) => handleInputChange("clientId", val)}
         />
 
         <div className="flex gap-3 pt-4">
-          <Button type="button" onClick={onClose} className="flex-1">
+          <Button type="button" onClick={handleClose} className="flex-1">
             Cancel
           </Button>
           <Button
             type="submit"
             className="flex-1"
-            onClick={() => onSubmit(formData)}
+            variant="primary"
             disabled={submitting}
           >
             {submitting ? "Submitting..." : "Submit"}

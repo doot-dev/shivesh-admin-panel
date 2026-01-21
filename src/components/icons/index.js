@@ -35,7 +35,7 @@ export const ICON_NAMES = {
   TICK: "tick",
   PRODUCT_MODAL: "product-modal",
   DELETE: "delete",
-  UPLOAD: 'upload',
+  UPLOAD: "upload",
   // UI Icons (inline SVG)
   SEARCH: "search",
   PLUS: "plus",
@@ -54,6 +54,7 @@ export const ICON_NAMES = {
   TRENDING_UP: "trending-up",
   INBOX: "inbox",
   CHECK: "check",
+  PROJECT: "project",
 };
 
 // Note: For convenience components with JSX, import Icon and ICON_NAMES and create them in your component files
