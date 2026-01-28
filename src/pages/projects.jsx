@@ -68,17 +68,12 @@ const ProjectsPage = () => {
   console.log("projectsData", projectsData);
 
   const projectsWithClientName = projectsData.map((project, index) => {
-    const client = clients.find(
-      (c) =>
-        c.clientId === project.clientId ||
-        c._id === project.clientId ||
-        c.id === project.clientId,
-    );
+    const client = clients.find((c) => c.clientId === project.client.clientId);
 
     return {
       ...project,
       sNo: (index + 1).toString().padStart(2, "0"),
-      clientName: client?.companyName || client?.name || "—",
+      clientName: client?.ownerName || "N/A",
     };
   });
 
