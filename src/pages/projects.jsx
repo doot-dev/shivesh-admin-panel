@@ -9,9 +9,11 @@ import {
   fetchProjects,
 } from "../features/projects/projectSlice";
 import { fetchClients } from "../features/clients/clientsSlice";
+import { useNavigate } from "react-router-dom";
 
 const ProjectsPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { list: projectsData = [], loading } = useSelector(
     (state) => state.project,
   ); // Replace with actual selector
@@ -52,11 +54,14 @@ const ProjectsPage = () => {
       },
     },
   ];
-
+  const handleEdit = (projectsData) => {
+    console.log("Edit", projectsData);
+    navigate(`/projects/${projectsData.id}`);
+  };
   const actions = [
     {
       text: "Edit",
-      onClick: (project) => console.log("Edit", project),
+      onClick: handleEdit,
       textColor: "var(--color-primary)",
     },
     {
