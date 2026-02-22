@@ -22,6 +22,29 @@ const projectService = {
       throw error;
     }
   },
+  getProjectById: async (projectId) => {
+    try {
+      console.log("Fetching project details for ID:", projectId);
+      const response = await api.get(`/api/v1/admin/project/${projectId}`);
+      console.log("Project details response:", response);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching project details:", error);
+      throw error;
+    }
+  },
+  updateProject: async (projectId, projectData) => {
+    try {
+      const response = await api.put(
+        `/api/v1/admin/project/${projectId}`,
+        projectData,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating project:", error);
+      throw error;
+    }
+  },
 };
 
 export default projectService;

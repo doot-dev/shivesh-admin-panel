@@ -44,19 +44,19 @@ const ProjectsPage = () => {
       type: "badge",
       badgeConfig: {
         Active: {
-          color: "#16A34A",
-          backgroundColor: "#D1FAE5",
+          color: "#16A34A",           // green text
+          backgroundColor: "#D1FAE5", // light green bg
         },
         Inactive: {
-          color: "#DC2626",
-          backgroundColor: "#FECACA",
+          color: "#DC2626",           // red text
+          backgroundColor: "#FECACA", // light red bg
         },
       },
     },
   ];
   const handleEdit = (projectsData) => {
     console.log("Edit", projectsData);
-    navigate(`/projects/${projectsData.id}`);
+    navigate(`/projects/${projectsData.projectId}`);
   };
   const actions = [
     {
@@ -73,16 +73,26 @@ const ProjectsPage = () => {
   console.log("projectsData", projectsData);
 
   const projectsWithClientName = projectsData.map((project, index) => {
-    const client = clients.find((c) => c.clientId === project.client.clientId);
+    const client = clients.find(
+      (c) => c.clientId === project.client?.clientId
+    );
+
+    // Normalize status
+    const normalizedStatus =
+      project.status?.toLowerCase() === "active"
+        ? "Active"
+        : "Inactive";
 
     return {
       ...project,
+      status: normalizedStatus,
       sNo: (index + 1).toString().padStart(2, "0"),
       clientName: client?.ownerName || "N/A",
     };
   });
 
   const filteredProjects = projectsWithClientName.filter((project) => {
+    
     const s = searchTerm.toLowerCase();
     return (
       !s ||
