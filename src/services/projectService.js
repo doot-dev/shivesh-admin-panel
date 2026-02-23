@@ -33,12 +33,10 @@ const projectService = {
       throw error;
     }
   },
-  updateProject: async (projectId, projectData) => {
+  updateProject: async (projectData) => {
     try {
-      const response = await api.put(
-        `/api/v1/admin/project/${projectId}`,
-        projectData,
-      );
+      console.log("Updating project with data:", projectData);
+      const response = await api.put(`/api/v1/admin/project`, projectData);
       return response.data;
     } catch (error) {
       console.error("Error updating project:", error);

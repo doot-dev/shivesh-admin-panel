@@ -15,8 +15,9 @@ const EditProjectModal = ({ isOpen, onClose, onSubmit, clients = [], project }) 
     projectLocation: "",
     siteName: "",
     clientId: "",
-    projectManager: "",
-    status: "active",
+    projectId: "",
+    address: "",
+    status: "ACTIVE",
   });
 
   const [errors, setErrors] = useState({});
@@ -34,8 +35,9 @@ const EditProjectModal = ({ isOpen, onClose, onSubmit, clients = [], project }) 
         projectLocation: project.projectLocation || "",
         siteName: project.siteName || "",
         clientId: project.client?.clientId || "",
-        projectManager: project.projectManager || "",
-        status: project.status?.toLowerCase() || "active",
+        projectId: project.projectId || "",
+        status: project.status?.toUpperCase() || "ACTIVE",
+        address: project.address || "",
       });
     }
   }, [project, isOpen]);
@@ -51,14 +53,21 @@ const EditProjectModal = ({ isOpen, onClose, onSubmit, clients = [], project }) 
     if (!formData.projectName)
       newErrors.projectName = "Project Name is required";
     if (!formData.clientId) newErrors.clientId = "Client is required";
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-    
+
     setSubmitting(true);
-    onSubmit({ ...formData, id: project?.id || project?._id });
+    const {
+      clientId,   // remove
+      id,         // remove
+      _id,        // remove
+      ...cleanPayload
+    } = formData;
+
+    onSubmit(cleanPayload);
     setSubmitting(false);
     handleClose();
   };
@@ -116,8 +125,8 @@ const EditProjectModal = ({ isOpen, onClose, onSubmit, clients = [], project }) 
   );
 
   const statusOptions = [
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
+    { value: "ACTIVE", label: "Active" },
+    { value: "INACTIVE", label: "Inactive" },
   ];
 
   return (
@@ -127,7 +136,7 @@ const EditProjectModal = ({ isOpen, onClose, onSubmit, clients = [], project }) 
       title="Edit project"
       size="lg"
       maxWidth="550px"
-      headerIcon={ICON_NAMES.EDIT}
+      headerIcon={ICON_NAMES.PROJECT}
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         {/* Project Name */}
@@ -140,13 +149,13 @@ const EditProjectModal = ({ isOpen, onClose, onSubmit, clients = [], project }) 
         />
 
         {/* Project Manager */}
-        <Input
+        {/* <Input
           type="text"
           label="Project Manager"
           placeholder="Project Manager"
           value={formData.projectManager}
           onChange={(e) => handleInputChange("projectManager", e.target.value)}
-        />
+        /> */}
 
         {/* Search icon toggle */}
         <div className="flex items-center gap-2">
@@ -223,6 +232,7 @@ const EditProjectModal = ({ isOpen, onClose, onSubmit, clients = [], project }) 
           placeholder="Select Client"
           width="100%"
           height="40px"
+          disabled
           onChange={(val) => handleInputChange("clientId", val)}
         />
 

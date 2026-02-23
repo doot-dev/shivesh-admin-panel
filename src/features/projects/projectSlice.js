@@ -47,9 +47,10 @@ export const fetchProjectById = createAsyncThunk(
 
 export const updateProject = createAsyncThunk(
   "projects/updateProject",
-  async ({ id, ...projectData }, { rejectWithValue }) => {
+  async ({ ...projectData }, { rejectWithValue }) => {
     try {
-      const response = await projectService.updateProject(id, projectData);
+      console.log("Updating project with data:", projectData);
+      const response = await projectService.updateProject(projectData);
       console.log("response of update project", response);
       return response.data;
     } catch (error) {

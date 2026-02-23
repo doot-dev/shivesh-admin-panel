@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import LocationMap from "../components/ui/LocationMap";
 import FullPageLoader from "../components/ui/FullPageLoader";
 import EditProjectModal from "../components/modals/project/editProjectModal";
+import AddProjectProductModal from "../components/modals/project/addProjectProductModal";
 
 export default function ProjectsDetails() {
   const { id } = useParams();
@@ -17,7 +18,7 @@ export default function ProjectsDetails() {
   const { currentProject, loading } = useSelector((state) => state.project);
   const { list: clients = [] } = useSelector((state) => state.client);
   const [isEditMode, setIsEditMode] = useState(false);
-
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
   useEffect(() => {
     if (id) {
       dispatch(fetchProjectById(id));
@@ -63,6 +64,7 @@ export default function ProjectsDetails() {
   const statusStyle = statusConfig[status] || statusConfig.inactive;
 
   const handleUpdateProject = async (projectData) => {
+    console.log("Updating project with data:", projectData);
     const resultAction = await dispatch(updateProject(projectData));
     if (updateProject.fulfilled.match(resultAction)) {
       setIsEditMode(false);
@@ -167,7 +169,7 @@ export default function ProjectsDetails() {
           </h2>
           <Button
             onClick={() => {
-              // TODO: Add product modal
+              setShowAddProductModal(true);
               console.log("Add product");
             }}
             leftIcon={ICON_NAMES.PLUS}
@@ -191,6 +193,7 @@ export default function ProjectsDetails() {
         clients={clients}
         project={currentProject}
       />
+      <AddProjectProductModal isOpen={showAddProductModal} onClose={() => setShowAddProductModal(false)} />
     </div>
   );
 }
