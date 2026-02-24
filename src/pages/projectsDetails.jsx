@@ -14,7 +14,9 @@ export default function ProjectsDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+  const { currentProduct: productData = null, load } = useSelector(
+    (state) => state.products
+  );
   const { currentProject, loading } = useSelector((state) => state.project);
   const { list: clients = [] } = useSelector((state) => state.client);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -100,7 +102,7 @@ export default function ProjectsDetails() {
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
           Project Details
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Project Name */}
           <div>
@@ -193,7 +195,7 @@ export default function ProjectsDetails() {
         clients={clients}
         project={currentProject}
       />
-      <AddProjectProductModal isOpen={showAddProductModal} onClose={() => setShowAddProductModal(false)} />
+      <AddProjectProductModal isOpen={showAddProductModal} productData={productData} onClose={() => setShowAddProductModal(false)} />
     </div>
   );
 }

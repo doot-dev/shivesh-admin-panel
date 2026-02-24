@@ -5,7 +5,9 @@ import Button from "../../ui/Button";
 import Input from "../../ui/Input";
 import Dropdown from "../../ui/Dropdown";
 
-const AddProjectProductModal = ({ isOpen, onClose, onSubmit }) => {
+const AddProjectProductModal = ({ isOpen, onClose, onSubmit, productData }) => {
+
+  console.log("Product data in add product modal", productData);
   const [formData, setFormData] = useState({
     productName: "",
     productGrade: "",
@@ -27,7 +29,23 @@ const AddProjectProductModal = ({ isOpen, onClose, onSubmit }) => {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
+  const handleProductNameChange = (value) => {
+    handleInputChange("productName", value);
 
+    if (!productData) return;
+
+    const selectedProduct = productData.find(
+      (p) => p.productName.toLowerCase() === value.toLowerCase()
+    );
+
+    if (selectedProduct) {
+      setFormData((prev) => ({
+        ...prev,
+        productGrade: selectedProduct.productGrade,
+        productCost: selectedProduct.productCost || ""
+      }));
+    }
+  };
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -83,7 +101,7 @@ const AddProjectProductModal = ({ isOpen, onClose, onSubmit }) => {
           placeholder="Enter product name"
           value={formData.productName}
           onChange={(e) =>
-            handleInputChange("productName", e.target.value)
+            handleProductNameChange(e.target.value)
           }
         />
 
@@ -92,14 +110,17 @@ const AddProjectProductModal = ({ isOpen, onClose, onSubmit }) => {
           Product Grade
         </label>
         <Dropdown
-          options={gradeOptions}
-          value={formData.productGrade}
-          placeholder="Select Grade"
+          options={
+            productData?.map((p) => ({
+              value: p.productName,
+              label: p.productName
+            })) || []
+          }
+          value={formData.productName}
+          placeholder="Select Product"
           width="100%"
           height="40px"
-          onChange={(val) =>
-            handleInputChange("productGrade", val)
-          }
+          onChange={(val) => handleProductNameChange(val)}
         />
 
         {/* Product Cost */}
@@ -109,7 +130,7 @@ const AddProjectProductModal = ({ isOpen, onClose, onSubmit }) => {
           placeholder="Enter cost"
           value={formData.productCost}
           onChange={(e) =>
-            handleInputChange("productCost", e.target.value)
+            handleProductNameChange("productCost", e.target.value)
           }
         />
 
