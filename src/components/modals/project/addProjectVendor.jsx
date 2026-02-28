@@ -16,7 +16,7 @@ const initialState = {
   costPrice: "",
 };
 
-const AddProjectProductModal = ({
+const AddProjectVendor = ({
   isOpen,
   onClose,
   onSubmit,
@@ -147,7 +147,7 @@ const AddProjectProductModal = ({
       <form className="space-y-4" onSubmit={handleSubmit}>
         {/* Product */}
         <Dropdown
-          label="Product"
+          label="Vendor Name"
           options={productData.map((p) => ({
             value: p.id,
             label: p.name,
@@ -163,7 +163,7 @@ const AddProjectProductModal = ({
 
         {/* Grade */}
         <Dropdown
-          label="Product Grade"
+          label="Vendor Priority"
           options={
             currentProduct?.size?.map((g) => ({
               value: g.id,
@@ -183,7 +183,7 @@ const AddProjectProductModal = ({
         {/* Cost */}
         <Input
           type="number"
-          label="Product Cost"
+          label="Vendor Custom Price"
           placeholder="Enter cost"
           value={formData.costPrice}
           onChange={(e) =>
@@ -216,5 +216,5 @@ const AddProjectProductModal = ({
   );
 };
 
-export default AddProjectProductModal;
+export default AddProjectVendor;
 

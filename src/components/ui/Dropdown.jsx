@@ -22,14 +22,19 @@ const Dropdown = ({
   const searchInputRef = useRef(null);
 
   // Filter options based on search term
-  const filteredOptions = searchable 
-    ? options.filter(option => 
-        option.label.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+      option?.label
+        ?.toString()
+        .toLowerCase()
+        .includes(searchTerm?.toLowerCase() || "")
+    )
     : options;
 
   // Get selected option
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find(
+    (option) => option?.value === value
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -71,7 +76,7 @@ const Dropdown = ({
   };
 
   return (
-    <div 
+    <div
       ref={dropdownRef}
       className={`relative rounded-lg inline-block ${className}`}
       style={{ width }}
@@ -84,21 +89,21 @@ const Dropdown = ({
         className={`
           w-full px-3 py-2 text-left border rounded-lg transition-all duration-200
           flex items-center justify-between
-          ${disabled 
-            ? 'cursor-not-allowed' 
+          ${disabled
+            ? 'cursor-not-allowed'
             : 'hover:opacity-90 cursor-pointer'
           }
-          ${error 
-            ? 'border-red-500 focus:ring-red-500' 
+          ${error
+            ? 'border-red-500 focus:ring-red-500'
             : 'border-border focus:ring-primary focus:border-transparent'
           }
           ${isOpen ? 'ring-2 ring-primary border-transparent' : ''}
         `}
-        style={{ 
+        style={{
           height,
           borderColor: error ? 'var(--color-error)' : 'var(--color-border)',
           color: selectedOption ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-          backgroundColor: disabled 
+          backgroundColor: disabled
             ? 'var(--color-background)'
             : backgroundColor === 'input-bg'
               ? 'var(--color-input-bg)'
@@ -110,11 +115,11 @@ const Dropdown = ({
         <span className="truncate">
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        
+
         <div className="flex items-center ml-2">
-          <Icon 
-            name={ICON_NAMES.CHEVRON_DOWN} 
-            size={16} 
+          <Icon
+            name={ICON_NAMES.CHEVRON_DOWN}
+            size={16}
             color="var(--color-text-secondary)"
             className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           />
@@ -123,14 +128,14 @@ const Dropdown = ({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div 
+        <div
           className={`
             absolute z-50 w-full bg-white border border-border rounded-lg shadow-lg
             ${position === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'}
           `}
-          style={{ 
+          style={{
             borderColor: 'var(--color-border)',
-            maxHeight 
+            maxHeight
           }}
         >
           {/* Search Input */}
@@ -168,8 +173,8 @@ const Dropdown = ({
                   className={`
                     w-full px-3 py-2 text-left text-sm transition-colors duration-150
                     hover:bg-background-hover
-                    ${value === option.value 
-                      ? 'text-primary font-medium' 
+                    ${value === option.value
+                      ? 'text-primary font-medium'
                       : 'text-text-primary'
                     }
                   `}

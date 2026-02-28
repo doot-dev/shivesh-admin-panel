@@ -16,7 +16,7 @@ const initialState = {
   costPrice: "",
 };
 
-const AddProjectProductModal = ({
+const EditProjectProductModal = ({
   isOpen,
   onClose,
   onSubmit,
@@ -216,5 +216,5 @@ const AddProjectProductModal = ({
   );
 };
 
-export default AddProjectProductModal;
+export default EditProjectProductModal;
 

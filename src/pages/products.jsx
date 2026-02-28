@@ -17,43 +17,6 @@ const Products = () => {
   const dispatch = useDispatch();
   const { productList: productData = [], loading } = useSelector((state) => state.products)
   console.log("Product List", productData)
-  // Transform product data from API response
-  // const transformProductData = useCallback(async () => {
-  //   const response = await productService.getAllProducts(
-  //     1,
-  //     100,
-  //     ""
-  //   );
-  //   console.log("Fetched Products:", response);
-
-  //   let rawData = [];
-  //   if (Array.isArray(response.data)) {
-  //     rawData = response.data;
-  //   } else if (response && Array.isArray(response.data)) {
-  //     rawData = response.data;
-  //   } else if (response && Array.isArray(response.products)) {
-  //     rawData = response.products;
-  //   } else {
-  //     console.warn("Unexpected response structure:", response);
-  //     rawData = [];
-  //   }
-
-  //   return rawData.map((item, index) => ({
-  //     id: item.id,
-  //     sNo: String(index + 1).padStart(2, "0"),
-  //     product: item.name,
-  //     gradeSize: item.sizeCount,
-  //     status: item.isActive ? "Active" : "Inactive",
-  //     isActive: item.isActive,
-  //     name: item.name,
-  //   }));
-  // }, []);
-
-  // const { data: products, loading, refetch: loadProducts } = useFetch(
-  //   transformProductData,
-  //   [],
-  //   { autoFetch: true, showToast: true }
-  // );
 
   const [searchTerm, setSearchTerm] = useState("");
   // const [filteredProducts, setFilteredProducts] = useState([]);

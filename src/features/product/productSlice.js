@@ -132,7 +132,7 @@ const productSlice = createSlice({
     name: "products",
     initialState: {
         productList: [],
-        currentProduct: null, // Single product for detail view
+        currentProduct: [], // Single product for detail view
         loading: false,
         error: null,
     },

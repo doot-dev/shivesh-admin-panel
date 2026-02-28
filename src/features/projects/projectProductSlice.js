@@ -10,7 +10,10 @@ export const fetchProjectProducts = createAsyncThunk(
   "projectProduct/fetchAll",
   async (projectId, thunkAPI) => {
     try {
-      return await projectProductService.getAllProjectProducts(projectId);
+      console.log("Project Id", projectId)
+      const response = await projectProductService.getAllProjectProducts(projectId);
+      console.log("proj prod :", response)
+      return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data || "Failed to fetch products",
@@ -85,8 +88,10 @@ export const deleteProjectProduct = createAsyncThunk(
    SLICE
 ================================= */
 
+
+
 const initialState = {
-  list: [],
+  prodList: [],
   currentProduct: null,
 
   loading: false,
@@ -109,91 +114,48 @@ const projectProductSlice = createSlice({
   extraReducers: (builder) => {
     builder
 
-      /* ================= FETCH ALL ================= */
-
       .addCase(fetchProjectProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchProjectProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload?.data || action.payload || [];
+        state.prodList =
+          action.payload?.data || action.payload || [];
       })
       .addCase(fetchProjectProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      /* ================= FETCH BY ID ================= */
-
-      .addCase(fetchProjectProductById.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchProjectProductById.fulfilled, (state, action) => {
-        state.loading = false;
-        state.currentProduct = action.payload?.data || action.payload || null;
-      })
-      .addCase(fetchProjectProductById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      /* ================= CREATE ================= */
-
-      .addCase(createProjectProduct.pending, (state) => {
-        state.createLoading = true;
-      })
       .addCase(createProjectProduct.fulfilled, (state, action) => {
-        state.createLoading = false;
+        const newProduct =
+          action.payload?.data || action.payload;
 
-        const newProduct = action.payload?.data || action.payload;
         if (newProduct) {
-          state.list.unshift(newProduct);
+          state.prodList.unshift(newProduct);
         }
       })
-      .addCase(createProjectProduct.rejected, (state, action) => {
-        state.createLoading = false;
-        state.error = action.payload;
-      })
 
-      /* ================= UPDATE ================= */
-
-      .addCase(updateProjectProduct.pending, (state) => {
-        state.updateLoading = true;
-      })
       .addCase(updateProjectProduct.fulfilled, (state, action) => {
-        state.updateLoading = false;
+        const updatedProduct =
+          action.payload?.data || action.payload;
 
-        const updatedProduct = action.payload?.data || action.payload;
-
-        const index = state.list.findIndex(
-          (item) => item.productId === updatedProduct.productId,
+        const index = state.prodList.findIndex(
+          (item) => item.productId === updatedProduct.productId
         );
 
         if (index !== -1) {
-          state.list[index] = updatedProduct;
+          state.prodList[index] = updatedProduct;
         }
       })
-      .addCase(updateProjectProduct.rejected, (state, action) => {
-        state.updateLoading = false;
-        state.error = action.payload;
-      })
 
-      /* ================= DELETE ================= */
-
-      .addCase(deleteProjectProduct.pending, (state) => {
-        state.deleteLoading = true;
-      })
       .addCase(deleteProjectProduct.fulfilled, (state, action) => {
-        state.deleteLoading = false;
-
         const { productId } = action.meta.arg;
 
-        state.list = state.list.filter((item) => item.productId !== productId);
-      })
-      .addCase(deleteProjectProduct.rejected, (state, action) => {
-        state.deleteLoading = false;
-        state.error = action.payload;
+        state.prodList = state.prodList.filter(
+          (item) => item.productId !== productId
+        );
       });
   },
 });
