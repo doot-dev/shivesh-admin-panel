@@ -10,9 +10,10 @@ export const fetchProjectProducts = createAsyncThunk(
   "projectProduct/fetchAll",
   async (projectId, thunkAPI) => {
     try {
-      console.log("Project Id", projectId)
-      const response = await projectProductService.getAllProjectProducts(projectId);
-      console.log("proj prod :", response)
+      console.log("Project Id", projectId);
+      const response =
+        await projectProductService.getAllProjectProducts(projectId);
+      console.log("proj prod :", response);
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(
@@ -58,7 +59,12 @@ export const updateProjectProduct = createAsyncThunk(
   "projectProduct/update",
   async (productData, thunkAPI) => {
     try {
-      return await projectProductService.updateProjectProduct(productData);
+      console.log("Product Data", productData);
+      const response =
+        await projectProductService.updateProjectProduct(productData);
+
+      console.log("Updated Product Response", response);
+      return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(
         error.response?.data || "Failed to update product",
@@ -87,8 +93,6 @@ export const deleteProjectProduct = createAsyncThunk(
 /* ===============================
    SLICE
 ================================= */
-
-
 
 const initialState = {
   prodList: [],
@@ -120,42 +124,61 @@ const projectProductSlice = createSlice({
       })
       .addCase(fetchProjectProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.prodList =
-          action.payload?.data || action.payload || [];
+        state.prodList = action.payload?.data || action.payload || [];
       })
       .addCase(fetchProjectProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
+      .addCase(fetchProjectProductById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProjectProductById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentProduct = action.payload?.data || action.payload || null;
+      })
+      .addCase(fetchProjectProductById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
       .addCase(createProjectProduct.fulfilled, (state, action) => {
-        const newProduct =
-          action.payload?.data || action.payload;
+        const newProduct = action.payload?.data || action.payload;
 
         if (newProduct) {
           state.prodList.unshift(newProduct);
         }
       })
 
+      .addCase(updateProjectProduct.pending, (state) => {
+        state.updateLoading = true;
+        state.error = null;
+      })
       .addCase(updateProjectProduct.fulfilled, (state, action) => {
-        const updatedProduct =
-          action.payload?.data || action.payload;
+        const updatedProduct = action.payload?.data || action.payload;
 
         const index = state.prodList.findIndex(
-          (item) => item.productId === updatedProduct.productId
+          (item) => item.id === updatedProduct.id,
         );
 
         if (index !== -1) {
           state.prodList[index] = updatedProduct;
         }
+
+        state.currentProduct = updatedProduct;
+        state.updateLoading = false;
+      })
+      .addCase(updateProjectProduct.rejected, (state, action) => {
+        state.updateLoading = false;
+        state.error = action.payload;
       })
 
       .addCase(deleteProjectProduct.fulfilled, (state, action) => {
         const { productId } = action.meta.arg;
 
-        state.prodList = state.prodList.filter(
-          (item) => item.productId !== productId
-        );
+        state.prodList = state.prodList.filter((item) => item.id !== productId);
       });
   },
 });

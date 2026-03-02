@@ -11,8 +11,9 @@ import FullPageLoader from "../components/ui/FullPageLoader";
 import EditProjectModal from "../components/modals/project/editProjectModal";
 import AddProjectProductModal from "../components/modals/project/addProjectProductModal";
 import { ICON_NAMES } from "../components/icons";
-import { createProjectProduct, fetchProjectProducts } from "../features/projects/projectProductSlice";
+import { createProjectProduct, fetchProjectProductById, fetchProjectProducts } from "../features/projects/projectProductSlice";
 import { Table } from "../components/ui";
+import EditProjectProductModal from "../components/modals/project/editProjectProductModal";
 
 export default function ProjectsDetails() {
   const { id } = useParams();
@@ -41,6 +42,9 @@ export default function ProjectsDetails() {
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [showEditProductModal, setShowEditProductModal] = useState(false);
+  const [showDeleteProductModal, setShowDeleteProductModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState(null);
   const [filters, setFilters] = useState({
     search: "",
   });
@@ -102,20 +106,29 @@ export default function ProjectsDetails() {
     { key: "costPrice", header: "Cost Price" },
 
   ];
-
+  const handleEdit = (product) => {
+    console.log("Edit product", product);
+    setSelectedProductId(product.id);
+    setShowEditProductModal(true);
+  };
+  const handleDelete = (product) => {
+    console.log("Delete product", product);
+    setSelectedProductId(product.id);
+    setShowDeleteProductModal(true);  
+  };
   const actions = [
     {
-      text:"Vendors",
-      textColor: "var(--color-primary)"
+      text: "Vendors",
+      textColor: "var(--color-success)"
     },
     {
       text: "Edit",
-      // onClick: handleEdit,
+      onClick: handleEdit,
       textColor: "var(--color-primary)",
     },
     {
       text: "Delete",
-      // onClick: (prod) => console.log("Delete", prod),
+      onClick: handleDelete,
       textColor: "var(--color-error)",
     },
   ];
@@ -278,6 +291,13 @@ export default function ProjectsDetails() {
         onSubmit={handleAddProduct}
         projectId={id}
         onClose={() => setShowAddProductModal(false)}
+      />
+      <EditProjectProductModal
+        isOpen={showEditProductModal}
+        onClose={() => setShowEditProductModal(false)}
+        projectId={id}
+        productId={selectedProductId}
+        productData={productData}
       />
     </div>
   );

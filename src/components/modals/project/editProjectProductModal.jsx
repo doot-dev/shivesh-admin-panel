@@ -1,16 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
+import {
+  fetchProjectProductById,
+  updateProjectProduct,
+  clearCurrentProduct,
+} from "../../../features/projects/projectProductSlice";
 
 import { fetchProductsById } from "../../../features/product/productSlice";
 
-import { ICON_NAMES } from "../../icons";
 import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
 import Dropdown from "../../ui/Dropdown";
+import { ICON_NAMES } from "../../icons";
 
-const initialState = {
-
+const initialFormState = {
   productId: "",
   gradeId: "",
   costPrice: "",
@@ -19,51 +24,90 @@ const initialState = {
 const EditProjectProductModal = ({
   isOpen,
   onClose,
-  onSubmit,
   projectId,
+  productId,
   productData = [],
 }) => {
   const dispatch = useDispatch();
 
-  const { currentProduct } = useSelector((state) => state.products);
+  const { currentProduct, updateLoading } = useSelector(
+    (state) => state.projectProduct
+  );
 
-  const [formData, setFormData] = useState(initialState);
+  const { currentProduct: selectedProductDetails } = useSelector(
+    (state) => state.products
+  );
+
+  const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
 
-  /* ---------------- Handlers ---------------- */
+  /* ---------------- FETCH PROJECT PRODUCT ---------------- */
 
-  const handleChange = (field, value) => {
+  useEffect(() => {
+    if (!isOpen || !productId) return;
+    dispatch(fetchProjectProductById({ projectId, productId }));
+  }, [isOpen, productId, projectId, dispatch]);
+
+  /* ---------------- PREFILL FORM (Single Source of Truth) ---------------- */
+
+  useEffect(() => {
+    if (!currentProduct || !isOpen) return;
+
+    // Match product once
+    const matchedProduct = productData.find(
+      (p) =>
+        p.name?.toLowerCase() ===
+        currentProduct.productName?.toLowerCase()
+    );
+
+    if (!matchedProduct) return;
+
+    // Fetch product details for grades
+    dispatch(fetchProductsById(matchedProduct.id));
+
+    setFormData({
+      productId: matchedProduct.id,
+      gradeId: "", // will be set after grades load
+      costPrice: currentProduct.costPrice || "",
+    });
+  }, [currentProduct, isOpen, productData, dispatch]);
+
+  /* ---------------- AUTO-SET GRADE ---------------- */
+
+  useEffect(() => {
+    if (!selectedProductDetails || !currentProduct) return;
+
+    const matchedGrade = selectedProductDetails.size?.find(
+      (g) =>
+        g.name?.toLowerCase() ===
+        currentProduct.productGrade?.toLowerCase()
+    );
+
+    if (!matchedGrade) return;
+
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      gradeId: matchedGrade.id,
     }));
+  }, [selectedProductDetails, currentProduct]);
 
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
-    }
-  };
+  /* ---------------- HANDLERS ---------------- */
 
-  const handleProductChange = (productId) => {
-    setFormData((prev) => ({
-      ...prev,
-      productId,
+  const handleProductChange = (id) => {
+    setFormData({
+      productId: id,
       gradeId: "",
       costPrice: "",
-    }));
+    });
 
-    if (productId) {
-      dispatch(fetchProductsById(productId));
-    }
+    dispatch(fetchProductsById(id));
   };
 
   const handleGradeChange = (gradeId) => {
-    const selectedGrade = currentProduct?.size?.find(
-      (g) => g.id === gradeId
-    );
+    const selectedGrade =
+      selectedProductDetails?.size?.find(
+        (g) => g.id === gradeId
+      );
 
     setFormData((prev) => ({
       ...prev,
@@ -75,140 +119,119 @@ const EditProjectProductModal = ({
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.productId)
-      newErrors.productId = "Product is required";
-
-    if (!formData.gradeId)
-      newErrors.gradeId = "Grade is required";
-
-    if (!formData.costPrice)
-      newErrors.costPrice = "Cost price is required";
+    if (!formData.productId) newErrors.productId = "Required";
+    if (!formData.gradeId) newErrors.gradeId = "Required";
+    if (!formData.costPrice) newErrors.costPrice = "Required";
 
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  /* ---------------- SUBMIT ---------------- */
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validate()) return;
-
-    setSubmitting(true);
 
     const selectedProduct = productData.find(
       (p) => p.id === formData.productId
     );
 
-    const selectedGrade = currentProduct?.size?.find(
-      (g) => g.id === formData.gradeId
-    );
+    const selectedGrade =
+      selectedProductDetails?.size?.find(
+        (g) => g.id === formData.gradeId
+      );
 
     const payload = {
-      projectId: projectId,
-      productName: selectedProduct?.name || "",
-      productGrade: selectedGrade?.name || "",
+      projectId,
+      productId, // project-product id
+      productName: selectedProduct?.name,
+      productGrade: selectedGrade?.name,
       costPrice: Number(formData.costPrice),
     };
 
-    onSubmit(payload);
-
+    await dispatch(updateProjectProduct(payload));
     handleClose();
   };
 
   const handleClose = () => {
-    setFormData(initialState);
+    setFormData(initialFormState);
     setErrors({});
-    setSubmitting(false);
+    dispatch(clearCurrentProduct());
     onClose();
   };
 
-  /* ---------------- Reset on Close ---------------- */
+  /* ---------------- MEMOIZED OPTIONS ---------------- */
 
-  useEffect(() => {
-    if (!isOpen) {
-      setFormData(initialState);
-      setErrors({});
-      setSubmitting(false);
-    }
-  }, [isOpen]);
+  const productOptions = useMemo(
+    () =>
+      productData.map((p) => ({
+        value: p.id,
+        label: p.name,
+      })),
+    [productData]
+  );
 
-  /* ---------------- Render ---------------- */
+  const gradeOptions = useMemo(
+    () =>
+      selectedProductDetails?.size?.map((g) => ({
+        value: g.id,
+        label: g.name,
+      })) || [],
+    [selectedProductDetails]
+  );
+
+  /* ---------------- UI ---------------- */
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Add Product"
+      title="Edit Product"
       size="md"
       maxWidth="450px"
       headerIcon={ICON_NAMES.PROJECT}
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
-        {/* Product */}
         <Dropdown
           label="Product"
-          options={productData.map((p) => ({
-            value: p.id,
-            label: p.name,
-          }))}
+          options={productOptions}
           value={formData.productId}
-          placeholder="Search & Select Product"
-          searchable
-          width="100%"
-          height="40px"
           onChange={handleProductChange}
+          searchable
           error={errors.productId}
         />
 
-        {/* Grade */}
         <Dropdown
           label="Product Grade"
-          options={
-            currentProduct?.size?.map((g) => ({
-              value: g.id,
-              label: g.name,
-            })) || []
-          }
+          options={gradeOptions}
           value={formData.gradeId}
-          placeholder="Select Grade"
-          searchable
-          width="100%"
-          height="40px"
           onChange={handleGradeChange}
+          searchable
           disabled={!formData.productId}
           error={errors.gradeId}
         />
 
-        {/* Cost */}
         <Input
           type="number"
           label="Product Cost"
-          placeholder="Enter cost"
           value={formData.costPrice}
           onChange={(e) =>
-            handleChange("costPrice", e.target.value)
+            setFormData((prev) => ({
+              ...prev,
+              costPrice: e.target.value,
+            }))
           }
           error={errors.costPrice}
         />
 
-        {/* Buttons */}
         <div className="flex gap-3 pt-4">
-          <Button
-            type="button"
-            onClick={handleClose}
-            className="flex-1"
-          >
+          <Button type="button" onClick={handleClose}>
             Cancel
           </Button>
 
-          <Button
-            type="submit"
-            variant="primary"
-            className="flex-1"
-            disabled={submitting}
-          >
-            {submitting ? "Submitting..." : "Submit"}
+          <Button type="submit" disabled={updateLoading}>
+            {updateLoading ? "Updating..." : "Update"}
           </Button>
         </div>
       </form>
@@ -217,4 +240,3 @@ const EditProjectProductModal = ({
 };
 
 export default EditProjectProductModal;
-

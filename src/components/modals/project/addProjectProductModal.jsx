@@ -146,6 +146,9 @@ const AddProjectProductModal = ({
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         {/* Product */}
+        <label className="text-sm font-medium text-text-primary">
+          Product Name
+        </label>
         <Dropdown
           label="Product"
           options={productData.map((p) => ({
@@ -159,9 +162,13 @@ const AddProjectProductModal = ({
           height="40px"
           onChange={handleProductChange}
           error={errors.productId}
+          className="mt-2"
         />
 
         {/* Grade */}
+        <label className="text-sm mb-2 font-medium text-text-primary">
+          Product Grade
+        </label>
         <Dropdown
           label="Product Grade"
           options={
@@ -178,6 +185,7 @@ const AddProjectProductModal = ({
           onChange={handleGradeChange}
           disabled={!formData.productId}
           error={errors.gradeId}
+          className="mt-2"
         />
 
         {/* Cost */}
