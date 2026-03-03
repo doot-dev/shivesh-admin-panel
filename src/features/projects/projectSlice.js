@@ -60,6 +60,52 @@ export const updateProject = createAsyncThunk(
   },
 );
 
+export const deleteProject = createAsyncThunk(
+  "projects/deleteProject",
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await projectService.deleteProject(projectId);
+      return response.message;
+    } catch (error) {
+      console.error("Error in deleteProject thunk:", error);
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+export const updateProjectCredit = createAsyncThunk(
+  "projects/updateProjectCredit",
+  async (creditData, { rejectWithValue }) => {
+    try {
+      const response = await projectService.updateProjectCredit(creditData);
+
+      return {
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+export const updateProjectCommission = createAsyncThunk(
+  "projects/updateProjectCommission",
+  async (commissionData, { rejectWithValue }) => {
+    try {
+      const response =
+        await projectService.updateProjectCommission(commissionData);
+      console.log("response of update project commission", response);
+      return {
+        data: response.data,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error("Error in updateProjectCommission thunk:", error);
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 const projectSlice = createSlice({
   name: "projects",
   initialState: {
@@ -123,6 +169,67 @@ const projectSlice = createSlice({
         }
       })
       .addCase(updateProject.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+      .addCase(deleteProject.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteProject.fulfilled, (state, action) => {
+        state.loading = false;
+        const deletedId = action.meta.arg;
+        state.list = state.list.filter(
+          (p) =>
+            p.projectId !== deletedId &&
+            p.id !== deletedId &&
+            p._id !== deletedId,
+        );
+
+        if (
+          state.currentProject &&
+          (state.currentProject.projectId === deletedId ||
+            state.currentProject.id === deletedId ||
+            state.currentProject._id === deletedId)
+        ) {
+          state.currentProject = null;
+        }
+      })
+      .addCase(deleteProject.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+      .addCase(updateProjectCredit.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProjectCredit.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.currentProject) {
+          state.currentProject = {
+            ...state.currentProject,
+            ...action.payload.data,
+          };
+        }
+      })
+      .addCase(updateProjectCredit.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error.message;
+      })
+      .addCase(updateProjectCommission.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProjectCommission.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.currentProject) {
+          state.currentProject = {
+            ...state.currentProject,
+            ...action.payload.data,
+          };
+        }
+      })
+      .addCase(updateProjectCommission.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       });

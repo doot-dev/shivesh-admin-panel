@@ -1,3 +1,4 @@
+import { deleteProject } from "../features/projects/projectSlice";
 import api from "./api";
 
 const projectService = {
@@ -40,6 +41,39 @@ const projectService = {
       return response.data;
     } catch (error) {
       console.error("Error updating project:", error);
+      throw error;
+    }
+  },
+  deleteProject: async (projectId) => {
+    try {
+      const response = await api.delete(`/api/v1/admin/project/${projectId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      throw error;
+    }
+  },
+  updateProjectCredit: async (creditData) => {
+    try {
+      const response = await api.put(
+        `/api/v1/admin/project/credit`,
+        creditData,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating project credit:", error);
+      throw error;
+    }
+  },
+  updateProjectCommission: async (commissionData) => {
+    try {
+      const response = await api.put(
+        `/api/v1/admin/project/commission`,
+        commissionData,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating project commission:", error);
       throw error;
     }
   },

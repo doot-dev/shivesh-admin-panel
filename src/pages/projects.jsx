@@ -3,13 +3,16 @@ import { Icon, ICON_NAMES } from "../components/icons";
 import Button from "../components/ui/Button";
 import { Table } from "../components/ui";
 import AddProjectModal from "../components/modals/project/addProjectModal";
+import DeleteModal from "../components/modals/DeleteModal";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addProjectDetails,
+  deleteProject,
   fetchProjects,
 } from "../features/projects/projectSlice";
 import { fetchClients } from "../features/clients/clientsSlice";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const ProjectsPage = () => {
   const dispatch = useDispatch();
@@ -20,6 +23,12 @@ const ProjectsPage = () => {
   const { list: clients = [] } = useSelector((state) => state.client);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfig, setDeleteConfig] = useState({
+    onConfirm: null,
+    title: "",
+    message: "",
+  });
 
   const refreshProjects = useCallback(() => {
     dispatch(fetchProjects());
@@ -58,6 +67,31 @@ const ProjectsPage = () => {
     console.log("Edit", projectsData);
     navigate(`/projects/${projectsData.projectId}`);
   };
+  const handleDelete = (project) => {
+    if (!project) return;
+
+    const identifier = project.projectId || project.id || project._id;
+    if (!identifier) return;
+
+    setDeleteConfig({
+      onConfirm: async () => {
+        try {
+          const resultAction = await dispatch(deleteProject(identifier));
+          if (deleteProject.fulfilled.match(resultAction)) {
+            refreshProjects();
+            toast.success( resultAction.payload ||"Project deleted successfully!");
+          }
+          
+        } catch (error) {
+          console.error("Failed to delete project", error);
+        }
+      },
+      title: "Delete project",
+      message:
+        "Are you sure you want to delete this project? This action is permanent and cannot be undone.",
+    });
+    setShowDeleteModal(true);
+  };
   const actions = [
     {
       text: "Edit",
@@ -66,7 +100,7 @@ const ProjectsPage = () => {
     },
     {
       text: "Delete",
-      onClick: (project) => console.log("Delete", project),
+      onClick: handleDelete,
       textColor: "var(--color-error)",
     },
   ];
@@ -170,6 +204,14 @@ const ProjectsPage = () => {
         onClose={() => setShowAddModal(false)}
         onSubmit={handleAddProject}
         clients={clients}
+      />
+
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={deleteConfig.onConfirm}
+        title={deleteConfig.title}
+        message={deleteConfig.message}
       />
     </div>
   );

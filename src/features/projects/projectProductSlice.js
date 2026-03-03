@@ -174,11 +174,19 @@ const projectProductSlice = createSlice({
         state.updateLoading = false;
         state.error = action.payload;
       })
-
+      .addCase(deleteProjectProduct.pending, (state) => {
+        state.deleteLoading = true;
+        state.error = null;
+      })
       .addCase(deleteProjectProduct.fulfilled, (state, action) => {
         const { productId } = action.meta.arg;
 
         state.prodList = state.prodList.filter((item) => item.id !== productId);
+        state.deleteLoading = false;
+      })
+      .addCase(deleteProjectProduct.rejected, (state, action) => {
+        state.deleteLoading = false;
+        state.error = action.payload;
       });
   },
 });

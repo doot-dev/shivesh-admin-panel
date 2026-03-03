@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import { addProjectDetails, fetchProjectById, updateProject } from "../features/projects/projectSlice";
+import { addProjectDetails, fetchProjectById, updateProject, updateProjectCredit, updateProjectCommission } from "../features/projects/projectSlice";
 import { fetchClients } from "../features/clients/clientsSlice";
 import { fetchProducts } from "../features/product/productSlice";
 
@@ -11,11 +11,17 @@ import FullPageLoader from "../components/ui/FullPageLoader";
 import EditProjectModal from "../components/modals/project/editProjectModal";
 import AddProjectProductModal from "../components/modals/project/addProjectProductModal";
 import { ICON_NAMES } from "../components/icons";
-import { createProjectProduct, fetchProjectProductById, fetchProjectProducts } from "../features/projects/projectProductSlice";
+import { createProjectProduct, deleteProjectProduct, fetchProjectProductById, fetchProjectProducts } from "../features/projects/projectProductSlice";
 import { Table } from "../components/ui";
 import EditProjectProductModal from "../components/modals/project/editProjectProductModal";
 import ProjectVendorModal from "../components/modals/project/projectVendorModal";
-import { createProjectProductVendor } from "../features/projects/projectProductVendorSlice";
+import EditCommissionModal from "../components/modals/project/editCommissionModal";
+import EditCreditModal from "../components/modals/project/editCreditModal";
+import DeleteProjectProduct from "../components/modals/project/deleteProjectProduct";
+import { BiEdit } from "react-icons/bi";
+import { FaEdit } from "react-icons/fa";
+import { FiEdit2 } from "react-icons/fi";
+import { toast } from "react-toastify";
 
 export default function ProjectsDetails() {
   const { id } = useParams();
@@ -36,10 +42,10 @@ export default function ProjectsDetails() {
     (state) => state.products
   );
 
-  const { prodList: currentProduct = [], loading: prodLoading } = useSelector(
+  const { prodList: currentProduct = [], loading: prodLoading, deleteLoading } = useSelector(
     (state) => state.projectProduct
   )
-  console.log("ProductProject List", currentProduct)
+
   /* ---------------- Local State ---------------- */
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -47,8 +53,11 @@ export default function ProjectsDetails() {
   const [showEditProductModal, setShowEditProductModal] = useState(false);
   const [showDeleteProductModal, setShowDeleteProductModal] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
+  const [selectedDeleteProduct, setSelectedDeleteProduct] = useState(null);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
 
   const openVendors = (product) => {
     setSelectedProduct(product);
@@ -66,7 +75,7 @@ export default function ProjectsDetails() {
     dispatch(fetchProducts());
     dispatch(fetchProjectProducts(id))
   }, [dispatch, id]);
-  console.log("sfsdfsdf", productData)
+
   /* ---------------- Derived Values ---------------- */
 
 
@@ -116,21 +125,16 @@ export default function ProjectsDetails() {
 
   ];
   const handleEdit = (product) => {
-    console.log("Edit product", product);
     setSelectedProductId(product.id);
     setShowEditProductModal(true);
   };
   const handleDelete = (product) => {
     console.log("Delete product", product);
     setSelectedProductId(product.id);
+    setSelectedDeleteProduct(product);
     setShowDeleteProductModal(true);
   };
 
-  const handleVendor = async (vendor) => {
-    console.log("Vendor Data adding:", vendor);
-    const res = await createProjectProductVendor(vendor);
-    console.log("ADD VEndorr details", res);
-  }  
   const actions = [
     {
       text: "Vendors",
@@ -177,12 +181,9 @@ export default function ProjectsDetails() {
   /* ---------------- Handlers ---------------- */
 
   const handleAddProduct = async (productData) => {
-    // Dispatch action to add product to project
-    // You would need to implement this action in your Redux slice
-    // Example: await dispatch(addProductToProject({ projectId: id, ...productData }));
-    console.log("Adding product to project:", productData);
+
     const addRes = await dispatch(createProjectProduct(productData));
-    console.log("addRes", addRes);
+
   }
 
   const handleUpdateProject = async (projectData) => {
@@ -194,6 +195,50 @@ export default function ProjectsDetails() {
     }
   };
 
+  const handleUpdateCommission = async (commissionData) => {
+    try {
+      const res = await dispatch(
+        updateProjectCommission({ projectId: id, ...commissionData })
+      ).unwrap();
+
+      setShowCommissionModal(false);
+
+      toast.success(res.message || "Commission updated");
+    } catch (err) {
+      toast.error("Failed to update commission");
+    }
+  };
+  const handleUpdateCredit = async (creditData) => {
+    const resultAction = await dispatch(
+      updateProjectCredit({ projectId: id, ...creditData })
+    );
+
+    if (updateProjectCredit.fulfilled.match(resultAction)) {
+      setShowCreditModal(false);
+      dispatch(fetchProjectById(id));
+
+      toast.success(
+        resultAction.payload?.message ||
+        "Credit details updated successfully"
+      );
+    }
+  };
+
+  const handleDeleteProjectProduct = async (product) => {
+    if (!product?.id) return;
+
+    try {
+      const res = await dispatch(
+        deleteProjectProduct({ projectId: id, productId: product.id })
+      ).unwrap();
+
+      toast.success(res?.message || "Product deleted successfully");
+      setShowDeleteProductModal(false);
+      setSelectedDeleteProduct(null);
+    } catch (err) {
+      toast.error("Failed to delete product");
+    }
+  };
 
   /* -------------------- Render -------------------- */
 
@@ -291,6 +336,101 @@ export default function ProjectsDetails() {
         </div>
       </div>
 
+      {/* ---------------- Commission & Credit Details Section ---------------- */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+
+        {/* Commission Details Card */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Commission Details
+            </h2>
+            <div className="flex items-center gap-3">
+              {/* Toggle Switch */}
+              {/* <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  defaultChecked
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label> */}
+
+              <button
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                onClick={() => setShowCommissionModal(true)}
+              >
+                <span><FiEdit2 className="text-lg" /></span>
+                <span>Edit</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Person name</p>
+                <p className="text-base font-medium text-gray-900">
+                  {currentProject.commissionPersonName
+                    || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Amount per m3</p>
+                <p className="text-base font-medium text-gray-900">
+                  ₹{currentProject.commissionAmountPerM3
+                    ?? "N/A"}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Person Phone No.</p>
+                <p className="text-base font-medium text-gray-900">
+                  {currentProject.commissionPersonMobile
+                    || "N/A"}
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Credit Details Card */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Credit Details
+            </h2>
+            <button
+              className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+              onClick={() => setShowCreditModal(true)}
+            >
+              <span><FiEdit2 className="text-lg" /></span>
+              <span>Edit</span>
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Amount</p>
+              <p className="text-base font-medium text-gray-900">
+                ₹{currentProject.creditAmount || "N/A"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Reset period(in days)</p>
+              <p className="text-base font-medium text-gray-900">
+                {currentProject.creditResetPeriodDays || "N/A"} days
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       {/* ---------------- Modals ---------------- */}
 
       <EditProjectModal
@@ -319,8 +459,34 @@ export default function ProjectsDetails() {
         isOpen={showVendorModal}
         onClose={() => setShowVendorModal(false)}
         product={selectedProduct}
-       // vendorMasterList={vendorDataFromRedux}
-        onAddVendor={handleVendor}
+        projectId={id}
+      />
+
+      <EditCommissionModal
+        isOpen={showCommissionModal}
+        onClose={() => setShowCommissionModal(false)}
+        onSubmit={handleUpdateCommission}
+        project={currentProject}
+        loading={loading}
+      />
+
+      <EditCreditModal
+        isOpen={showCreditModal}
+        onClose={() => setShowCreditModal(false)}
+        onSubmit={handleUpdateCredit}
+        project={currentProject}
+        loading={loading}
+      />
+
+      <DeleteProjectProduct
+        isOpen={showDeleteProductModal}
+        onClose={() => {
+          setShowDeleteProductModal(false);
+          setSelectedDeleteProduct(null);
+        }}
+        product={selectedDeleteProduct}
+        onDelete={handleDeleteProjectProduct}
+        loading={deleteLoading}
       />
     </div>
   );
