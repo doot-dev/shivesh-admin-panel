@@ -6,12 +6,14 @@ import clientReducer from "../features/clients/clientsSlice";
 import projectReducer from "../features/projects/projectSlice";
 import projectProductReducer from "../features/projects/projectProductSlice";
 import projectProductVendorReducer from "../features/projects/projectProductVendorSlice";
+import vendorReducer from "../features/vendors/vendorSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     users: userReducer,
     products: productReducer,
     client: clientReducer,
+    vendor: vendorReducer,
     project: projectReducer,
     projectProduct: projectProductReducer,
     projectProductVendor: projectProductVendorReducer,

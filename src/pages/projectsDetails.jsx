@@ -14,6 +14,8 @@ import { ICON_NAMES } from "../components/icons";
 import { createProjectProduct, fetchProjectProductById, fetchProjectProducts } from "../features/projects/projectProductSlice";
 import { Table } from "../components/ui";
 import EditProjectProductModal from "../components/modals/project/editProjectProductModal";
+import ProjectVendorModal from "../components/modals/project/projectVendorModal";
+import { createProjectProductVendor } from "../features/projects/projectProductVendorSlice";
 
 export default function ProjectsDetails() {
   const { id } = useParams();
@@ -45,6 +47,13 @@ export default function ProjectsDetails() {
   const [showEditProductModal, setShowEditProductModal] = useState(false);
   const [showDeleteProductModal, setShowDeleteProductModal] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const openVendors = (product) => {
+    setSelectedProduct(product);
+    setShowVendorModal(true);
+  };
   const [filters, setFilters] = useState({
     search: "",
   });
@@ -114,11 +123,18 @@ export default function ProjectsDetails() {
   const handleDelete = (product) => {
     console.log("Delete product", product);
     setSelectedProductId(product.id);
-    setShowDeleteProductModal(true);  
+    setShowDeleteProductModal(true);
   };
+
+  const handleVendor = async (vendor) => {
+    console.log("Vendor Data adding:", vendor);
+    const res = await createProjectProductVendor(vendor);
+    console.log("ADD VEndorr details", res);
+  }  
   const actions = [
     {
       text: "Vendors",
+      onClick: openVendors,
       textColor: "var(--color-success)"
     },
     {
@@ -298,6 +314,13 @@ export default function ProjectsDetails() {
         projectId={id}
         productId={selectedProductId}
         productData={productData}
+      />
+      <ProjectVendorModal
+        isOpen={showVendorModal}
+        onClose={() => setShowVendorModal(false)}
+        product={selectedProduct}
+       // vendorMasterList={vendorDataFromRedux}
+        onAddVendor={handleVendor}
       />
     </div>
   );
