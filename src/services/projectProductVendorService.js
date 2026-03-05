@@ -4,7 +4,7 @@ const projectProductVendorService = {
   getAllProjectProductVendors: async (projectId, productId) => {
     try {
       const response = await api.get(
-        `/api/v1/admin/project/${projectId}/product/${productId}/vendor/list`,
+        `/api/v1/admin/project/${projectId}/product/${productId}/vendor/list?length=1000`,
       );
       return response.data;
     } catch (error) {

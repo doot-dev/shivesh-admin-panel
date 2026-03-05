@@ -7,7 +7,7 @@ export const addUser = async (userData) => {
 };
 
 export const getUsers = async () => {
-  const response = await api.get("/api/v1/admin/user/all");
+  const response = await api.get("/api/v1/admin/user/all?length=1000");
   console.log("Get Users Response:", response);
   return response.data;
 };

@@ -2,7 +2,7 @@ import api from "./api";
 const vendorService = {
   getVendors: async () => {
     try {
-      const response = await api.get("/api/v1/admin/vendor");
+      const response = await api.get("/api/v1/admin/vendor?length=1000");
       return response.data;
     } catch (error) {
       console.error("Error fetching vendors:", error);

@@ -2,7 +2,7 @@ import api from "./api";
 const leadService = {
   getAllLeads: async () => {
     try {
-      const response = await api.get("/api/v1/admin/leads");
+      const response = await api.get("/api/v1/admin/leads?length=1000");
       return response.data;
     } catch (error) {
       console.error("Error fetching leads:", error);
