@@ -16,6 +16,8 @@ import Client from "../pages/client";
 import ClientDetails from "../pages/clientDetails";
 import ProjectsPage from "../pages/projects";
 import ProjectsDetails from "../pages/projectsDetails";
+import OrdersPage from "../pages/orders";
+import OrderDetailsPage from "../pages/orderDetails";
 
 export default function AppRoutes() {
   return (
@@ -40,7 +42,8 @@ export default function AppRoutes() {
             <Route path="leads/:id" element={<LeadsDetailsPage />} />
             <Route path="projects" element={<ProjectsPage />} />
             <Route path="projects/:id" element={<ProjectsDetails />} />
-            <Route path="orders" element={<ComingSoon />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/:id" element={<OrderDetailsPage />} />
             <Route path="orders/all" element={<ComingSoon />} />
             <Route path="orders/pending" element={<ComingSoon />} />
             <Route path="orders/completed" element={<ComingSoon />} />

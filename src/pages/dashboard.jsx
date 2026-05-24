@@ -31,7 +31,7 @@ const Dashboard = () => {
     },
     {
       title: "Revenue",
-      value: "$54,321",
+      value: "₹54,321",
       change: "+8%",
       changeType: "increase",
       icon: ICON_NAMES.DOLLAR_SIGN,
