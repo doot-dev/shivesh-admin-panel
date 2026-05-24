@@ -44,6 +44,9 @@ export default function AppRoutes() {
             <Route path="projects/:id" element={<ProjectsDetails />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/:orderId" element={<OrderDetails />} />
+            <Route path="orders/all" element={<ComingSoon />} />
+            <Route path="orders/pending" element={<ComingSoon />} />
+            <Route path="orders/completed" element={<ComingSoon />} />
             <Route path="testing" element={<ComingSoon />} />
             <Route path="billing" element={<ComingSoon />} />
             <Route path="reports" element={<ComingSoon />} />

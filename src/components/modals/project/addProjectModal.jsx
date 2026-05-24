@@ -169,7 +169,7 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
         <Input
           type="text"
           label="Project Location"
-          placeholder="Project Location (form data)"
+          placeholder="Project Location"
           value={formData.projectLocation}
           onChange={(e) => handleInputChange("projectLocation", e.target.value)}
         />
