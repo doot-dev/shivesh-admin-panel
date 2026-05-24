@@ -169,12 +169,22 @@ const Sidebar = ({ isOpen, onClose }) => {
         xl:w-64
       `}
       >
-
         <div className="flex items-center md:hidden justify-center h-[65px] xl:h-[100px] border-b border-primary">
           <img src={LogoImg} alt="Logo" className="h-12 xl:h-20" />
         </div>
 
-        {/* Logo */}
+        {/* Desktop logo */}
+        <div className="hidden md:flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+          <img src={LogoImg} alt="Logo" className="h-10 w-10 object-contain" />
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-bold text-primary tracking-wide">
+              SHIVESH
+            </span>
+            <span className="text-[10px] text-gray-400 font-medium">
+              Group of Companies
+            </span>
+          </div>
+        </div>
 
         {/* Navigation */}
         <nav className="flex-1  py-6 overflow-y-auto">
@@ -257,7 +267,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Logout */}
         <div className="p-4 border-t border-gray-200">
-          <button type="button" onClick={handleLogout} className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-primary-light rounded-lg transition-colors w-full">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-primary-light rounded-lg transition-colors w-full"
+          >
             <Icon name={ICON_NAMES.LOG_OUT} size={18} />
             <span>Log out</span>
           </button>

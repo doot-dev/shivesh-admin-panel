@@ -10,7 +10,6 @@ import Input from "../../ui/Input";
 import Dropdown from "../../ui/Dropdown";
 
 const initialState = {
-
   productId: "",
   gradeId: "",
   costPrice: "",
@@ -61,9 +60,7 @@ const AddProjectProductModal = ({
   };
 
   const handleGradeChange = (gradeId) => {
-    const selectedGrade = currentProduct?.size?.find(
-      (g) => g.id === gradeId
-    );
+    const selectedGrade = currentProduct?.size?.find((g) => g.id === gradeId);
 
     setFormData((prev) => ({
       ...prev,
@@ -75,14 +72,11 @@ const AddProjectProductModal = ({
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.productId)
-      newErrors.productId = "Product is required";
+    if (!formData.productId) newErrors.productId = "Product is required";
 
-    if (!formData.gradeId)
-      newErrors.gradeId = "Grade is required";
+    if (!formData.gradeId) newErrors.gradeId = "Grade is required";
 
-    if (!formData.costPrice)
-      newErrors.costPrice = "Cost price is required";
+    if (!formData.costPrice) newErrors.costPrice = "Cost price is required";
 
     setErrors(newErrors);
 
@@ -97,11 +91,11 @@ const AddProjectProductModal = ({
     setSubmitting(true);
 
     const selectedProduct = productData.find(
-      (p) => p.id === formData.productId
+      (p) => p.id === formData.productId,
     );
 
     const selectedGrade = currentProduct?.size?.find(
-      (g) => g.id === formData.gradeId
+      (g) => g.id === formData.gradeId,
     );
 
     const payload = {
@@ -151,10 +145,12 @@ const AddProjectProductModal = ({
         </label>
         <Dropdown
           label="Product"
-          options={productData.map((p) => ({
-            value: p.id,
-            label: p.name,
-          }))}
+          options={productData
+            .filter((p) => p.isActive !== false && !p.isDeleted)
+            .map((p) => ({
+              value: p.id,
+              label: p.name,
+            }))}
           value={formData.productId}
           placeholder="Search & Select Product"
           searchable
@@ -172,10 +168,12 @@ const AddProjectProductModal = ({
         <Dropdown
           label="Product Grade"
           options={
-            currentProduct?.size?.map((g) => ({
-              value: g.id,
-              label: g.name,
-            })) || []
+            currentProduct?.size
+              ?.filter((g) => g.isActive !== false)
+              .map((g) => ({
+                value: g.id,
+                label: g.name,
+              })) || []
           }
           value={formData.gradeId}
           placeholder="Select Grade"
@@ -194,19 +192,13 @@ const AddProjectProductModal = ({
           label="Product Cost"
           placeholder="Enter cost"
           value={formData.costPrice}
-          onChange={(e) =>
-            handleChange("costPrice", e.target.value)
-          }
+          onChange={(e) => handleChange("costPrice", e.target.value)}
           error={errors.costPrice}
         />
 
         {/* Buttons */}
         <div className="flex gap-3 pt-4">
-          <Button
-            type="button"
-            onClick={handleClose}
-            className="flex-1"
-          >
+          <Button type="button" onClick={handleClose} className="flex-1">
             Cancel
           </Button>
 
@@ -225,4 +217,3 @@ const AddProjectProductModal = ({
 };
 
 export default AddProjectProductModal;
-

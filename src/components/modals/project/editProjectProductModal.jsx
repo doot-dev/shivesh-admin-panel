@@ -31,11 +31,11 @@ const EditProjectProductModal = ({
   const dispatch = useDispatch();
 
   const { currentProduct, updateLoading } = useSelector(
-    (state) => state.projectProduct
+    (state) => state.projectProduct,
   );
 
   const { currentProduct: selectedProductDetails } = useSelector(
-    (state) => state.products
+    (state) => state.products,
   );
 
   const [formData, setFormData] = useState(initialFormState);
@@ -56,8 +56,7 @@ const EditProjectProductModal = ({
     // Match product once
     const matchedProduct = productData.find(
       (p) =>
-        p.name?.toLowerCase() ===
-        currentProduct.productName?.toLowerCase()
+        p.name?.toLowerCase() === currentProduct.productName?.toLowerCase(),
     );
 
     if (!matchedProduct) return;
@@ -79,8 +78,7 @@ const EditProjectProductModal = ({
 
     const matchedGrade = selectedProductDetails.size?.find(
       (g) =>
-        g.name?.toLowerCase() ===
-        currentProduct.productGrade?.toLowerCase()
+        g.name?.toLowerCase() === currentProduct.productGrade?.toLowerCase(),
     );
 
     if (!matchedGrade) return;
@@ -104,10 +102,9 @@ const EditProjectProductModal = ({
   };
 
   const handleGradeChange = (gradeId) => {
-    const selectedGrade =
-      selectedProductDetails?.size?.find(
-        (g) => g.id === gradeId
-      );
+    const selectedGrade = selectedProductDetails?.size?.find(
+      (g) => g.id === gradeId,
+    );
 
     setFormData((prev) => ({
       ...prev,
@@ -134,13 +131,12 @@ const EditProjectProductModal = ({
     if (!validate()) return;
 
     const selectedProduct = productData.find(
-      (p) => p.id === formData.productId
+      (p) => p.id === formData.productId,
     );
 
-    const selectedGrade =
-      selectedProductDetails?.size?.find(
-        (g) => g.id === formData.gradeId
-      );
+    const selectedGrade = selectedProductDetails?.size?.find(
+      (g) => g.id === formData.gradeId,
+    );
 
     const payload = {
       projectId,
@@ -165,20 +161,24 @@ const EditProjectProductModal = ({
 
   const productOptions = useMemo(
     () =>
-      productData.map((p) => ({
-        value: p.id,
-        label: p.name,
-      })),
-    [productData]
+      productData
+        .filter((p) => p.isActive !== false && !p.isDeleted)
+        .map((p) => ({
+          value: p.id,
+          label: p.name,
+        })),
+    [productData],
   );
 
   const gradeOptions = useMemo(
     () =>
-      selectedProductDetails?.size?.map((g) => ({
-        value: g.id,
-        label: g.name,
-      })) || [],
-    [selectedProductDetails]
+      selectedProductDetails?.size
+        ?.filter((g) => g.isActive !== false)
+        .map((g) => ({
+          value: g.id,
+          label: g.name,
+        })) || [],
+    [selectedProductDetails],
   );
 
   /* ---------------- UI ---------------- */

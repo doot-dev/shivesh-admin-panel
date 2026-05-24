@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { Icon, ICON_NAMES } from '../icons';
+import { useState } from "react";
+import { Icon, ICON_NAMES } from "../icons";
 import Logo from "../../assets/img/shivesh-logo.png";
 import { useSelector } from "react-redux";
-import UserIcon from "../../assets/img/profile.png"
+import UserIcon from "../../assets/img/profile.png";
 // import { useUser } from '../../context/UserContext';
 const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   // const { getUserName, getUserRole } = useUser();
   const user = useSelector((state) => state.auth.user);
-  
+
   return (
     <nav className="bg-white border-b border-primary h-[65px] xl:h-[100px] px-4 inline-flex justify-center w-full  md:px-6">
       <div className="flex items-center justify-between w-full">
@@ -19,9 +19,13 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
             onClick={onToggleSidebar}
             className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 md:hidden"
           >
-            {isSidebarOpen ? <Icon name={ICON_NAMES.X} size={20} /> : <Icon name={ICON_NAMES.MENU} size={20} />}
+            {isSidebarOpen ? (
+              <Icon name={ICON_NAMES.X} size={20} />
+            ) : (
+              <Icon name={ICON_NAMES.MENU} size={20} />
+            )}
           </button>
-          
+
           {/* Search bar */}
           {/* <div className="relative hidden md:block">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -33,8 +37,16 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
               className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div> */}
-          <div className='hidden md:block' >
-            <img src={Logo} alt="Logo" className="h-20" />
+          <div className="hidden md:flex items-center gap-3">
+            <img src={Logo} alt="Logo" className="h-14 xl:h-16" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-base font-bold text-primary tracking-wide">
+                SHIVESH
+              </span>
+              <span className="text-[11px] text-gray-500 font-medium">
+                Group of Companies
+              </span>
+            </div>
           </div>
         </div>
 
