@@ -106,7 +106,7 @@ export default function OrderDetails() {
   );
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 ">
       {/* Back + Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
@@ -114,7 +114,7 @@ export default function OrderDetails() {
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors"
         >
           <Icon name={ICON_NAMES.CHEVRON_LEFT} size={16} />
-          Back
+          {/* Back */}
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
