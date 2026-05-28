@@ -149,7 +149,15 @@ const OrdersPage = () => {
           />
         </div>
 
-        
+        {/* <Button
+          onClick={() => setShowCreateModal(true)}
+          leftIcon={ICON_NAMES.PLUS}
+          variant="primary"
+          size="md"
+          className="w-full sm:w-auto px-4 py-2 md:px-6 md:py-3 text-sm whitespace-nowrap"
+        >
+          Create Order
+        </Button> */}
       </div>
 
       {/* Table */}
