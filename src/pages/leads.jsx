@@ -43,7 +43,7 @@ const LeadsPage = () => {
       email: lead.email,
       requirement: lead.requirement,
       source: lead.source,
-      status: lead.status,
+      status: (lead.status || "").toUpperCase(),
       assignedTo: lead.assignedToId,
     }));
   }, []);
@@ -145,13 +145,21 @@ const LeadsPage = () => {
       header: "Status",
       type: "badge",
       badgeConfig: {
-        Active: {
-          color: "#16A34A",
-          backgroundColor: "#D1FAE5",
+        NEW: {
+          color: "#2563EB",
+          backgroundColor: "#DBEAFE",
         },
-        Inactive: {
+        IN_PROGRESS: {
+          color: "#D97706",
+          backgroundColor: "#FEF3C7",
+        },
+        CONVERTED: {
+          color: "#16A34A",
+          backgroundColor: "#DCFCE7",
+        },
+        LOST: {
           color: "#DC2626",
-          backgroundColor: "#FECACA",
+          backgroundColor: "#FEE2E2",
         },
       },
     },
