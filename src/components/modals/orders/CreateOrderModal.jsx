@@ -1,31 +1,45 @@
-import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Modal from '../../ui/Modal';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 import Dropdown from '../../ui/Dropdown';
 import { ICON_NAMES } from '../../icons';
+import vendorService from '../../../services/vendorService';
+import { fetchProductsById } from '../../../features/product/productSlice';
 
 const EMPTY = {
   projectId: '',
   clientId: '',
-  productName: '',
-  productGrade: '',
+  productId: '',
+  gradeId: '',
   quantity: '',
   date: '',
   time: '',
   deliveryAddress: '',
   assignedToId: '',
+  vendorId: '',
+  vendorLocationId: '',
+  vendorHandlerId: '',
 };
 
 const CreateOrderModal = ({ isOpen, onClose, onSubmit }) => {
+  const dispatch = useDispatch();
+
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  const [locations, setLocations] = useState([]);
+  const [handlers, setHandlers] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingHandlers, setLoadingHandlers] = useState(false);
+
   const { list: projects = [] } = useSelector((s) => s.project);
   const { list: clients = [] } = useSelector((s) => s.client);
   const { fieldTechs = [] } = useSelector((s) => s.orders);
+  const { list: vendors = [] } = useSelector((s) => s.vendor);
+  const { productList: products = [], currentProduct } = useSelector((s) => s.products);
 
   const set = (field, value) => {
     setForm((p) => ({ ...p, [field]: value }));
@@ -40,12 +54,48 @@ const CreateOrderModal = ({ isOpen, onClose, onSubmit }) => {
     }
   };
 
+  const handleProductChange = (productId) => {
+    setForm((p) => ({ ...p, productId, gradeId: '' }));
+    if (errors.productId) setErrors((p) => ({ ...p, productId: '' }));
+    if (productId) dispatch(fetchProductsById(productId));
+  };
+
+  const handleVendorChange = (vendorId) => {
+    setForm((p) => ({ ...p, vendorId, vendorLocationId: '', vendorHandlerId: '' }));
+    setLocations([]);
+    setHandlers([]);
+    if (errors.vendorId) setErrors((p) => ({ ...p, vendorId: '' }));
+
+    if (vendorId) {
+      setLoadingLocations(true);
+      vendorService
+        .getLocationbyVendorId(vendorId)
+        .then((res) => setLocations(res.data || []))
+        .catch(() => setLocations([]))
+        .finally(() => setLoadingLocations(false));
+    }
+  };
+
+  const handleLocationChange = (vendorLocationId) => {
+    setForm((p) => ({ ...p, vendorLocationId, vendorHandlerId: '' }));
+    setHandlers([]);
+
+    if (vendorLocationId) {
+      setLoadingHandlers(true);
+      vendorService
+        .getHandlersforLocation(vendorLocationId)
+        .then((res) => setHandlers(res.data || []))
+        .catch(() => setHandlers([]))
+        .finally(() => setLoadingHandlers(false));
+    }
+  };
+
   const validate = () => {
     const e = {};
     if (!form.projectId) e.projectId = 'Project is required';
     if (!form.clientId) e.clientId = 'Client is required';
-    if (!form.productName.trim()) e.productName = 'Product name is required';
-    if (!form.productGrade.trim()) e.productGrade = 'Product grade is required';
+    if (!form.productId) e.productId = 'Product is required';
+    if (!form.gradeId) e.gradeId = 'Product grade is required';
     if (!form.quantity.trim()) e.quantity = 'Quantity is required';
     return e;
   };
@@ -56,9 +106,18 @@ const CreateOrderModal = ({ isOpen, onClose, onSubmit }) => {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSubmitting(true);
     try {
+      const selectedProduct = products.find((p) => p.id === form.productId);
+      const selectedGrade = currentProduct?.size?.find((g) => g.id === form.gradeId);
+      const { productId, gradeId, ...rest } = form;
+
       await onSubmit({
-        ...form,
+        ...rest,
+        productName: selectedProduct?.name || '',
+        productGrade: selectedGrade?.name || '',
         assignedToId: form.assignedToId ? parseInt(form.assignedToId) : undefined,
+        vendorId: form.vendorId ? parseInt(form.vendorId) : undefined,
+        vendorLocationId: form.vendorLocationId ? parseInt(form.vendorLocationId) : undefined,
+        vendorHandlerId: form.vendorHandlerId ? parseInt(form.vendorHandlerId) : undefined,
       });
       handleClose();
     } finally {
@@ -70,8 +129,19 @@ const CreateOrderModal = ({ isOpen, onClose, onSubmit }) => {
     setForm(EMPTY);
     setErrors({});
     setSubmitting(false);
+    setLocations([]);
+    setHandlers([]);
     onClose();
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setForm(EMPTY);
+      setErrors({});
+      setLocations([]);
+      setHandlers([]);
+    }
+  }, [isOpen]);
 
   const projectOptions = projects.map((p) => ({
     value: p.projectId,
@@ -90,6 +160,31 @@ const CreateOrderModal = ({ isOpen, onClose, onSubmit }) => {
       label: `${t.name} (${t.employeeId})`,
     })),
   ];
+
+  const productOptions = products.map((p) => ({
+    value: p.id,
+    label: p.name,
+  }));
+
+  const gradeOptions = (currentProduct?.size || []).map((g) => ({
+    value: g.id,
+    label: g.name,
+  }));
+
+  const vendorOptions = vendors.map((v) => ({
+    value: String(v.id),
+    label: v.companyName || v.name,
+  }));
+
+  const locationOptions = locations.map((l) => ({
+    value: String(l.id),
+    label: l.address || l.name,
+  }));
+
+  const handlerOptions = handlers.map((h) => ({
+    value: String(h.id),
+    label: `${h.name}${h.phone ? ` (${h.phone})` : ''}`,
+  }));
 
   return (
     <Modal
@@ -136,27 +231,37 @@ const CreateOrderModal = ({ isOpen, onClose, onSubmit }) => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Product */}
           <div>
-            <Input
-              label="Product Name"
-              placeholder="e.g. RMC"
-              value={form.productName}
-              onChange={(e) => set('productName', e.target.value)}
-              required
-              error={!!errors.productName}
-              errorMessage={errors.productName}
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+              Product <span style={{ color: 'var(--color-error)' }}>*</span>
+            </label>
+            <Dropdown
+              options={productOptions}
+              value={form.productId}
+              placeholder="Select product"
+              width="100%"
+              height="40px"
+              onChange={handleProductChange}
             />
+            {errors.productId && <p className="mt-1 text-xs text-red-500">{errors.productId}</p>}
           </div>
+
+          {/* Product Grade */}
           <div>
-            <Input
-              label="Product Grade"
-              placeholder="e.g. M25"
-              value={form.productGrade}
-              onChange={(e) => set('productGrade', e.target.value)}
-              required
-              error={!!errors.productGrade}
-              errorMessage={errors.productGrade}
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+              Product Grade <span style={{ color: 'var(--color-error)' }}>*</span>
+            </label>
+            <Dropdown
+              options={gradeOptions}
+              value={form.gradeId}
+              placeholder="Select grade"
+              width="100%"
+              height="40px"
+              disabled={!form.productId}
+              onChange={(v) => set('gradeId', v)}
             />
+            {errors.gradeId && <p className="mt-1 text-xs text-red-500">{errors.gradeId}</p>}
           </div>
         </div>
 
@@ -183,6 +288,55 @@ const CreateOrderModal = ({ isOpen, onClose, onSubmit }) => {
               width="100%"
               height="40px"
               onChange={(v) => set('assignedToId', v)}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Vendor */}
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+              Vendor
+            </label>
+            <Dropdown
+              options={vendorOptions}
+              value={form.vendorId}
+              placeholder="Select vendor"
+              width="100%"
+              height="40px"
+              onChange={handleVendorChange}
+            />
+          </div>
+
+          {/* Vendor Location */}
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+              Plant Location
+            </label>
+            <Dropdown
+              options={locationOptions}
+              value={form.vendorLocationId}
+              placeholder={loadingLocations ? 'Loading...' : 'Select location'}
+              width="100%"
+              height="40px"
+              disabled={!form.vendorId || loadingLocations}
+              onChange={handleLocationChange}
+            />
+          </div>
+
+          {/* Vendor Handler */}
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+              Handler
+            </label>
+            <Dropdown
+              options={handlerOptions}
+              value={form.vendorHandlerId}
+              placeholder={loadingHandlers ? 'Loading...' : 'Select handler'}
+              width="100%"
+              height="40px"
+              disabled={!form.vendorLocationId || loadingHandlers}
+              onChange={(v) => set('vendorHandlerId', v)}
             />
           </div>
         </div>

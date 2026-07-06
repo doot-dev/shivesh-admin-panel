@@ -11,6 +11,8 @@ import CreateOrderModal from '../components/modals/orders/CreateOrderModal';
 import { createOrder, deleteOrder, fetchFieldTechs, fetchOrders } from '../features/orders/orderSlice';
 import { fetchProjects } from '../features/projects/projectSlice';
 import { fetchClients } from '../features/clients/clientsSlice';
+import { fetchVendors } from '../features/vendors/vendorSlice';
+import { fetchProducts } from '../features/product/productSlice';
 
 const STATUS_TABS = ['All', 'NEW', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 
@@ -42,6 +44,8 @@ const OrdersPage = () => {
     dispatch(fetchProjects());
     dispatch(fetchClients());
     dispatch(fetchFieldTechs());
+    dispatch(fetchVendors());
+    dispatch(fetchProducts());
   }, [refresh, dispatch]);
 
   const columns = [
@@ -149,15 +153,15 @@ const OrdersPage = () => {
           />
         </div>
 
-        {/* <Button
+        <Button
           onClick={() => setShowCreateModal(true)}
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
           size="md"
           className="w-full sm:w-auto px-4 py-2 md:px-6 md:py-3 text-sm whitespace-nowrap"
         >
-          Create Order
-        </Button> */}
+          Add Order
+        </Button>
       </div>
 
       {/* Table */}

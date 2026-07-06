@@ -174,7 +174,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Desktop logo */}
-        <div className="hidden md:flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+        {/* <div className="hidden md:flex items-center gap-3 px-5 py-4 border-b border-gray-100">
           <img src={LogoImg} alt="Logo" className="h-10 w-10 object-contain" />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-bold text-primary tracking-wide">
@@ -184,7 +184,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               Group of Companies
             </span>
           </div>
-        </div>
+        </div> */}
 
         {/* Navigation */}
         <nav className="flex-1  py-6 overflow-y-auto">
