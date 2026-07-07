@@ -5,23 +5,42 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   addOrderComment,
   clearCurrentOrder,
+  deleteOrder,
   fetchFieldTechs,
   fetchOrderById,
   updateOrder,
 } from '../features/orders/orderSlice';
+import { fetchVendors } from '../features/vendors/vendorSlice';
+import vendorService from '../services/vendorService';
 import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Dropdown from '../components/ui/Dropdown';
 import FullPageLoader from '../components/ui/FullPageLoader';
-import AssignTechModal from '../components/modals/orders/AssignTechModal';
+import DeleteModal from '../components/modals/DeleteModal';
 import { ICON_NAMES, Icon } from '../components/icons';
 
-const ORDER_STATUSES = ['NEW', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
-const DELIVERY_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'DELIVERED'];
+const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+const DELIVERY_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'];
 
 const STATUS_BADGE = {
-  NEW:       { color: '#2563EB', backgroundColor: '#DBEAFE' },
-  ACTIVE:    { color: '#16A34A', backgroundColor: '#D1FAE5' },
-  COMPLETED: { color: '#374151', backgroundColor: '#F3F4F6' },
-  CANCELLED: { color: '#DC2626', backgroundColor: '#FECACA' },
+  NEW:         { color: '#2563EB', backgroundColor: '#DBEAFE' },
+  CONFIRMED:   { color: '#7C3AED', backgroundColor: '#EDE9FE' },
+  IN_PROGRESS: { color: '#D97706', backgroundColor: '#FEF3C7' },
+  DELIVERED:   { color: '#0891B2', backgroundColor: '#CFFAFE' },
+  COMPLETED:   { color: '#16A34A', backgroundColor: '#D1FAE5' },
+  CANCELLED:   { color: '#DC2626', backgroundColor: '#FECACA' },
+};
+
+const EMPTY_EDIT_FORM = {
+  status: '',
+  deliveryStatus: '',
+  assignedToId: '',
+  vendorId: '',
+  vendorLocationId: '',
+  vendorHandlerId: '',
+  date: '',
+  time: '',
+  deliveryAddress: '',
 };
 
 const StatusBadge = ({ value }) => {
@@ -54,6 +73,12 @@ const SectionCard = ({ title, children, action }) => (
   </div>
 );
 
+const FieldLabel = ({ children }) => (
+  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+    {children}
+  </label>
+);
+
 export default function OrderDetails() {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -61,15 +86,26 @@ export default function OrderDetails() {
   const commentsEndRef = useRef(null);
 
   const { currentOrder: order, loading, fieldTechs } = useSelector((s) => s.orders);
+  const { list: vendors = [] } = useSelector((s) => s.vendor);
 
-  const [showAssignModal, setShowAssignModal] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
+  const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const [locations, setLocations] = useState([]);
+  const [handlers, setHandlers] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [loadingHandlers, setLoadingHandlers] = useState(false);
 
   useEffect(() => {
     dispatch(fetchOrderById(orderId));
     dispatch(fetchFieldTechs());
+    dispatch(fetchVendors());
     return () => dispatch(clearCurrentOrder());
   }, [dispatch, orderId]);
 
@@ -77,16 +113,115 @@ export default function OrderDetails() {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [order?.comments?.length]);
 
-  const handleAssign = async (techId) => {
-    await dispatch(updateOrder({ orderId, assignedToId: techId }));
-    dispatch(fetchOrderById(orderId));
+  const setField = (field, value) => setEditForm((p) => ({ ...p, [field]: value }));
+
+  const handleVendorChange = (vendorId) => {
+    setEditForm((p) => ({ ...p, vendorId, vendorLocationId: '', vendorHandlerId: '' }));
+    setLocations([]);
+    setHandlers([]);
+
+    if (vendorId) {
+      setLoadingLocations(true);
+      vendorService
+        .getLocationbyVendorId(vendorId)
+        .then((res) => setLocations(res.data || []))
+        .catch(() => setLocations([]))
+        .finally(() => setLoadingLocations(false));
+    }
   };
 
-  const handleStatusChange = async (field, value) => {
-    setUpdatingStatus(true);
-    await dispatch(updateOrder({ orderId, [field]: value }));
-    await dispatch(fetchOrderById(orderId));
-    setUpdatingStatus(false);
+  const handleLocationChange = (vendorLocationId) => {
+    setEditForm((p) => ({ ...p, vendorLocationId, vendorHandlerId: '' }));
+    setHandlers([]);
+
+    if (vendorLocationId) {
+      setLoadingHandlers(true);
+      vendorService
+        .getHandlersforLocation(vendorLocationId)
+        .then((res) => setHandlers(res.data || []))
+        .catch(() => setHandlers([]))
+        .finally(() => setLoadingHandlers(false));
+    }
+  };
+
+  const handleEnterEdit = () => {
+    setEditForm({
+      status: order.status || '',
+      deliveryStatus: order.deliveryStatus || '',
+      assignedToId: order.assignedTo?.id ? String(order.assignedTo.id) : order.assignedToId ? String(order.assignedToId) : '',
+      vendorId: order.vendor?.id ? String(order.vendor.id) : '',
+      vendorLocationId: order.vendorLocation?.id ? String(order.vendorLocation.id) : '',
+      vendorHandlerId: order.vendorHandler?.id ? String(order.vendorHandler.id) : '',
+      date: order.date || '',
+      time: order.time || '',
+      deliveryAddress: order.deliveryAddress || '',
+    });
+    setLocations([]);
+    setHandlers([]);
+
+    if (order.vendor?.id) {
+      setLoadingLocations(true);
+      vendorService
+        .getLocationbyVendorId(order.vendor.id)
+        .then((res) => {
+          const locs = res.data || [];
+          setLocations(locs);
+          if (order.vendorLocation?.id) {
+            setLoadingHandlers(true);
+            vendorService
+              .getHandlersforLocation(order.vendorLocation.id)
+              .then((r) => setHandlers(r.data || []))
+              .catch(() => setHandlers([]))
+              .finally(() => setLoadingHandlers(false));
+          }
+        })
+        .catch(() => setLocations([]))
+        .finally(() => setLoadingLocations(false));
+    }
+
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditForm(EMPTY_EDIT_FORM);
+    setLocations([]);
+    setHandlers([]);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const result = await dispatch(updateOrder({
+        orderId,
+        status: editForm.status,
+        deliveryStatus: editForm.deliveryStatus,
+        assignedToId: editForm.assignedToId ? parseInt(editForm.assignedToId) : null,
+        vendorId: editForm.vendorId ? parseInt(editForm.vendorId) : null,
+        vendorLocationId: editForm.vendorLocationId ? parseInt(editForm.vendorLocationId) : null,
+        vendorHandlerId: editForm.vendorHandlerId ? parseInt(editForm.vendorHandlerId) : null,
+        date: editForm.date,
+        time: editForm.time,
+        deliveryAddress: editForm.deliveryAddress,
+      }));
+      if (updateOrder.fulfilled.match(result)) {
+        await dispatch(fetchOrderById(orderId));
+        setIsEditing(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+    try {
+      const result = await dispatch(deleteOrder(orderId));
+      if (deleteOrder.fulfilled.match(result)) navigate('/orders');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleSendComment = async () => {
@@ -105,6 +240,32 @@ export default function OrderDetails() {
     </div>
   );
 
+  const statusOptions = ORDER_STATUSES.map((s) => ({ value: s, label: s }));
+  const deliveryStatusOptions = DELIVERY_STATUSES.map((s) => ({ value: s, label: s }));
+
+  const techOptions = [
+    { value: '', label: 'Unassigned' },
+    ...fieldTechs.map((t) => ({
+      value: String(t.id),
+      label: `${t.name} (${t.employeeId})`,
+    })),
+  ];
+
+  const vendorOptions = vendors.map((v) => ({
+    value: String(v.id),
+    label: v.companyName || v.name,
+  }));
+
+  const locationOptions = locations.map((l) => ({
+    value: String(l.id),
+    label: l.address || l.name,
+  }));
+
+  const handlerOptions = handlers.map((h) => ({
+    value: String(h.id),
+    label: `${h.name}${h.phone ? ` (${h.phone})` : ''}`,
+  }));
+
   return (
     <div className="p-4 md:p-6 lg:p-8 ">
       {/* Back + Header */}
@@ -114,7 +275,6 @@ export default function OrderDetails() {
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors"
         >
           <Icon name={ICON_NAMES.CHEVRON_LEFT} size={16} />
-          {/* Back */}
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
@@ -125,6 +285,26 @@ export default function OrderDetails() {
             {order.project?.projectName} · {order.client?.companyName}
           </p>
         </div>
+
+        {isEditing ? (
+          <div className="flex gap-2">
+            <Button type="button" onClick={handleCancelEdit} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Button type="button" variant="success" onClick={handleEnterEdit}>
+              Edit
+            </Button>
+            <Button type="button" variant="danger" onClick={() => setShowDeleteModal(true)}>
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -135,32 +315,12 @@ export default function OrderDetails() {
           <SectionCard
             title="Order Summary"
             action={
-              <div className="flex gap-2 flex-wrap">
-                {/* Order Status */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Status:</span>
-                  <select
-                    value={order.status}
-                    disabled={updatingStatus}
-                    onChange={(e) => handleStatusChange('status', e.target.value)}
-                    className="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+              !isEditing && (
+                <div className="flex gap-2 flex-wrap">
+                  <StatusBadge value={order.status} />
+                  <StatusBadge value={order.deliveryStatus || 'ASSIGNED'} />
                 </div>
-                {/* Delivery Status */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Delivery:</span>
-                  <select
-                    value={order.deliveryStatus || 'ASSIGNED'}
-                    disabled={updatingStatus}
-                    onChange={(e) => handleStatusChange('deliveryStatus', e.target.value)}
-                    className="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
-                  >
-                    {DELIVERY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
+              )
             }
           >
             <InfoRow label="Order ID" value={order.orderId} />
@@ -168,18 +328,116 @@ export default function OrderDetails() {
             <InfoRow label="Client" value={order.client?.companyName} />
             <InfoRow label="Product" value={`${order.productName || ''} ${order.productGrade ? `(${order.productGrade})` : ''}`} />
             <InfoRow label="Quantity" value={order.quantity} />
-            <InfoRow label="Date" value={order.date} />
-            <InfoRow label="Time" value={order.time} />
-            <InfoRow label="Delivery Address" value={order.deliveryAddress} />
+
+            {isEditing ? (
+              <div className="space-y-4 pt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <FieldLabel>Status</FieldLabel>
+                    <Dropdown
+                      options={statusOptions}
+                      value={editForm.status}
+                      placeholder="Select status"
+                      width="100%"
+                      height="40px"
+                      onChange={(v) => setField('status', v)}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Delivery Status</FieldLabel>
+                    <Dropdown
+                      options={deliveryStatusOptions}
+                      value={editForm.deliveryStatus}
+                      placeholder="Select delivery status"
+                      width="100%"
+                      height="40px"
+                      onChange={(v) => setField('deliveryStatus', v)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Input
+                      type="date"
+                      label="Date"
+                      value={editForm.date}
+                      onChange={(e) => setField('date', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="time"
+                      label="Time"
+                      value={editForm.time}
+                      onChange={(e) => setField('time', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Input
+                  label="Delivery Address"
+                  placeholder="Delivery address"
+                  value={editForm.deliveryAddress}
+                  onChange={(e) => setField('deliveryAddress', e.target.value)}
+                />
+              </div>
+            ) : (
+              <>
+                <InfoRow label="Date" value={order.date} />
+                <InfoRow label="Time" value={order.time} />
+                <InfoRow label="Delivery Address" value={order.deliveryAddress} />
+              </>
+            )}
           </SectionCard>
 
           {/* Vendor Details */}
-          {order.vendor && (
+          {(isEditing || order.vendor) && (
             <SectionCard title="Vendor Details">
-              <InfoRow label="Vendor" value={order.vendor?.companyName} />
-              <InfoRow label="Handler" value={order.vendorHandler?.name} />
-              <InfoRow label="Handler Phone" value={order.vendorHandler?.phone} />
-              <InfoRow label="Plant Location" value={order.vendorLocation?.address} />
+              {isEditing ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <FieldLabel>Vendor</FieldLabel>
+                    <Dropdown
+                      options={vendorOptions}
+                      value={editForm.vendorId}
+                      placeholder="Select vendor"
+                      width="100%"
+                      height="40px"
+                      onChange={handleVendorChange}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Plant Location</FieldLabel>
+                    <Dropdown
+                      options={locationOptions}
+                      value={editForm.vendorLocationId}
+                      placeholder={loadingLocations ? 'Loading...' : 'Select location'}
+                      width="100%"
+                      height="40px"
+                      disabled={!editForm.vendorId || loadingLocations}
+                      onChange={handleLocationChange}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Handler</FieldLabel>
+                    <Dropdown
+                      options={handlerOptions}
+                      value={editForm.vendorHandlerId}
+                      placeholder={loadingHandlers ? 'Loading...' : 'Select handler'}
+                      width="100%"
+                      height="40px"
+                      disabled={!editForm.vendorLocationId || loadingHandlers}
+                      onChange={(v) => setField('vendorHandlerId', v)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <InfoRow label="Vendor" value={order.vendor?.companyName} />
+                  <InfoRow label="Handler" value={order.vendorHandler?.name} />
+                  <InfoRow label="Handler Phone" value={order.vendorHandler?.phone} />
+                  <InfoRow label="Plant Location" value={order.vendorLocation?.address} />
+                </>
+              )}
             </SectionCard>
           )}
 
@@ -220,30 +478,27 @@ export default function OrderDetails() {
         <div className="space-y-5">
 
           {/* Field Tech */}
-          <SectionCard
-            title="Field Technician"
-            action={
-              <button
-                onClick={() => setShowAssignModal(true)}
-                className="text-xs text-primary font-medium hover:underline"
-              >
-                {order.assignedTo ? 'Reassign' : 'Assign'}
-              </button>
-            }
-          >
-            {order.assignedTo ? (
+          <SectionCard title="Field Technician">
+            {isEditing ? (
+              <div>
+                <FieldLabel>Assign Field Tech</FieldLabel>
+                <Dropdown
+                  options={techOptions}
+                  value={editForm.assignedToId}
+                  placeholder="Unassigned"
+                  width="100%"
+                  height="40px"
+                  onChange={(v) => setField('assignedToId', v)}
+                />
+              </div>
+            ) : order.assignedTo ? (
               <>
                 <InfoRow label="Name" value={order.assignedTo.name} />
                 <InfoRow label="Employee ID" value={order.assignedTo.employeeId} />
                 <InfoRow label="Phone" value={order.assignedTo.phone} />
               </>
             ) : (
-              <div className="py-2">
-                <p className="text-sm text-gray-400 mb-3">No field tech assigned.</p>
-                <Button variant="primary" size="sm" onClick={() => setShowAssignModal(true)} className="w-full">
-                  Assign Field Tech
-                </Button>
-              </div>
+              <p className="text-sm text-gray-400 py-2">No field tech assigned.</p>
             )}
           </SectionCard>
 
@@ -304,12 +559,13 @@ export default function OrderDetails() {
         </div>
       </div>
 
-      <AssignTechModal
-        isOpen={showAssignModal}
-        onClose={() => setShowAssignModal(false)}
-        onSubmit={handleAssign}
-        fieldTechs={fieldTechs}
-        currentAssignedId={order.assignedToId}
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Order"
+        message={`Are you sure you want to delete order ${order.orderId}? This cannot be undone.`}
+        isLoading={deleting}
       />
     </div>
   );

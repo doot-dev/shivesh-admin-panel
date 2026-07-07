@@ -18,6 +18,7 @@ import ProjectsPage from "../pages/projects";
 import ProjectsDetails from "../pages/projectsDetails";
 import OrdersPage from "../pages/orders";
 import OrderDetails from "../pages/orderDetails";
+import AddOrderPage from "../pages/addOrder";
 
 export default function AppRoutes() {
   return (
@@ -43,6 +44,7 @@ export default function AppRoutes() {
             <Route path="projects" element={<ProjectsPage />} />
             <Route path="projects/:id" element={<ProjectsDetails />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/add" element={<AddOrderPage />} />
             <Route path="orders/:orderId" element={<OrderDetails />} />
             <Route path="orders/all" element={<ComingSoon />} />
             <Route path="orders/pending" element={<ComingSoon />} />
