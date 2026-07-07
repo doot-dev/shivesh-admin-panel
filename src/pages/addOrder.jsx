@@ -7,8 +7,8 @@ import Input from '../components/ui/Input';
 import Dropdown from '../components/ui/Dropdown';
 import { ICON_NAMES, Icon } from '../components/icons';
 import vendorService from '../services/vendorService';
-import { fetchProductsById, fetchProducts } from '../features/product/productSlice';
 import { fetchProjects } from '../features/projects/projectSlice';
+import { fetchProjectProducts } from '../features/projects/projectProductSlice';
 import { fetchClients } from '../features/clients/clientsSlice';
 import { fetchVendors } from '../features/vendors/vendorSlice';
 import { createOrder, fetchFieldTechs } from '../features/orders/orderSlice';
@@ -17,7 +17,6 @@ const EMPTY = {
   projectId: '',
   clientId: '',
   productId: '',
-  gradeId: '',
   quantity: '',
   date: '',
   time: '',
@@ -45,13 +44,12 @@ const AddOrderPage = () => {
   const { list: clients = [] } = useSelector((s) => s.client);
   const { fieldTechs = [] } = useSelector((s) => s.orders);
   const { list: vendors = [] } = useSelector((s) => s.vendor);
-  const { productList: products = [], currentProduct } = useSelector((s) => s.products);
+  const { prodList: projectProducts = [], loading: loadingProjectProducts } = useSelector((s) => s.projectProduct);
 
   useEffect(() => {
     dispatch(fetchProjects());
     dispatch(fetchClients());
     dispatch(fetchVendors());
-    dispatch(fetchProducts());
     dispatch(fetchFieldTechs());
   }, [dispatch]);
 
@@ -68,10 +66,11 @@ const AddOrderPage = () => {
     }
   };
 
-  const handleProductChange = (productId) => {
-    setForm((p) => ({ ...p, productId, gradeId: '' }));
+  const handleProjectChange = (projectId) => {
+    set('projectId', projectId);
+    setForm((p) => ({ ...p, productId: '' }));
     if (errors.productId) setErrors((p) => ({ ...p, productId: '' }));
-    if (productId) dispatch(fetchProductsById(productId));
+    if (projectId) dispatch(fetchProjectProducts(projectId));
   };
 
   const handleVendorChange = (vendorId) => {
@@ -108,7 +107,6 @@ const AddOrderPage = () => {
     if (!form.projectId) e.projectId = 'Project is required';
     if (!form.clientId) e.clientId = 'Client is required';
     if (!form.productId) e.productId = 'Product is required';
-    if (!form.gradeId) e.gradeId = 'Product grade is required';
     if (!form.quantity.trim()) e.quantity = 'Quantity is required';
     return e;
   };
@@ -119,14 +117,13 @@ const AddOrderPage = () => {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSubmitting(true);
     try {
-      const selectedProduct = products.find((p) => p.id === form.productId);
-      const selectedGrade = currentProduct?.size?.find((g) => g.id === form.gradeId);
-      const { productId, gradeId, ...rest } = form;
+      const selectedProduct = projectProducts.find((p) => p.id === form.productId);
+      const { productId, ...rest } = form;
 
       const result = await dispatch(createOrder({
         ...rest,
-        productName: selectedProduct?.name || '',
-        productGrade: selectedGrade?.name || '',
+        productName: selectedProduct?.productName || '',
+        productGrade: selectedProduct?.productGrade || '',
         assignedToId: form.assignedToId ? parseInt(form.assignedToId) : undefined,
         vendorId: form.vendorId ? parseInt(form.vendorId) : undefined,
         vendorLocationId: form.vendorLocationId ? parseInt(form.vendorLocationId) : undefined,
@@ -160,14 +157,9 @@ const AddOrderPage = () => {
     })),
   ];
 
-  const productOptions = products.map((p) => ({
+  const productOptions = projectProducts.map((p) => ({
     value: p.id,
-    label: p.name,
-  }));
-
-  const gradeOptions = (currentProduct?.size || []).map((g) => ({
-    value: g.id,
-    label: g.name,
+    label: `${p.productName}${p.productGrade ? ` (${p.productGrade})` : ''}`,
   }));
 
   const vendorOptions = vendors.map((v) => ({
@@ -215,7 +207,7 @@ const AddOrderPage = () => {
                 placeholder="Select project"
                 width="100%"
                 height="40px"
-                onChange={(v) => set('projectId', v)}
+                onChange={handleProjectChange}
               />
               {errors.projectId && <p className="mt-1 text-xs text-red-500">{errors.projectId}</p>}
             </div>
@@ -246,33 +238,22 @@ const AddOrderPage = () => {
               <Dropdown
                 options={productOptions}
                 value={form.productId}
-                placeholder="Select product"
+                placeholder={
+                  !form.projectId
+                    ? 'Select project first'
+                    : loadingProjectProducts
+                      ? 'Loading...'
+                      : 'Select product'
+                }
                 width="100%"
                 height="40px"
-                onChange={handleProductChange}
+                disabled={!form.projectId || loadingProjectProducts}
+                onChange={(v) => set('productId', v)}
               />
               {errors.productId && <p className="mt-1 text-xs text-red-500">{errors.productId}</p>}
             </div>
 
-            {/* Product Grade */}
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
-                Product Grade <span style={{ color: 'var(--color-error)' }}>*</span>
-              </label>
-              <Dropdown
-                options={gradeOptions}
-                value={form.gradeId}
-                placeholder="Select grade"
-                width="100%"
-                height="40px"
-                disabled={!form.productId}
-                onChange={(v) => set('gradeId', v)}
-              />
-              {errors.gradeId && <p className="mt-1 text-xs text-red-500">{errors.gradeId}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Quantity */}
             <div>
               <Input
                 label="Quantity"
@@ -284,19 +265,20 @@ const AddOrderPage = () => {
                 errorMessage={errors.quantity}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
-                Assign Field Tech
-              </label>
-              <Dropdown
-                options={techOptions}
-                value={form.assignedToId}
-                placeholder="Unassigned"
-                width="100%"
-                height="40px"
-                onChange={(v) => set('assignedToId', v)}
-              />
-            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+              Assign Field Tech
+            </label>
+            <Dropdown
+              options={techOptions}
+              value={form.assignedToId}
+              placeholder="Unassigned"
+              width="100%"
+              height="40px"
+              onChange={(v) => set('assignedToId', v)}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
