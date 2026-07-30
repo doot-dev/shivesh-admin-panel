@@ -19,6 +19,8 @@ import ProjectsDetails from "../pages/projectsDetails";
 import OrdersPage from "../pages/orders";
 import OrderDetails from "../pages/orderDetails";
 import AddOrderPage from "../pages/addOrder";
+import BillingPage from "../pages/billing";
+import BillDetails from "../pages/billDetails";
 
 export default function AppRoutes() {
   return (
@@ -50,7 +52,8 @@ export default function AppRoutes() {
             <Route path="orders/pending" element={<ComingSoon />} />
             <Route path="orders/completed" element={<ComingSoon />} />
             <Route path="testing" element={<ComingSoon />} />
-            <Route path="billing" element={<ComingSoon />} />
+            <Route path="billing" element={<BillingPage />} />
+            <Route path="billing/:billId" element={<BillDetails />} />
             <Route path="reports" element={<ComingSoon />} />
             <Route path="settings" element={<ComingSoon />} />
           </Route>
