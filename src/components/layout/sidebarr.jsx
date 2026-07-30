@@ -146,6 +146,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       );
     }
 
+    if (path === "/billing") {
+      return (
+        location.pathname === "/billing" ||
+        location.pathname.startsWith("/billing/")
+      );
+    }
+
     // Default exact match for other paths
     return location.pathname === path;
   };

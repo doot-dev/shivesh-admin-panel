@@ -34,13 +34,50 @@ const STATUS_BADGE = {
 const EMPTY_EDIT_FORM = {
   status: '',
   deliveryStatus: '',
-  assignedToId: '',
-  vendorId: '',
-  vendorLocationId: '',
-  vendorHandlerId: '',
   date: '',
   time: '',
   deliveryAddress: '',
+  vendors: [],
+  fieldTechs: [],
+};
+
+let rowKeySeq = 0;
+const nextRowKey = () => `row-${++rowKeySeq}`;
+
+const makeVendorRow = (init = {}) => ({
+  key: nextRowKey(),
+  vendorId: init.vendorId ? String(init.vendorId) : '',
+  vendorLocationId: init.vendorLocationId ? String(init.vendorLocationId) : '',
+  vendorHandlerId: init.vendorHandlerId ? String(init.vendorHandlerId) : '',
+  locations: [],
+  handlers: [],
+  loadingLocations: false,
+  loadingHandlers: false,
+});
+
+const makeTechRow = (init = {}) => ({
+  key: nextRowKey(),
+  assignedToId: init.assignedToId ? String(init.assignedToId) : '',
+});
+
+// The API still returns a single vendor / single assignee. Read both shapes so the
+// page keeps working once the backend moves to arrays.
+const readVendors = (order) => {
+  if (Array.isArray(order.vendors) && order.vendors.length) return order.vendors;
+  if (order.vendor) {
+    return [{
+      vendor: order.vendor,
+      vendorLocation: order.vendorLocation,
+      vendorHandler: order.vendorHandler,
+    }];
+  }
+  return [];
+};
+
+const readFieldTechs = (order) => {
+  if (Array.isArray(order.fieldTechs) && order.fieldTechs.length) return order.fieldTechs;
+  if (order.assignedTo) return [order.assignedTo];
+  return [];
 };
 
 const StatusBadge = ({ value }) => {
@@ -97,11 +134,6 @@ export default function OrderDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const [locations, setLocations] = useState([]);
-  const [handlers, setHandlers] = useState([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
-  const [loadingHandlers, setLoadingHandlers] = useState(false);
-
   useEffect(() => {
     dispatch(fetchOrderById(orderId));
     dispatch(fetchFieldTechs());
@@ -115,95 +147,129 @@ export default function OrderDetails() {
 
   const setField = (field, value) => setEditForm((p) => ({ ...p, [field]: value }));
 
-  const handleVendorChange = (vendorId) => {
-    setEditForm((p) => ({ ...p, vendorId, vendorLocationId: '', vendorHandlerId: '' }));
-    setLocations([]);
-    setHandlers([]);
+  const patchVendorRow = (key, patch) =>
+    setEditForm((p) => ({
+      ...p,
+      vendors: p.vendors.map((r) => (r.key === key ? { ...r, ...patch } : r)),
+    }));
 
-    if (vendorId) {
-      setLoadingLocations(true);
-      vendorService
-        .getLocationbyVendorId(vendorId)
-        .then((res) => setLocations(res.data || []))
-        .catch(() => setLocations([]))
-        .finally(() => setLoadingLocations(false));
-    }
+  const loadLocations = (key, vendorId) => {
+    patchVendorRow(key, { loadingLocations: true });
+    return vendorService
+      .getLocationbyVendorId(vendorId)
+      .then((res) => patchVendorRow(key, { locations: res.data || [] }))
+      .catch(() => patchVendorRow(key, { locations: [] }))
+      .finally(() => patchVendorRow(key, { loadingLocations: false }));
   };
 
-  const handleLocationChange = (vendorLocationId) => {
-    setEditForm((p) => ({ ...p, vendorLocationId, vendorHandlerId: '' }));
-    setHandlers([]);
-
-    if (vendorLocationId) {
-      setLoadingHandlers(true);
-      vendorService
-        .getHandlersforLocation(vendorLocationId)
-        .then((res) => setHandlers(res.data || []))
-        .catch(() => setHandlers([]))
-        .finally(() => setLoadingHandlers(false));
-    }
+  const loadHandlers = (key, locationId) => {
+    patchVendorRow(key, { loadingHandlers: true });
+    return vendorService
+      .getHandlersforLocation(locationId)
+      .then((res) => patchVendorRow(key, { handlers: res.data || [] }))
+      .catch(() => patchVendorRow(key, { handlers: [] }))
+      .finally(() => patchVendorRow(key, { loadingHandlers: false }));
   };
+
+  const handleVendorChange = (key, vendorId) => {
+    patchVendorRow(key, {
+      vendorId,
+      vendorLocationId: '',
+      vendorHandlerId: '',
+      locations: [],
+      handlers: [],
+    });
+    if (vendorId) loadLocations(key, vendorId);
+  };
+
+  const handleLocationChange = (key, vendorLocationId) => {
+    patchVendorRow(key, { vendorLocationId, vendorHandlerId: '', handlers: [] });
+    if (vendorLocationId) loadHandlers(key, vendorLocationId);
+  };
+
+  const handleAddVendorRow = () =>
+    setEditForm((p) => ({ ...p, vendors: [...p.vendors, makeVendorRow()] }));
+
+  const handleRemoveVendorRow = (key) =>
+    setEditForm((p) => ({ ...p, vendors: p.vendors.filter((r) => r.key !== key) }));
+
+  const handleAddTechRow = () =>
+    setEditForm((p) => ({ ...p, fieldTechs: [...p.fieldTechs, makeTechRow()] }));
+
+  const handleRemoveTechRow = (key) =>
+    setEditForm((p) => ({ ...p, fieldTechs: p.fieldTechs.filter((r) => r.key !== key) }));
+
+  const handleTechChange = (key, assignedToId) =>
+    setEditForm((p) => ({
+      ...p,
+      fieldTechs: p.fieldTechs.map((r) => (r.key === key ? { ...r, assignedToId } : r)),
+    }));
 
   const handleEnterEdit = () => {
+    const vendorRows = readVendors(order).map((v) =>
+      makeVendorRow({
+        vendorId: v.vendor?.id ?? v.vendorId,
+        vendorLocationId: v.vendorLocation?.id ?? v.vendorLocationId,
+        vendorHandlerId: v.vendorHandler?.id ?? v.vendorHandlerId,
+      })
+    );
+    const techRows = readFieldTechs(order).map((t) =>
+      makeTechRow({ assignedToId: t.id ?? t.assignedToId })
+    );
+
     setEditForm({
       status: order.status || '',
       deliveryStatus: order.deliveryStatus || '',
-      assignedToId: order.assignedTo?.id ? String(order.assignedTo.id) : order.assignedToId ? String(order.assignedToId) : '',
-      vendorId: order.vendor?.id ? String(order.vendor.id) : '',
-      vendorLocationId: order.vendorLocation?.id ? String(order.vendorLocation.id) : '',
-      vendorHandlerId: order.vendorHandler?.id ? String(order.vendorHandler.id) : '',
       date: order.date || '',
       time: order.time || '',
       deliveryAddress: order.deliveryAddress || '',
+      vendors: vendorRows,
+      fieldTechs: techRows,
     });
-    setLocations([]);
-    setHandlers([]);
-
-    if (order.vendor?.id) {
-      setLoadingLocations(true);
-      vendorService
-        .getLocationbyVendorId(order.vendor.id)
-        .then((res) => {
-          const locs = res.data || [];
-          setLocations(locs);
-          if (order.vendorLocation?.id) {
-            setLoadingHandlers(true);
-            vendorService
-              .getHandlersforLocation(order.vendorLocation.id)
-              .then((r) => setHandlers(r.data || []))
-              .catch(() => setHandlers([]))
-              .finally(() => setLoadingHandlers(false));
-          }
-        })
-        .catch(() => setLocations([]))
-        .finally(() => setLoadingLocations(false));
-    }
-
     setIsEditing(true);
+
+    vendorRows.forEach((row) => {
+      if (!row.vendorId) return;
+      loadLocations(row.key, row.vendorId);
+      if (row.vendorLocationId) loadHandlers(row.key, row.vendorLocationId);
+    });
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditForm(EMPTY_EDIT_FORM);
-    setLocations([]);
-    setHandlers([]);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
+      const vendorPayload = editForm.vendors
+        .filter((r) => r.vendorId)
+        .map((r) => ({
+          vendorId: parseInt(r.vendorId),
+          vendorLocationId: r.vendorLocationId ? parseInt(r.vendorLocationId) : null,
+          vendorHandlerId: r.vendorHandlerId ? parseInt(r.vendorHandlerId) : null,
+        }));
+      const techPayload = editForm.fieldTechs
+        .filter((r) => r.assignedToId)
+        .map((r) => ({ assignedToId: parseInt(r.assignedToId) }));
+
       const result = await dispatch(updateOrder({
         orderId,
         status: editForm.status,
         deliveryStatus: editForm.deliveryStatus,
-        assignedToId: editForm.assignedToId ? parseInt(editForm.assignedToId) : null,
-        vendorId: editForm.vendorId ? parseInt(editForm.vendorId) : null,
-        vendorLocationId: editForm.vendorLocationId ? parseInt(editForm.vendorLocationId) : null,
-        vendorHandlerId: editForm.vendorHandlerId ? parseInt(editForm.vendorHandlerId) : null,
         date: editForm.date,
         time: editForm.time,
         deliveryAddress: editForm.deliveryAddress,
+        vendors: vendorPayload,
+        fieldTechs: techPayload,
+        // The API is still single-vendor / single-assignee; send the first row in the
+        // legacy fields so saves keep working until it accepts the arrays above.
+        vendorId: vendorPayload[0]?.vendorId ?? null,
+        vendorLocationId: vendorPayload[0]?.vendorLocationId ?? null,
+        vendorHandlerId: vendorPayload[0]?.vendorHandlerId ?? null,
+        assignedToId: techPayload[0]?.assignedToId ?? null,
       }));
       if (updateOrder.fulfilled.match(result)) {
         await dispatch(fetchOrderById(orderId));
@@ -243,28 +309,35 @@ export default function OrderDetails() {
   const statusOptions = ORDER_STATUSES.map((s) => ({ value: s, label: s }));
   const deliveryStatusOptions = DELIVERY_STATUSES.map((s) => ({ value: s, label: s }));
 
-  const techOptions = [
-    { value: '', label: 'Unassigned' },
-    ...fieldTechs.map((t) => ({
-      value: String(t.id),
-      label: `${t.name} (${t.employeeId})`,
-    })),
-  ];
-
   const vendorOptions = vendors.map((v) => ({
     value: String(v.id),
     label: v.companyName || v.name,
   }));
 
-  const locationOptions = locations.map((l) => ({
+  const toLocationOptions = (list) => list.map((l) => ({
     value: String(l.id),
     label: l.address || l.name,
   }));
 
-  const handlerOptions = handlers.map((h) => ({
+  const toHandlerOptions = (list) => list.map((h) => ({
     value: String(h.id),
     label: `${h.name}${h.phone ? ` (${h.phone})` : ''}`,
   }));
+
+  // A technician already picked in another row shouldn't be selectable twice.
+  const techOptionsFor = (row) => [
+    { value: '', label: 'Select technician' },
+    ...fieldTechs
+      .filter(
+        (t) =>
+          String(t.id) === row.assignedToId ||
+          !editForm.fieldTechs.some((r) => r.key !== row.key && r.assignedToId === String(t.id))
+      )
+      .map((t) => ({ value: String(t.id), label: `${t.name} (${t.employeeId})` })),
+  ];
+
+  const orderVendors = readVendors(order);
+  const orderFieldTechs = readFieldTechs(order);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 ">
@@ -390,53 +463,88 @@ export default function OrderDetails() {
           </SectionCard>
 
           {/* Vendor Details */}
-          {(isEditing || order.vendor) && (
-            <SectionCard title="Vendor Details">
+          {(isEditing || orderVendors.length > 0) && (
+            <SectionCard
+              title={`Vendor Details (${isEditing ? editForm.vendors.length : orderVendors.length})`}
+              action={
+                isEditing && (
+                  <Button type="button" variant="success" onClick={handleAddVendorRow}>
+                    + Add Vendor
+                  </Button>
+                )
+              }
+            >
               {isEditing ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <FieldLabel>Vendor</FieldLabel>
-                    <Dropdown
-                      options={vendorOptions}
-                      value={editForm.vendorId}
-                      placeholder="Select vendor"
-                      width="100%"
-                      height="40px"
-                      onChange={handleVendorChange}
-                    />
+                editForm.vendors.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-2">
+                    No vendors added. Use “Add Vendor” to add one.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {editForm.vendors.map((row, i) => (
+                      <div key={row.key} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-600">Vendor {i + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVendorRow(row.key)}
+                            className="text-xs text-red-600 hover:text-red-700 font-medium"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div>
+                            <FieldLabel>Vendor</FieldLabel>
+                            <Dropdown
+                              options={vendorOptions}
+                              value={row.vendorId}
+                              placeholder="Select vendor"
+                              width="100%"
+                              height="40px"
+                              onChange={(v) => handleVendorChange(row.key, v)}
+                            />
+                          </div>
+                          <div>
+                            <FieldLabel>Plant Location</FieldLabel>
+                            <Dropdown
+                              options={toLocationOptions(row.locations)}
+                              value={row.vendorLocationId}
+                              placeholder={row.loadingLocations ? 'Loading...' : 'Select location'}
+                              width="100%"
+                              height="40px"
+                              disabled={!row.vendorId || row.loadingLocations}
+                              onChange={(v) => handleLocationChange(row.key, v)}
+                            />
+                          </div>
+                          <div>
+                            <FieldLabel>Handler</FieldLabel>
+                            <Dropdown
+                              options={toHandlerOptions(row.handlers)}
+                              value={row.vendorHandlerId}
+                              placeholder={row.loadingHandlers ? 'Loading...' : 'Select handler'}
+                              width="100%"
+                              height="40px"
+                              disabled={!row.vendorLocationId || row.loadingHandlers}
+                              onChange={(v) => patchVendorRow(row.key, { vendorHandlerId: v })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <FieldLabel>Plant Location</FieldLabel>
-                    <Dropdown
-                      options={locationOptions}
-                      value={editForm.vendorLocationId}
-                      placeholder={loadingLocations ? 'Loading...' : 'Select location'}
-                      width="100%"
-                      height="40px"
-                      disabled={!editForm.vendorId || loadingLocations}
-                      onChange={handleLocationChange}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel>Handler</FieldLabel>
-                    <Dropdown
-                      options={handlerOptions}
-                      value={editForm.vendorHandlerId}
-                      placeholder={loadingHandlers ? 'Loading...' : 'Select handler'}
-                      width="100%"
-                      height="40px"
-                      disabled={!editForm.vendorLocationId || loadingHandlers}
-                      onChange={(v) => setField('vendorHandlerId', v)}
-                    />
-                  </div>
-                </div>
+                )
               ) : (
-                <>
-                  <InfoRow label="Vendor" value={order.vendor?.companyName} />
-                  <InfoRow label="Handler" value={order.vendorHandler?.name} />
-                  <InfoRow label="Handler Phone" value={order.vendorHandler?.phone} />
-                  <InfoRow label="Plant Location" value={order.vendorLocation?.address} />
-                </>
+                <div className="space-y-3">
+                  {orderVendors.map((v, i) => (
+                    <div key={v.id || i} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                      <InfoRow label="Vendor" value={v.vendor?.companyName} />
+                      <InfoRow label="Handler" value={v.vendorHandler?.name} />
+                      <InfoRow label="Handler Phone" value={v.vendorHandler?.phone} />
+                      <InfoRow label="Plant Location" value={v.vendorLocation?.address} />
+                    </div>
+                  ))}
+                </div>
               )}
             </SectionCard>
           )}
@@ -478,27 +586,59 @@ export default function OrderDetails() {
         <div className="space-y-5">
 
           {/* Field Tech */}
-          <SectionCard title="Field Technician">
+          <SectionCard
+            title={`Field Technicians (${isEditing ? editForm.fieldTechs.length : orderFieldTechs.length})`}
+            action={
+              isEditing && (
+                <Button type="button" variant="success" onClick={handleAddTechRow}>
+                  + Add
+                </Button>
+              )
+            }
+          >
             {isEditing ? (
-              <div>
-                <FieldLabel>Assign Field Tech</FieldLabel>
-                <Dropdown
-                  options={techOptions}
-                  value={editForm.assignedToId}
-                  placeholder="Unassigned"
-                  width="100%"
-                  height="40px"
-                  onChange={(v) => setField('assignedToId', v)}
-                />
-              </div>
-            ) : order.assignedTo ? (
-              <>
-                <InfoRow label="Name" value={order.assignedTo.name} />
-                <InfoRow label="Employee ID" value={order.assignedTo.employeeId} />
-                <InfoRow label="Phone" value={order.assignedTo.phone} />
-              </>
-            ) : (
+              editForm.fieldTechs.length === 0 ? (
+                <p className="text-sm text-gray-400 py-2">
+                  No technicians assigned. Use “Add” to assign one.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {editForm.fieldTechs.map((row, i) => (
+                    <div key={row.key}>
+                      <div className="flex items-center justify-between mb-1">
+                        <FieldLabel>Technician {i + 1}</FieldLabel>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTechRow(row.key)}
+                          className="text-xs text-red-600 hover:text-red-700 font-medium mb-2"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <Dropdown
+                        options={techOptionsFor(row)}
+                        value={row.assignedToId}
+                        placeholder="Select technician"
+                        width="100%"
+                        height="40px"
+                        onChange={(v) => handleTechChange(row.key, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : orderFieldTechs.length === 0 ? (
               <p className="text-sm text-gray-400 py-2">No field tech assigned.</p>
+            ) : (
+              <div className="space-y-3">
+                {orderFieldTechs.map((t, i) => (
+                  <div key={t.id || i} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                    <InfoRow label="Name" value={t.name} />
+                    <InfoRow label="Employee ID" value={t.employeeId} />
+                    <InfoRow label="Phone" value={t.phone} />
+                  </div>
+                ))}
+              </div>
             )}
           </SectionCard>
 
