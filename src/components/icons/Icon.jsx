@@ -583,6 +583,9 @@ const getColorFilter = (color) => {
       "brightness(0) saturate(100%) invert(52%) sepia(18%) saturate(398%) hue-rotate(185deg) brightness(90%) contrast(88%)",
     "var(--color-border)":
       "brightness(0) saturate(100%) invert(58%) sepia(74%) saturate(1547%) hue-rotate(213deg) brightness(104%) contrast(92%)",
+    "var(--color-text-inverse)": "brightness(0) saturate(100%) invert(100%)",
+    "#ffffff": "brightness(0) saturate(100%) invert(100%)",
+    "#fff": "brightness(0) saturate(100%) invert(100%)",
 
     // Your custom colors (hex values)
     "#1e3a8a":
