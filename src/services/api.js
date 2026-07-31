@@ -15,7 +15,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers.authorization = token; // Use lowercase 'authorization' and just the token value
     }
-    
+
+    // Let the browser set the multipart boundary for file uploads —
+    // a hand-set application/json here breaks upload endpoints ("No file uploaded").
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     // Log the actual request being sent
     console.log('Request config:', {
       url: config.url,

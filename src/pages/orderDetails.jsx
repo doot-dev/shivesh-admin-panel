@@ -922,16 +922,57 @@ const VendorForm = ({ form, vendorOptions, locationOptions, handlerOptions, onVe
   </div>
 );
 
+// DB stores times as "hh:mm AM/PM" strings; <input type="time"> needs 24-hour "HH:mm".
+const to24HourTime = (value) => {
+  if (!value) return '';
+  const match = /^(\d{1,2}):(\d{2})\s*([AP]M)$/i.exec(value.trim());
+  if (!match) return '';
+  let [, h, m, period] = match;
+  h = parseInt(h, 10);
+  if (period.toUpperCase() === 'PM' && h !== 12) h += 12;
+  if (period.toUpperCase() === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${m}`;
+};
+
+const to12HourTime = (value) => {
+  if (!value) return '';
+  const [h, m] = value.split(':').map((n) => parseInt(n, 10));
+  const period = h >= 12 ? 'PM' : 'AM';
+  let hour12 = h % 12;
+  if (hour12 === 0) hour12 = 12;
+  return `${String(hour12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+};
+
 const TmForm = ({ form, onChange, onSave, onCancel, saving }) => (
   <div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Input label="Truck No." value={form.truckNo} onChange={(e) => onChange('truckNo', e.target.value)} />
       <Input label="Quantity" value={form.qty} onChange={(e) => onChange('qty', e.target.value)} />
       <Input label="Challan No." value={form.challanNo} onChange={(e) => onChange('challanNo', e.target.value)} />
-      <Input label="Dispatch Time" value={form.dispatchTime} onChange={(e) => onChange('dispatchTime', e.target.value)} />
-      <Input label="Arrival Time" value={form.arrivalTime} onChange={(e) => onChange('arrivalTime', e.target.value)} />
-      <Input label="Batch Start" value={form.batchStartTime} onChange={(e) => onChange('batchStartTime', e.target.value)} />
-      <Input label="Batch End" value={form.batchEndTime} onChange={(e) => onChange('batchEndTime', e.target.value)} />
+      <Input
+        label="Dispatch Time"
+        type="time"
+        value={to24HourTime(form.dispatchTime)}
+        onChange={(e) => onChange('dispatchTime', to12HourTime(e.target.value))}
+      />
+      <Input
+        label="Arrival Time"
+        type="time"
+        value={to24HourTime(form.arrivalTime)}
+        onChange={(e) => onChange('arrivalTime', to12HourTime(e.target.value))}
+      />
+      <Input
+        label="Batch Start"
+        type="time"
+        value={to24HourTime(form.batchStartTime)}
+        onChange={(e) => onChange('batchStartTime', to12HourTime(e.target.value))}
+      />
+      <Input
+        label="Batch End"
+        type="time"
+        value={to24HourTime(form.batchEndTime)}
+        onChange={(e) => onChange('batchEndTime', to12HourTime(e.target.value))}
+      />
     </div>
     <div className="flex justify-end gap-2 mt-3">
       <Button type="button" onClick={onCancel} disabled={saving}>Cancel</Button>

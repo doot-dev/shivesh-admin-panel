@@ -49,7 +49,7 @@ const BillingPage = () => {
 
   const columns = [
     { key: 'billNo', header: 'Bill no.' },
-    { key: 'orderNo', header: 'Order no.' },
+    { key: 'orderId', header: 'Order no.' },
     { key: 'clientName', header: 'Client' },
     {
       key: 'product',
@@ -88,21 +88,20 @@ const BillingPage = () => {
       const s = searchTerm.trim().toLowerCase();
       return (
         !s ||
-        b.billDetails?.clientName?.toLowerCase().includes(s) ||
-        b.billDetails?.orderNo?.toLowerCase().includes(s) ||
+        b.order?.client?.companyName?.toLowerCase().includes(s) ||
+        b.order?.orderId?.toLowerCase().includes(s) ||
         b.billNo?.toLowerCase().includes(s) ||
-        b.billDetails?.product?.toLowerCase().includes(s)
+        b.order?.productName?.toLowerCase().includes(s)
       );
     })
     .map((b) => ({
       ...b,
-      orderNo: b.billDetails?.orderNo || '—',
-      clientName: b.billDetails?.clientName || '—',
-      product: `${b.billDetails?.product || ''}${b.billDetails?.grade ? ` (${b.billDetails.grade})` : ''}`,
-      quantity: b.billDetails?.quantity ?? '—',
-      assignedTrucks: b.tmDetails?.length ?? 0,
+      orderId: b.order?.orderId || '—',
+      clientName: b.order?.client?.companyName || '—',
+      product: `${b.order?.productName || ''}${b.order?.productGrade ? ` (${b.order.productGrade})` : ''}`,
+      quantity: b.quantity ?? '—',
+      assignedTrucks: b.assignedTrucks ?? 0,
     }));
-
   return (
     <div className="p-4 md:p-6 lg:p-8">
       {/* Header */}
@@ -143,7 +142,7 @@ const BillingPage = () => {
           </div>
         </div>
 
-        <Button
+        {/* <Button
           onClick={() =>
             toast.info('Bills are generated automatically when an order is marked COMPLETED.')
           }
@@ -153,7 +152,7 @@ const BillingPage = () => {
           className="w-full lg:w-auto px-4 py-2 md:px-6 md:py-3 text-sm whitespace-nowrap"
         >
           New Bill
-        </Button>
+        </Button> */}
       </div>
 
       {/* Table */}
