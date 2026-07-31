@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -6,14 +7,11 @@ import { Icon, ICON_NAMES } from '../components/icons';
 import Button from '../components/ui/Button';
 import Dropdown from '../components/ui/Dropdown';
 import { Table } from '../components/ui';
-import {
-  BILLING_STATUSES,
-  BILLING_STATUS_BADGE,
-  billingData,
-} from '../constant/billingData';
+import { fetchBills } from '../features/bills/billSlice';
+import { BILL_STATUSES, BILL_STATUS_BADGE } from '../constant/billingData';
 
 const StatusBadge = ({ value }) => {
-  const cfg = BILLING_STATUS_BADGE[value] || {
+  const cfg = BILL_STATUS_BADGE[value] || {
     color: 'var(--color-text-secondary)',
     backgroundColor: 'var(--color-background)',
   };
@@ -28,26 +26,29 @@ const StatusBadge = ({ value }) => {
 };
 
 const BillingPage = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const { list: bills = [], total, loading } = useSelector((s) => s.bills);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [productFilter, setProductFilter] = useState('All');
+
+  const refresh = useCallback(() => {
+    dispatch(fetchBills({ limit: 200, status: statusFilter === 'All' ? undefined : statusFilter }));
+  }, [dispatch, statusFilter]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const statusOptions = [
     { value: 'All', label: 'All' },
-    ...BILLING_STATUSES.map((s) => ({ value: s, label: s })),
-  ];
-
-  const productOptions = [
-    { value: 'All', label: 'All' },
-    ...[...new Set(billingData.map((b) => b.product))].map((p) => ({
-      value: p,
-      label: p,
-    })),
+    ...BILL_STATUSES.map((s) => ({ value: s, label: s })),
   ];
 
   const columns = [
+    { key: 'billNo', header: 'Bill no.' },
     { key: 'orderNo', header: 'Order no.' },
     { key: 'clientName', header: 'Client' },
     {
@@ -62,43 +63,45 @@ const BillingPage = () => {
     },
     { key: 'assignedTrucks', header: 'Assigned Trucks' },
     {
-      key: 'billingStatus',
+      key: 'status',
       header: 'Billing status',
       render: (value) => <StatusBadge value={value} />,
     },
     {
       key: 'action',
       header: 'Action',
-      // Rendered as a column rather than a Table `action` so each row can offer
-      // View or Upload depending on whether its bill exists yet.
-      render: (_v, item) => {
-        const isUploaded = item.billingStatus !== 'Not uploaded';
-        return (
-          <button
-            type="button"
-            onClick={() => navigate(`/billing/${item.id}`)}
-            className="text-xs font-medium hover:underline"
-            style={{ color: 'var(--color-primary)' }}
-          >
-            {isUploaded ? 'View' : 'Upload'}
-          </button>
-        );
-      },
+      render: (_v, item) => (
+        <button
+          type="button"
+          onClick={() => navigate(`/billing/${item.billNo}`)}
+          className="text-xs font-medium hover:underline"
+          style={{ color: 'var(--color-primary)' }}
+        >
+          View
+        </button>
+      ),
     },
   ];
 
-  const filteredBills = billingData
-    .filter((b) => statusFilter === 'All' || b.billingStatus === statusFilter)
-    .filter((b) => productFilter === 'All' || b.product === productFilter)
+  const rows = bills
     .filter((b) => {
       const s = searchTerm.trim().toLowerCase();
       return (
         !s ||
-        b.clientName.toLowerCase().includes(s) ||
-        b.orderNo.toLowerCase().includes(s) ||
-        b.product.toLowerCase().includes(s)
+        b.billDetails?.clientName?.toLowerCase().includes(s) ||
+        b.billDetails?.orderNo?.toLowerCase().includes(s) ||
+        b.billNo?.toLowerCase().includes(s) ||
+        b.billDetails?.product?.toLowerCase().includes(s)
       );
-    });
+    })
+    .map((b) => ({
+      ...b,
+      orderNo: b.billDetails?.orderNo || '—',
+      clientName: b.billDetails?.clientName || '—',
+      product: `${b.billDetails?.product || ''}${b.billDetails?.grade ? ` (${b.billDetails.grade})` : ''}`,
+      quantity: b.billDetails?.quantity ?? '—',
+      assignedTrucks: b.tmDetails?.length ?? 0,
+    }));
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -134,18 +137,7 @@ const BillingPage = () => {
               options={statusOptions}
               value={statusFilter}
               onChange={setStatusFilter}
-              width="130px"
-              height="40px"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 whitespace-nowrap">Product:</span>
-            <Dropdown
-              options={productOptions}
-              value={productFilter}
-              onChange={setProductFilter}
-              width="130px"
+              width="140px"
               height="40px"
             />
           </div>
@@ -153,7 +145,7 @@ const BillingPage = () => {
 
         <Button
           onClick={() =>
-            toast.info('New Bill flow is not designed yet — coming soon.')
+            toast.info('Bills are generated automatically when an order is marked COMPLETED.')
           }
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
@@ -168,10 +160,12 @@ const BillingPage = () => {
       <div className="overflow-x-auto -mx-4 md:mx-0">
         <div className="inline-block min-w-full align-middle">
           <Table
-            data={filteredBills}
+            data={rows}
             columns={columns}
+            loading={loading}
             itemsPerPage={10}
             emptyMessage="No bills found"
+            mainTotalItems={total}
           />
         </div>
       </div>

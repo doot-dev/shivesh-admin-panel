@@ -8,6 +8,7 @@ import projectProductReducer from "../features/projects/projectProductSlice";
 import projectProductVendorReducer from "../features/projects/projectProductVendorSlice";
 import vendorReducer from "../features/vendors/vendorSlice";
 import orderReducer from "../features/orders/orderSlice";
+import billReducer from "../features/bills/billSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -19,6 +20,7 @@ export const store = configureStore({
     projectProduct: projectProductReducer,
     projectProductVendor: projectProductVendorReducer,
     orders: orderReducer,
+    bills: billReducer,
   },
 });
 

@@ -1,25 +1,4 @@
-import axios from 'axios';
-import { localStorageKeys } from '../constant/constant';
-
-const ordersApi = axios.create({
-  baseURL: 'http://localhost:3001',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-ordersApi.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(localStorageKeys.accessToken);
-    if (token) {
-      config.headers.authorization = token;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-const api = ordersApi;
+import api from './api';
 
 const BASE = '/api/v1/admin/orders';
 
@@ -29,8 +8,8 @@ const orderService = {
     return response.data;
   },
 
-  getOrder: async (orderId) => {
-    const response = await api.get(`${BASE}/${orderId}`);
+  getOrder: async (orderId, params = {}) => {
+    const response = await api.get(`${BASE}/${orderId}`, { params });
     return response.data;
   },
 
@@ -41,6 +20,11 @@ const orderService = {
 
   updateOrder: async (orderId, data) => {
     const response = await api.put(`${BASE}/${orderId}`, data);
+    return response.data;
+  },
+
+  updateOrderStatus: async (orderId, data) => {
+    const response = await api.put(`${BASE}/${orderId}/status`, data);
     return response.data;
   },
 
@@ -56,6 +40,69 @@ const orderService = {
 
   getFieldTechs: async () => {
     const response = await api.get(`${BASE}/field-techs`);
+    return response.data;
+  },
+
+  // TM details
+  addTm: async (orderId, data) => {
+    const response = await api.post(`${BASE}/${orderId}/tm`, data);
+    return response.data;
+  },
+
+  getTms: async (orderId) => {
+    const response = await api.get(`${BASE}/${orderId}/tm`);
+    return response.data;
+  },
+
+  updateTm: async (orderId, tmId, data) => {
+    const response = await api.put(`${BASE}/${orderId}/tm/${tmId}`, data);
+    return response.data;
+  },
+
+  deleteTm: async (orderId, tmId) => {
+    const response = await api.delete(`${BASE}/${orderId}/tm/${tmId}`);
+    return response.data;
+  },
+
+  // Order vendors
+  addOrderVendor: async (data) => {
+    const response = await api.post(`${BASE}/vendor/create`, data);
+    return response.data;
+  },
+
+  getOrderVendors: async (orderId) => {
+    const response = await api.get(`${BASE}/${orderId}/vendor/list`);
+    return response.data;
+  },
+
+  updateOrderVendor: async (data) => {
+    const response = await api.put(`${BASE}/vendor`, data);
+    return response.data;
+  },
+
+  deleteOrderVendor: async (orderId, orderVendorId) => {
+    const response = await api.delete(`${BASE}/${orderId}/vendor/${orderVendorId}`);
+    return response.data;
+  },
+
+  // Order technicians
+  addOrderTechnician: async (data) => {
+    const response = await api.post(`${BASE}/technician/create`, data);
+    return response.data;
+  },
+
+  getOrderTechnicians: async (orderId) => {
+    const response = await api.get(`${BASE}/${orderId}/technician/list`);
+    return response.data;
+  },
+
+  updateOrderTechnician: async (data) => {
+    const response = await api.put(`${BASE}/technician`, data);
+    return response.data;
+  },
+
+  deleteOrderTechnician: async (orderId, orderTechnicianId) => {
+    const response = await api.delete(`${BASE}/${orderId}/technician/${orderTechnicianId}`);
     return response.data;
   },
 };

@@ -1,10 +1,27 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 
 import { Icon, ICON_NAMES } from '../components/icons';
 import Button from '../components/ui/Button';
-import { getBillById, TM_STATUS_BADGE } from '../constant/billingData';
+import Input from '../components/ui/Input';
+import Dropdown from '../components/ui/Dropdown';
+import FullPageLoader from '../components/ui/FullPageLoader';
+import api from '../services/api';
+import {
+  clearCurrentBill,
+  deleteBill,
+  fetchBillByNo,
+  setTmApproval,
+  updateBillStatus,
+  uploadBillDocument,
+  uploadTmChallan,
+} from '../features/bills/billSlice';
+import { BILL_STATUSES, BILL_STATUS_BADGE, TM_APPROVAL_BADGE } from '../constant/billingData';
+
+const ORIGIN = api.defaults.baseURL;
+const LOCKED_STATUSES = ['PAID', 'CANCELLED'];
 
 const Card = ({ title, children, className = '' }) => (
   <div
@@ -25,12 +42,12 @@ const Field = ({ label, value, action }) => (
       <span className="text-xs text-text-secondary">{label}</span>
       {action}
     </div>
-    <div className="text-sm font-medium text-text-primary mt-1">{value || '—'}</div>
+    <div className="text-sm font-medium text-text-primary mt-1">{value ?? '—'}</div>
   </div>
 );
 
-const TmStatusBadge = ({ value }) => {
-  const cfg = TM_STATUS_BADGE[value] || {
+const StatusBadge = ({ value, badgeMap = BILL_STATUS_BADGE }) => {
+  const cfg = badgeMap[value] || {
     color: 'var(--color-text-secondary)',
     backgroundColor: 'var(--color-background)',
   };
@@ -44,35 +61,40 @@ const TmStatusBadge = ({ value }) => {
   );
 };
 
-const TmCard = ({ tm, onQuantityChange, onAddChallan }) => {
-  const [editingQty, setEditingQty] = useState(false);
-  const [qtyDraft, setQtyDraft] = useState(tm.quantity);
+const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
   const fileInputRef = useRef(null);
-
-  const commitQty = () => {
-    onQuantityChange(tm.id, qtyDraft.trim() || tm.quantity);
-    setEditingQty(false);
-  };
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
 
   const handleViewChallan = () => {
     if (!tm.challanUrl) {
       toast.info('No challan uploaded for this TM yet.');
       return;
     }
-    window.open(tm.challanUrl, '_blank', 'noopener,noreferrer');
+    window.open(`${ORIGIN}${tm.challanUrl}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleFilePicked = (e) => {
     const file = e.target.files?.[0];
-    if (file) onAddChallan(tm.id, file.name);
+    if (file) onUploadChallan(tm.id, file);
     e.target.value = '';
+  };
+
+  const submitReject = () => {
+    if (!reason.trim()) {
+      toast.error('A rejection reason is required.');
+      return;
+    }
+    onReject(tm.id, reason.trim());
+    setRejecting(false);
+    setReason('');
   };
 
   return (
     <Card className="mb-4">
       {/* TM header */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h4 className="text-sm md:text-base font-semibold text-gray-800">{tm.id}</h4>
+        <h4 className="text-sm md:text-base font-semibold text-gray-800">{tm.tmNumber}</h4>
         <div className="flex items-center gap-4">
           <button
             type="button"
@@ -89,7 +111,7 @@ const TmCard = ({ tm, onQuantityChange, onAddChallan }) => {
             style={{ color: 'var(--color-primary)' }}
           >
             <Icon name={ICON_NAMES.PLUS} size={14} color="var(--color-primary)" />
-            Add challan
+            {tm.challanUrl ? 'Replace challan' : 'Add challan'}
           </button>
           <input
             ref={fileInputRef}
@@ -104,79 +126,88 @@ const TmCard = ({ tm, onQuantityChange, onAddChallan }) => {
       {/* TM fields */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
         <Field label="Truck No." value={tm.truckNo} />
-
-        {editingQty ? (
-          <div>
-            <span className="text-xs text-text-secondary">Quantity</span>
-            <div className="flex items-center gap-1 mt-1">
-              <input
-                type="text"
-                value={qtyDraft}
-                autoFocus
-                onChange={(e) => setQtyDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitQty();
-                  if (e.key === 'Escape') {
-                    setQtyDraft(tm.quantity);
-                    setEditingQty(false);
-                  }
-                }}
-                className="w-20 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-              />
-              <button
-                type="button"
-                onClick={commitQty}
-                className="text-xs font-medium text-green-700 hover:underline"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        ) : (
-          <Field
-            label="Quantity"
-            value={tm.quantity}
-            action={
-              <button
-                type="button"
-                onClick={() => {
-                  setQtyDraft(tm.quantity);
-                  setEditingQty(true);
-                }}
-                title="Edit quantity"
-                className="hover:opacity-70"
-              >
-                <Icon name={ICON_NAMES.EDIT} size={12} color="var(--color-primary)" />
-              </button>
-            }
-          />
-        )}
-
+        <Field label="Quantity" value={tm.qty} />
         <Field label="Batch Start Time" value={tm.batchStartTime} />
         <Field label="Batch End Time" value={tm.batchEndTime} />
         <Field label="Challan No." value={tm.challanNo} />
       </div>
 
       {/* TM status */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-start">
         <div>
           <span className="text-xs text-text-secondary">Status</span>
           <div className="mt-1">
-            <TmStatusBadge value={tm.status} />
+            <StatusBadge value={tm.approvalStatus} badgeMap={TM_APPROVAL_BADGE} />
           </div>
         </div>
-        {tm.status === 'Rejected' && <Field label="Reason" value={tm.reason} />}
+        {tm.approvalStatus === 'REJECTED' && <Field label="Reason" value={tm.rejectionReason} />}
+
+        {!locked && tm.approvalStatus !== 'ACCEPTED' && !rejecting && (
+          <div className="flex items-end gap-2 col-span-2">
+            <button
+              type="button"
+              onClick={() => onAccept(tm.id)}
+              className="text-xs font-medium text-green-700 hover:underline"
+            >
+              Accept
+            </button>
+            <button
+              type="button"
+              onClick={() => setRejecting(true)}
+              className="text-xs font-medium text-red-600 hover:underline"
+            >
+              Reject
+            </button>
+          </div>
+        )}
       </div>
+
+      {rejecting && (
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="text"
+            autoFocus
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason for rejection"
+            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+          />
+          <button type="button" onClick={submitReject} className="text-xs font-medium text-red-600 hover:underline">
+            Confirm Reject
+          </button>
+          <button type="button" onClick={() => { setRejecting(false); setReason(''); }} className="text-xs font-medium text-gray-500 hover:underline">
+            Cancel
+          </button>
+        </div>
+      )}
     </Card>
   );
 };
 
 export default function BillDetails() {
-  const { billId } = useParams();
+  const { billId: billNo } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [bill, setBill] = useState(() => getBillById(billId));
+  const { currentBill: bill, loading } = useSelector((s) => s.bills);
+
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const [statusDraft, setStatusDraft] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const docInputRef = useRef(null);
+
+  useEffect(() => {
+    dispatch(fetchBillByNo(billNo));
+    return () => dispatch(clearCurrentBill());
+  }, [dispatch, billNo]);
+
+  useEffect(() => {
+    if (bill) setStatusDraft(bill.status || '');
+  }, [bill?.status]);
+
+  if (loading && !bill) return <FullPageLoader />;
 
   if (!bill) {
     return (
@@ -192,33 +223,61 @@ export default function BillDetails() {
     );
   }
 
-  const d = bill.billDetails;
-  const tech = bill.fieldTechnician;
+  const d = bill.billDetails || {};
+  const techs = bill.fieldTechnicians || [];
+  const locked = LOCKED_STATUSES.includes(bill.status);
 
-  const patchTm = (tmId, patch) =>
-    setBill((p) => ({
-      ...p,
-      tmDetails: p.tmDetails.map((t) => (t.id === tmId ? { ...t, ...patch } : t)),
-    }));
-
-  const handleQuantityChange = (tmId, quantity) => {
-    patchTm(tmId, { quantity });
-    toast.success('Quantity updated');
+  const handleUploadChallan = async (tmId, file) => {
+    await dispatch(uploadTmChallan({ billNo, tmId, file }));
   };
 
-  const handleAddChallan = (tmId, fileName) => {
-    patchTm(tmId, { challanNo: fileName, challanUrl: '#' });
-    toast.success(`Challan "${fileName}" attached to ${tmId}`);
+  const handleAccept = async (tmId) => {
+    await dispatch(setTmApproval({ billNo, tmId, data: { approvalStatus: 'ACCEPTED' } }));
   };
 
-  const handleDownload = () => {
-    toast.info('Bill PDF download will be available once billing APIs are wired up.');
+  const handleReject = async (tmId, rejectionReason) => {
+    await dispatch(setTmApproval({ billNo, tmId, data: { approvalStatus: 'REJECTED', rejectionReason } }));
   };
+
+  const handleUpdateStatus = async () => {
+    if (statusDraft === bill.status) return;
+    setUpdatingStatus(true);
+    try {
+      await dispatch(updateBillStatus({ billNo, status: statusDraft }));
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleDocumentPicked = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploadingDoc(true);
+    try {
+      await dispatch(uploadBillDocument({ billNo, file }));
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete bill ${billNo}? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      const result = await dispatch(deleteBill(billNo));
+      if (deleteBill.fulfilled.match(result)) navigate('/billing');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const statusOptions = BILL_STATUSES.map((s) => ({ value: s, label: s }));
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      {/* Back + Download */}
-      <div className="flex items-center gap-3 mb-4 md:mb-6">
+      {/* Back + Actions */}
+      <div className="flex items-center gap-3 mb-4 md:mb-6 flex-wrap">
         <button
           onClick={() => navigate('/billing')}
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors"
@@ -226,21 +285,79 @@ export default function BillDetails() {
           <Icon name={ICON_NAMES.CHEVRON_LEFT} size={16} />
         </button>
         <div className="flex-1">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
-            {bill.orderNo}
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">{bill.clientName}</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">{bill.billNo}</h1>
+            <StatusBadge value={bill.status} />
+          </div>
+          <p className="text-sm text-gray-500 mt-0.5">{d.clientName}</p>
         </div>
-        <Button
-          onClick={handleDownload}
-          leftIcon={ICON_NAMES.DOWNLOAD}
-          variant="primary"
-          size="md"
-          className="px-4 py-2 md:px-5 md:py-2.5 text-sm whitespace-nowrap"
-        >
-          Download Bill(PDF)
-        </Button>
+
+        {bill.documentUrl ? (
+          <Button
+            onClick={() => window.open(`${ORIGIN}${bill.documentUrl}`, '_blank', 'noopener,noreferrer')}
+            leftIcon={ICON_NAMES.DOWNLOAD}
+            variant="primary"
+            size="md"
+            className="px-4 py-2 md:px-5 md:py-2.5 text-sm whitespace-nowrap"
+          >
+            View Bill Document
+          </Button>
+        ) : (
+          <Button
+            onClick={() => docInputRef.current?.click()}
+            leftIcon={ICON_NAMES.UPLOAD}
+            variant="primary"
+            size="md"
+            disabled={uploadingDoc}
+            className="px-4 py-2 md:px-5 md:py-2.5 text-sm whitespace-nowrap"
+          >
+            {uploadingDoc ? 'Uploading...' : 'Attach Bill Document'}
+          </Button>
+        )}
+        <input ref={docInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleDocumentPicked} />
+
+        {!locked && (
+          <Button
+            onClick={handleDelete}
+            variant="danger"
+            size="md"
+            disabled={deleting}
+            className="px-4 py-2 md:px-5 md:py-2.5 text-sm whitespace-nowrap"
+          >
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        )}
       </div>
+
+      {/* Status control */}
+      <Card className="mb-5">
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="w-48">
+            <span className="block text-xs text-text-secondary mb-2">Bill status</span>
+            <Dropdown
+              options={statusOptions}
+              value={statusDraft}
+              width="100%"
+              height="40px"
+              disabled={locked}
+              onChange={setStatusDraft}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleUpdateStatus}
+            disabled={locked || updatingStatus || statusDraft === bill.status}
+          >
+            {updatingStatus ? 'Updating...' : 'Update Status'}
+          </Button>
+          {locked && (
+            <span className="text-xs text-text-secondary">
+              This bill is {bill.status.toLowerCase()} and can no longer be edited.
+            </span>
+          )}
+        </div>
+      </Card>
 
       {/* Bill details */}
       <Card title="Bill details" className="mb-5">
@@ -256,29 +373,38 @@ export default function BillDetails() {
           <Field label="Order no." value={d.orderNo} />
           <Field label="Vendor name" value={d.vendorName} />
           <Field label="Date" value={d.date} />
+          <Field label="Rate" value={d.rate} />
           <Field label="Amount" value={d.amount} />
         </div>
       </Card>
 
       {/* Field Technician details */}
-      <Card title="Field Technician details" className="mb-5">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Field label="Field technician name" value={tech.name} />
-          <Field label="Contact no." value={tech.contactNo} />
-          <Field label="Employee ID" value={tech.employeeId} />
-        </div>
-      </Card>
+      {techs.length > 0 && (
+        <Card title="Field Technician details" className="mb-5">
+          <div className="space-y-3">
+            {techs.map((tech) => (
+              <div key={tech.id} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <Field label="Field technician name" value={tech.name} />
+                <Field label="Contact no." value={tech.contactNo} />
+                <Field label="Employee ID" value={tech.employeeId} />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* TM details */}
       <h2 className="text-base md:text-lg font-semibold text-gray-800 mb-3">
         TM details
       </h2>
-      {bill.tmDetails.map((tm) => (
+      {(bill.tmDetails || []).map((tm) => (
         <TmCard
           key={tm.id}
           tm={tm}
-          onQuantityChange={handleQuantityChange}
-          onAddChallan={handleAddChallan}
+          locked={locked}
+          onUploadChallan={handleUploadChallan}
+          onAccept={handleAccept}
+          onReject={handleReject}
         />
       ))}
 
@@ -300,7 +426,7 @@ export default function BillDetails() {
 
         {showActivityLog && (
           <div className="mt-4 space-y-3">
-            {bill.activityLog.length === 0 ? (
+            {(bill.activityLog || []).length === 0 ? (
               <p className="text-sm text-gray-400">No activity yet.</p>
             ) : (
               bill.activityLog.map((a) => (
@@ -310,10 +436,11 @@ export default function BillDetails() {
                 >
                   <div>
                     <p className="text-sm font-medium text-text-primary">{a.title}</p>
-                    <p className="text-xs text-text-secondary mt-0.5">by {a.by}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">{a.description}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">by {a.createdBy}</p>
                   </div>
                   <span className="text-xs text-text-secondary whitespace-nowrap">
-                    {a.at}
+                    {a.createdAt ? new Date(a.createdAt).toLocaleString() : ''}
                   </span>
                 </div>
               ))
