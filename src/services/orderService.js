@@ -1,4 +1,25 @@
-import api from './api';
+import axios from 'axios';
+import { localStorageKeys } from '../constant/constant';
+
+const ordersApi = axios.create({
+  baseURL: 'http://localhost:3001',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+ordersApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(localStorageKeys.accessToken);
+    if (token) {
+      config.headers.authorization = token;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+const api = ordersApi;
 
 const BASE = '/api/v1/admin/orders';
 
