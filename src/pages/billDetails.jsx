@@ -292,7 +292,7 @@ export default function BillDetails() {
           <p className="text-sm text-gray-500 mt-0.5">{d.clientName}</p>
         </div>
 
-        {/* {bill.documentUrl ? (
+        {bill.documentUrl ? (
           <Button
             onClick={() => window.open(`${ORIGIN}${bill.documentUrl}`, '_blank', 'noopener,noreferrer')}
             leftIcon={ICON_NAMES.DOWNLOAD}
@@ -313,7 +313,7 @@ export default function BillDetails() {
           >
             {uploadingDoc ? 'Uploading...' : 'Attach Bill Document'}
           </Button>
-        )} */}
+        )}
         <input ref={docInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleDocumentPicked} />
 
         {!locked && (
