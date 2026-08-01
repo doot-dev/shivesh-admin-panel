@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Search, Check } from "lucide-react";
 
 const Dropdown = ({
@@ -18,7 +19,9 @@ const Dropdown = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [menuRect, setMenuRect] = useState(null);
   const dropdownRef = useRef(null);
+  const menuRef = useRef(null);
   const searchInputRef = useRef(null);
 
   const filteredOptions = searchable
@@ -32,9 +35,28 @@ const Dropdown = ({
 
   const selectedOption = options.find((option) => option?.value === value);
 
+  // Menu is portaled to <body> so it can't be clipped by a scrolling ancestor
+  // (e.g. a Modal body) — position it relative to the viewport instead.
+  const updateMenuRect = useCallback(() => {
+    const trigger = dropdownRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setMenuRect({
+      left: rect.left,
+      width: rect.width,
+      top: rect.top,
+      bottom: rect.bottom,
+    });
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
         setSearchTerm("");
       }
@@ -48,6 +70,17 @@ const Dropdown = ({
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   }, [isOpen, searchable]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    updateMenuRect();
+    window.addEventListener("scroll", updateMenuRect, true);
+    window.addEventListener("resize", updateMenuRect);
+    return () => {
+      window.removeEventListener("scroll", updateMenuRect, true);
+      window.removeEventListener("resize", updateMenuRect);
+    };
+  }, [isOpen, updateMenuRect]);
 
   const handleToggle = () => {
     if (!disabled) {
@@ -73,6 +106,114 @@ const Dropdown = ({
     : isOpen
       ? "var(--color-primary)"
       : "var(--color-border)";
+
+  const openUpward = position === "top";
+
+  const menu =
+    isOpen && menuRect
+      ? createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-[9999] rounded-xl border bg-white overflow-hidden"
+            style={{
+              left: menuRect.left,
+              width: menuRect.width,
+              ...(openUpward
+                ? { bottom: window.innerHeight - menuRect.top + 6 }
+                : { top: menuRect.bottom + 6 }),
+              borderColor: "var(--color-border)",
+              boxShadow:
+                "0 8px 24px rgba(30,58,138,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+            }}
+          >
+            {/* Search */}
+            {searchable && (
+              <div
+                className="p-2.5"
+                style={{ borderBottom: "1px solid var(--color-border)" }}
+              >
+                <div
+                  className="flex items-center gap-2 rounded-lg px-3 py-2"
+                  style={{
+                    background: "var(--color-input-bg)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                >
+                  <Search
+                    size={13}
+                    color="var(--color-text-secondary)"
+                    strokeWidth={2}
+                  />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-sm"
+                    style={{ color: "var(--color-text-primary)" }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Options */}
+            <div style={{ maxHeight, overflowY: "auto" }}>
+              {filteredOptions.length === 0 ? (
+                <div
+                  className="py-6 text-center text-sm"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {searchable && searchTerm
+                    ? "No results found"
+                    : "No options available"}
+                </div>
+              ) : (
+                filteredOptions.map((option, index) => {
+                  const isSelected = value === option.value;
+                  return (
+                    <button
+                      key={option.value ?? index}
+                      type="button"
+                      onClick={() => handleSelect(option)}
+                      className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left transition-colors duration-100"
+                      style={{
+                        backgroundColor: isSelected
+                          ? "var(--color-primary-light)"
+                          : "transparent",
+                        color: isSelected
+                          ? "var(--color-primary)"
+                          : "var(--color-text-primary)",
+                        fontWeight: isSelected ? 600 : 400,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected)
+                          e.currentTarget.style.backgroundColor =
+                            "var(--color-background)";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected)
+                          e.currentTarget.style.backgroundColor = "transparent";
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isSelected && (
+                        <Check
+                          size={14}
+                          strokeWidth={2.5}
+                          color="var(--color-primary)"
+                          style={{ flexShrink: 0 }}
+                        />
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <div
@@ -122,104 +263,7 @@ const Dropdown = ({
         </p>
       )}
 
-      {/* Menu */}
-      {isOpen && (
-        <div
-          className={`absolute z-[9999] w-full rounded-xl border bg-white overflow-hidden ${
-            position === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5"
-          }`}
-          style={{
-            borderColor: "var(--color-border)",
-            boxShadow:
-              "0 8px 24px rgba(30,58,138,0.12), 0 2px 8px rgba(0,0,0,0.06)",
-          }}
-        >
-          {/* Search */}
-          {searchable && (
-            <div
-              className="p-2.5"
-              style={{ borderBottom: "1px solid var(--color-border)" }}
-            >
-              <div
-                className="flex items-center gap-2 rounded-lg px-3 py-2"
-                style={{
-                  background: "var(--color-input-bg)",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                <Search
-                  size={13}
-                  color="var(--color-text-secondary)"
-                  strokeWidth={2}
-                />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-sm"
-                  style={{ color: "var(--color-text-primary)" }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Options */}
-          <div style={{ maxHeight, overflowY: "auto" }}>
-            {filteredOptions.length === 0 ? (
-              <div
-                className="py-6 text-center text-sm"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                {searchable && searchTerm
-                  ? "No results found"
-                  : "No options available"}
-              </div>
-            ) : (
-              filteredOptions.map((option, index) => {
-                const isSelected = value === option.value;
-                return (
-                  <button
-                    key={option.value ?? index}
-                    type="button"
-                    onClick={() => handleSelect(option)}
-                    className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left transition-colors duration-100"
-                    style={{
-                      backgroundColor: isSelected
-                        ? "var(--color-primary-light)"
-                        : "transparent",
-                      color: isSelected
-                        ? "var(--color-primary)"
-                        : "var(--color-text-primary)",
-                      fontWeight: isSelected ? 600 : 400,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected)
-                        e.currentTarget.style.backgroundColor =
-                          "var(--color-background)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected)
-                        e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <span className="truncate">{option.label}</span>
-                    {isSelected && (
-                      <Check
-                        size={14}
-                        strokeWidth={2.5}
-                        color="var(--color-primary)"
-                        style={{ flexShrink: 0 }}
-                      />
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
+      {menu}
     </div>
   );
 };

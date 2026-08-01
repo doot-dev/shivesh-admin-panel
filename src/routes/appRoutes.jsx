@@ -21,6 +21,7 @@ import OrderDetails from "../pages/orderDetails";
 import AddOrderPage from "../pages/addOrder";
 import BillingPage from "../pages/billing";
 import BillDetails from "../pages/billDetails";
+import CubeTestingPage from "../pages/cubeTesting";
 
 export default function AppRoutes() {
   return (
@@ -51,7 +52,7 @@ export default function AppRoutes() {
             <Route path="orders/all" element={<ComingSoon />} />
             <Route path="orders/pending" element={<ComingSoon />} />
             <Route path="orders/completed" element={<ComingSoon />} />
-            <Route path="testing" element={<ComingSoon />} />
+            <Route path="testing" element={<CubeTestingPage />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="billing/:billId" element={<BillDetails />} />
             <Route path="reports" element={<ComingSoon />} />

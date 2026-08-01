@@ -7,11 +7,14 @@ import {
   addOrderVendor,
   addOrderTechnician,
   addTm,
+  addCubeTest,
   clearCurrentOrder,
   deleteOrder,
   deleteOrderVendor,
   deleteOrderTechnician,
   deleteTm,
+  deleteCubeTest,
+  fetchCubeTests,
   fetchFieldTechs,
   fetchOrderById,
   updateOrder,
@@ -19,10 +22,12 @@ import {
   updateOrderVendor,
   updateOrderTechnician,
   updateTm,
+  updateCubeTest,
 } from '../features/orders/orderSlice';
 import { createBill } from '../features/bills/billSlice';
 import { fetchVendors } from '../features/vendors/vendorSlice';
 import vendorService from '../services/vendorService';
+import api from '../services/api';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Dropdown from '../components/ui/Dropdown';
@@ -30,8 +35,24 @@ import FullPageLoader from '../components/ui/FullPageLoader';
 import DeleteModal from '../components/modals/DeleteModal';
 import { ICON_NAMES, Icon } from '../components/icons';
 
+const ORIGIN = api.defaults.baseURL;
+
 const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 const DELIVERY_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'];
+
+// Once the order/delivery has reached one of these states, no further cube tests can be logged.
+const CUBE_TEST_LOCKED_STATES = ['DELIVERED', 'COMPLETED'];
+
+const CUBE_TEST_PERIODS = [
+  { value: 'SEVEN_DAYS', label: '7 Days' },
+  { value: 'FOURTEEN_DAYS', label: '14 Days' },
+  { value: 'TWENTYONE_DAYS', label: '21 Days' },
+  { value: 'CUSTOM', label: 'Custom' },
+];
+
+const CUBE_TEST_PERIOD_DAYS = { SEVEN_DAYS: 7, FOURTEEN_DAYS: 14, TWENTYONE_DAYS: 21 };
+
+const CUBE_TEST_PERIOD_LABEL = CUBE_TEST_PERIODS.reduce((acc, p) => ({ ...acc, [p.value]: p.label }), {});
 
 const STATUS_BADGE = {
   NEW:         { color: '#2563EB', backgroundColor: '#DBEAFE' },
@@ -76,6 +97,48 @@ const EMPTY_TM_FORM = {
   challanNo: '',
 };
 
+const EMPTY_CUBE_TEST_FORM = {
+  castingDate: '',
+  castingTime: '',
+  quantity: '',
+  period: '',
+  toDate: '',
+  toTime: '',
+  file: null,
+};
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+// Split an ISO string into separate <input type="date"> / <input type="time"> values (local time).
+const splitIsoToDateTime = (iso) => {
+  if (!iso) return { date: '', time: '' };
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: '', time: '' };
+  return {
+    date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+    time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+  };
+};
+
+// Concatenate a date input + time input back into a single ISO string for the API.
+const combineDateTime = (date, time) => (date && time ? new Date(`${date}T${time}`).toISOString() : '');
+
+const addDaysToDateTime = (date, time, days) => {
+  if (!date || !time) return { date: '', time: '' };
+  const d = new Date(`${date}T${time}`);
+  if (Number.isNaN(d.getTime())) return { date: '', time: '' };
+  d.setDate(d.getDate() + days);
+  return {
+    date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+    time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+  };
+};
+
+const todayDateStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
+
 const StatusBadge = ({ value, badgeMap = STATUS_BADGE }) => {
   const cfg = badgeMap[value] || { color: '#374151', backgroundColor: '#F3F4F6' };
   return (
@@ -118,7 +181,7 @@ export default function OrderDetails() {
   const dispatch = useDispatch();
   const commentsEndRef = useRef(null);
 
-  const { currentOrder: order, loading, fieldTechs } = useSelector((s) => s.orders);
+  const { currentOrder: order, loading, fieldTechs, cubeTests } = useSelector((s) => s.orders);
   const { list: vendors = [] } = useSelector((s) => s.vendor);
 
   const [commentText, setCommentText] = useState('');
@@ -152,10 +215,16 @@ export default function OrderDetails() {
   const [tmForm, setTmForm] = useState(EMPTY_TM_FORM);
   const [savingTm, setSavingTm] = useState(false);
 
+  // Cube test row form
+  const [cubeTestFormKey, setCubeTestFormKey] = useState(null); // null | 'new' | cubeTestId
+  const [cubeTestForm, setCubeTestForm] = useState(EMPTY_CUBE_TEST_FORM);
+  const [savingCubeTest, setSavingCubeTest] = useState(false);
+
   useEffect(() => {
     dispatch(fetchOrderById(orderId));
     dispatch(fetchFieldTechs());
     dispatch(fetchVendors());
+    dispatch(fetchCubeTests(orderId));
     return () => dispatch(clearCurrentOrder());
   }, [dispatch, orderId]);
 
@@ -428,6 +497,75 @@ export default function OrderDetails() {
     if (deleteTm.fulfilled.match(result)) refreshOrder();
   };
 
+  // ---- Cube test CRUD ----
+  const openAddCubeTest = () => {
+    setCubeTestForm(EMPTY_CUBE_TEST_FORM);
+    setCubeTestFormKey('new');
+  };
+
+  const openEditCubeTest = (ct) => {
+    const casting = splitIsoToDateTime(ct.castingDate);
+    const to = splitIsoToDateTime(ct.toDate);
+    setCubeTestForm({
+      castingDate: casting.date,
+      castingTime: casting.time,
+      quantity: ct.quantity || '',
+      period: ct.period || '',
+      toDate: to.date,
+      toTime: to.time,
+      file: null,
+    });
+    setCubeTestFormKey(ct.id);
+  };
+
+  const cancelCubeTestForm = () => {
+    setCubeTestFormKey(null);
+    setCubeTestForm(EMPTY_CUBE_TEST_FORM);
+  };
+
+  const setCubeTestField = (field, value) => setCubeTestForm((p) => ({ ...p, [field]: value }));
+
+  const cubeTestFormValid = (() => {
+    if (!cubeTestForm.period || !cubeTestForm.castingDate.trim() || !cubeTestForm.castingTime.trim() || !cubeTestForm.quantity.trim()) {
+      return false;
+    }
+    if (cubeTestForm.period !== 'CUSTOM') return true;
+    if (!cubeTestForm.toDate.trim() || !cubeTestForm.toTime.trim()) return false;
+    const casting = new Date(combineDateTime(cubeTestForm.castingDate, cubeTestForm.castingTime));
+    const custom = new Date(combineDateTime(cubeTestForm.toDate, cubeTestForm.toTime));
+    return custom >= casting && custom <= new Date();
+  })();
+
+  const saveCubeTestForm = async () => {
+    if (!cubeTestFormValid) return;
+    setSavingCubeTest(true);
+    try {
+      const formData = new FormData();
+      formData.append('castingDate', combineDateTime(cubeTestForm.castingDate, cubeTestForm.castingTime));
+      formData.append('quantity', cubeTestForm.quantity.trim());
+      formData.append('period', cubeTestForm.period);
+      if (cubeTestForm.period === 'CUSTOM') {
+        formData.append('customDate', combineDateTime(cubeTestForm.toDate, cubeTestForm.toTime));
+      }
+      if (cubeTestForm.file) formData.append('file', cubeTestForm.file);
+
+      const action = cubeTestFormKey === 'new'
+        ? addCubeTest({ orderId, formData })
+        : updateCubeTest({ orderId, cubeTestId: cubeTestFormKey, formData });
+      const result = await dispatch(action);
+      if (result.meta.requestStatus === 'fulfilled') {
+        cancelCubeTestForm();
+      }
+    } finally {
+      setSavingCubeTest(false);
+    }
+  };
+
+  const handleDeleteCubeTest = async (cubeTestId) => {
+    if (!window.confirm('Remove this cube test?')) return;
+    await dispatch(deleteCubeTest({ orderId, cubeTestId }));
+  };
+
   if (loading && !order) return <FullPageLoader />;
   if (!order) return (
     <div className="p-8 text-center text-gray-500">
@@ -462,6 +600,10 @@ export default function OrderDetails() {
   const orderVendors = order.vendors || [];
   const orderTechnicians = order.technicians || [];
   const tmDetails = order.tmDetails || [];
+
+  // Once the order/delivery is marked delivered or completed, no new cube tests should be logged.
+  const cubeTestLocked =
+    CUBE_TEST_LOCKED_STATES.includes(order.status) || CUBE_TEST_LOCKED_STATES.includes(order.deliveryStatus);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 ">
@@ -731,6 +873,84 @@ export default function OrderDetails() {
               )}
             </div>
           </SectionCard>
+
+          {/* Cube Tests */}
+          <SectionCard
+            title={`Cube Tests (${cubeTests.length})`}
+            action={
+              cubeTestFormKey === null && !cubeTestLocked && (
+                <Button type="button" variant="success" onClick={openAddCubeTest}>
+                  + Add Cube Test
+                </Button>
+              )
+            }
+          >
+            <div className="space-y-3">
+              {cubeTestLocked && cubeTests.length === 0 && (
+                <p className="text-sm text-gray-400 py-2">No cube tests were logged for this order.</p>
+              )}
+              {!cubeTestLocked && cubeTests.length === 0 && cubeTestFormKey !== 'new' && (
+                <p className="text-sm text-gray-400 py-2">No cube tests added yet.</p>
+              )}
+              {cubeTests.map((ct) => (
+                <div key={ct.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  {cubeTestFormKey === ct.id ? (
+                    <CubeTestForm
+                      form={cubeTestForm}
+                      onChange={setCubeTestField}
+                      onSave={saveCubeTestForm}
+                      onCancel={cancelCubeTestForm}
+                      saving={savingCubeTest}
+                      valid={cubeTestFormValid}
+                    />
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-600">
+                          {CUBE_TEST_PERIOD_LABEL[ct.period] || ct.period}
+                        </span>
+                        <div className="flex gap-3">
+                          <button type="button" onClick={() => openEditCubeTest(ct)} className="text-xs text-primary hover:underline font-medium">
+                            Edit
+                          </button>
+                          <button type="button" onClick={() => handleDeleteCubeTest(ct.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+                        <div><span className="text-gray-500">Casting:</span> <span className="font-medium">{ct.castingDate ? new Date(ct.castingDate).toLocaleString() : '—'}</span></div>
+                        <div><span className="text-gray-500">Qty:</span> <span className="font-medium">{ct.quantity}</span></div>
+                        <div><span className="text-gray-500">Due:</span> <span className="font-medium">{ct.toDate ? new Date(ct.toDate).toLocaleString() : '—'}</span></div>
+                      </div>
+                      {ct.fileUrl && (
+                        <a
+                          href={`${ORIGIN}${ct.fileUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-2 text-xs text-primary hover:underline font-medium"
+                        >
+                          View report
+                        </a>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+              {cubeTestFormKey === 'new' && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <CubeTestForm
+                    form={cubeTestForm}
+                    onChange={setCubeTestField}
+                    onSave={saveCubeTestForm}
+                    onCancel={cancelCubeTestForm}
+                    saving={savingCubeTest}
+                    valid={cubeTestFormValid}
+                  />
+                </div>
+              )}
+            </div>
+          </SectionCard>
         </div>
 
         {/* Right Column: Field Tech + Comments */}
@@ -982,3 +1202,117 @@ const TmForm = ({ form, onChange, onSave, onCancel, saving }) => (
     </div>
   </div>
 );
+
+const CubeTestForm = ({ form, onChange, onSave, onCancel, saving, valid }) => {
+  const periodOptions = [{ value: '', label: 'Select period' }, ...CUBE_TEST_PERIODS];
+  const isCustom = form.period === 'CUSTOM';
+  const standardDays = CUBE_TEST_PERIOD_DAYS[form.period];
+  const periodChosen = Boolean(form.period);
+
+  // For 7/14/21-day periods the server computes the test date — keep the "to" pickers
+  // in sync with castingDate/period so they show it, but leave them disabled (not user-editable).
+  useEffect(() => {
+    if (!standardDays) return;
+    const next = addDaysToDateTime(form.castingDate, form.castingTime, standardDays);
+    onChange('toDate', next.date);
+    onChange('toTime', next.time);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.castingDate, form.castingTime, form.period]);
+
+  const handlePeriodChange = (v) => {
+    onChange('period', v);
+    // Whatever was auto-filled/typed for the previous period no longer applies.
+    if (v === 'CUSTOM') {
+      onChange('toDate', '');
+      onChange('toTime', '');
+    }
+  };
+
+  const castingCombined = combineDateTime(form.castingDate, form.castingTime);
+  const customCombined = combineDateTime(form.toDate, form.toTime);
+  const customBeforeCasting = isCustom && castingCombined && customCombined && new Date(customCombined) < new Date(castingCombined);
+  const customInFuture = isCustom && customCombined && new Date(customCombined) > new Date();
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <FieldLabel>Period</FieldLabel>
+          <Dropdown
+            options={periodOptions}
+            value={form.period}
+            placeholder="Select period"
+            width="100%"
+            height="40px"
+            onChange={handlePeriodChange}
+          />
+        </div>
+        <Input
+          label="Casting Date"
+          type="date"
+          disabled={!periodChosen}
+          value={form.castingDate}
+          onChange={(e) => onChange('castingDate', e.target.value)}
+        />
+        <Input
+          label="Casting Time"
+          type="time"
+          disabled={!periodChosen}
+          value={form.castingTime}
+          onChange={(e) => onChange('castingTime', e.target.value)}
+        />
+        <Input
+          label="Quantity"
+          disabled={!periodChosen}
+          value={form.quantity}
+          onChange={(e) => onChange('quantity', e.target.value)}
+        />
+
+        <div>
+          <Input
+            label={isCustom ? 'Test Date' : 'Test Date (auto)'}
+            type="date"
+            min={isCustom ? form.castingDate || undefined : undefined}
+            max={isCustom ? todayDateStr() : undefined}
+            disabled={!isCustom}
+            value={form.toDate}
+            onChange={(e) => onChange('toDate', e.target.value)}
+          />
+        </div>
+        <Input
+          label={isCustom ? 'Test Time' : 'Test Time (auto)'}
+          type="time"
+          disabled={!isCustom}
+          value={form.toTime}
+          onChange={(e) => onChange('toTime', e.target.value)}
+        />
+
+        <div>
+          <FieldLabel>Report File (optional)</FieldLabel>
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            disabled={!periodChosen}
+            onChange={(e) => onChange('file', e.target.files?.[0] || null)}
+            className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 disabled:opacity-50"
+          />
+        </div>
+      </div>
+
+      {(customBeforeCasting || customInFuture) && (
+        <p className="mt-2 text-xs text-red-600">
+          {customBeforeCasting
+            ? 'Test date/time cannot be before the casting date/time.'
+            : 'Test date/time cannot be in the future.'}
+        </p>
+      )}
+
+      <div className="flex justify-end gap-2 mt-3">
+        <Button type="button" onClick={onCancel} disabled={saving}>Cancel</Button>
+        <Button type="button" variant="primary" onClick={onSave} disabled={saving || !valid}>
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
+      </div>
+    </div>
+  );
+};

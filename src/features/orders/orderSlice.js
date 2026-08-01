@@ -242,6 +242,61 @@ export const deleteOrderTechnician = createAsyncThunk(
   }
 );
 
+// Cube tests — separate list endpoint, not nested on the order payload.
+export const fetchCubeTests = createAsyncThunk(
+  'orders/fetchCubeTests',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const res = await orderService.getCubeTests(orderId);
+      return res.data || [];
+    } catch (e) {
+      return rejectWithValue(e.response?.data || e.message);
+    }
+  }
+);
+
+export const addCubeTest = createAsyncThunk(
+  'orders/addCubeTest',
+  async ({ orderId, formData }, { rejectWithValue }) => {
+    try {
+      const res = await orderService.addCubeTest(orderId, formData);
+      toast.success('Cube test added');
+      return res.data;
+    } catch (e) {
+      toast.error(e.response?.data?.message || e.response?.data?.error || 'Failed to add cube test');
+      return rejectWithValue(e.response?.data || e.message);
+    }
+  }
+);
+
+export const updateCubeTest = createAsyncThunk(
+  'orders/updateCubeTest',
+  async ({ orderId, cubeTestId, formData }, { rejectWithValue }) => {
+    try {
+      const res = await orderService.updateCubeTest(orderId, cubeTestId, formData);
+      toast.success('Cube test updated');
+      return res.data;
+    } catch (e) {
+      toast.error(e.response?.data?.message || e.response?.data?.error || 'Failed to update cube test');
+      return rejectWithValue(e.response?.data || e.message);
+    }
+  }
+);
+
+export const deleteCubeTest = createAsyncThunk(
+  'orders/deleteCubeTest',
+  async ({ orderId, cubeTestId }, { rejectWithValue }) => {
+    try {
+      await orderService.deleteCubeTest(orderId, cubeTestId);
+      toast.success('Cube test removed');
+      return cubeTestId;
+    } catch (e) {
+      toast.error(e.response?.data?.message || e.response?.data?.error || 'Failed to remove cube test');
+      return rejectWithValue(e.response?.data || e.message);
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: 'orders',
   initialState: {
@@ -249,12 +304,14 @@ const orderSlice = createSlice({
     total: 0,
     currentOrder: null,
     fieldTechs: [],
+    cubeTests: [],
     loading: false,
     error: null,
   },
   reducers: {
     clearCurrentOrder: (state) => {
       state.currentOrder = null;
+      state.cubeTests = [];
     },
   },
   extraReducers: (builder) => {
@@ -315,6 +372,19 @@ const orderSlice = createSlice({
       })
       .addCase(fetchFieldTechs.fulfilled, (state, action) => {
         state.fieldTechs = action.payload || [];
+      })
+      .addCase(fetchCubeTests.fulfilled, (state, action) => {
+        state.cubeTests = action.payload || [];
+      })
+      .addCase(addCubeTest.fulfilled, (state, action) => {
+        if (action.payload) state.cubeTests = [action.payload, ...state.cubeTests];
+      })
+      .addCase(updateCubeTest.fulfilled, (state, action) => {
+        const idx = state.cubeTests.findIndex((c) => c.id === action.payload?.id);
+        if (idx !== -1) state.cubeTests[idx] = action.payload;
+      })
+      .addCase(deleteCubeTest.fulfilled, (state, action) => {
+        state.cubeTests = state.cubeTests.filter((c) => c.id !== action.payload);
       });
   },
 });

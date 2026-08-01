@@ -105,6 +105,27 @@ const orderService = {
     const response = await api.delete(`${BASE}/${orderId}/technician/${orderTechnicianId}`);
     return response.data;
   },
+
+  // Cube tests
+  addCubeTest: async (orderId, formData) => {
+    const response = await api.post(`${BASE}/${orderId}/cube-test`, formData);
+    return response.data;
+  },
+
+  getCubeTests: async (orderId) => {
+    const response = await api.get(`${BASE}/${orderId}/cube-test`);
+    return response.data;
+  },
+
+  updateCubeTest: async (orderId, cubeTestId, formData) => {
+    const response = await api.put(`${BASE}/${orderId}/cube-test/${cubeTestId}`, formData);
+    return response.data;
+  },
+
+  deleteCubeTest: async (orderId, cubeTestId) => {
+    const response = await api.delete(`${BASE}/${orderId}/cube-test/${cubeTestId}`);
+    return response.data;
+  },
 };
 
 export default orderService;
