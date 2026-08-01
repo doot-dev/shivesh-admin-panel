@@ -8,8 +8,10 @@ import { toast } from "react-toastify";
 // import { useUser } from "../context/UserContext";
 import { Icon, ICON_NAMES } from "../components/icons";
 export default function Login() {
-  const [userName, setUserName] = useState("test2");
-  const [password, setPassword] = useState("123456");
+  // const [userName, setUserName] = useState("test2");
+  // const [password, setPassword] = useState("123456");
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error } = useAuth();
   // const { updateUser } = useUser();

@@ -2,9 +2,7 @@ import axios from "axios";
 import { localStorageKeys } from "../constant/constant";
 
 const api = axios.create({
-  // baseURL: "http://31.97.206.154:3001", // change to your backend URL
-
-  baseURL: "http://localhost:3001", // change to your backend URL
+  baseURL: "http://31.97.206.154:3001", // change to your backend URL
   headers: {
     "Content-Type": "application/json",
   },
