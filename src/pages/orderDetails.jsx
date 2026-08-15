@@ -28,7 +28,7 @@ import { createBill } from '../features/bills/billSlice';
 import { fetchVendors } from '../features/vendors/vendorSlice';
 import vendorService from '../services/vendorService';
 import api from '../services/api';
-import { getSocket, joinOrderRoom, leaveOrderRoom } from '../services/socket';
+import { joinOrderRoom, leaveOrderRoom, onSocketEvent } from '../services/socket';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Dropdown from '../components/ui/Dropdown';
@@ -229,20 +229,23 @@ export default function OrderDetails() {
     return () => dispatch(clearCurrentOrder());
   }, [dispatch, orderId]);
 
-  // Real-time comments: join this order's room and refetch whenever either
-  // side (client app or another admin) posts a new comment.
+  // Real-time: join this order's room and refetch whenever either side (the
+  // client app or another admin) posts a comment or changes the status.
+  // Event names must match the backend hub in src/realtime/socketServer.js.
   useEffect(() => {
-    const socket = getSocket();
     joinOrderRoom(orderId);
 
-    const handleNewComment = (payload) => {
+    const refetchIfThisOrder = (payload) => {
       if (payload?.orderId === orderId) dispatch(fetchOrderById(orderId));
     };
 
-    socket.on('order:comment:new', handleNewComment);
+    const unsubscribers = [
+      onSocketEvent('comment:new', refetchIfThisOrder),
+      onSocketEvent('order:status', refetchIfThisOrder),
+    ];
 
     return () => {
-      socket.off('order:comment:new', handleNewComment);
+      unsubscribers.forEach((off) => off());
       leaveOrderRoom(orderId);
     };
   }, [dispatch, orderId]);

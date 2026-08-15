@@ -3,6 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { Icon, ICON_NAMES } from "../icons";
 import { useDispatch } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
+import { closeSocket } from "../../services/socket";
 import LogoImg from "../../assets/img/shivesh-logo.png";
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
@@ -16,6 +17,10 @@ const Sidebar = ({ isOpen, onClose }) => {
     }));
   };
   const handleLogout = () => {
+    // Close the realtime socket BEFORE clearing storage: it is authenticated
+    // with this user's token, so leaving it open would let the next person to
+    // use this browser keep receiving the previous user's order events.
+    closeSocket();
     dispatch(logout());
     localStorage.clear();
     router.push("/");
