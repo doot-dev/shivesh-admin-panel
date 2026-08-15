@@ -28,6 +28,7 @@ import { createBill } from '../features/bills/billSlice';
 import { fetchVendors } from '../features/vendors/vendorSlice';
 import vendorService from '../services/vendorService';
 import api from '../services/api';
+import { getSocket, joinOrderRoom, leaveOrderRoom } from '../services/socket';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Dropdown from '../components/ui/Dropdown';
@@ -226,6 +227,24 @@ export default function OrderDetails() {
     dispatch(fetchVendors());
     dispatch(fetchCubeTests(orderId));
     return () => dispatch(clearCurrentOrder());
+  }, [dispatch, orderId]);
+
+  // Real-time comments: join this order's room and refetch whenever either
+  // side (client app or another admin) posts a new comment.
+  useEffect(() => {
+    const socket = getSocket();
+    joinOrderRoom(orderId);
+
+    const handleNewComment = (payload) => {
+      if (payload?.orderId === orderId) dispatch(fetchOrderById(orderId));
+    };
+
+    socket.on('order:comment:new', handleNewComment);
+
+    return () => {
+      socket.off('order:comment:new', handleNewComment);
+      leaveOrderRoom(orderId);
+    };
   }, [dispatch, orderId]);
 
   useEffect(() => {
