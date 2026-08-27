@@ -12,6 +12,13 @@ import { fetchProjectProducts } from '../features/projects/projectProductSlice';
 import { fetchClients } from '../features/clients/clientsSlice';
 import { fetchVendors } from '../features/vendors/vendorSlice';
 import { createOrder, fetchFieldTechs } from '../features/orders/orderSlice';
+import {
+  MAX_ORDER_MONTHS_AHEAD,
+  getOrderDateError,
+  maxOrderDateIso,
+  maxOrderDateLabel,
+  todayIso,
+} from '../utils/orderDate';
 
 const EMPTY = {
   projectId: '',
@@ -159,6 +166,10 @@ const AddOrderPage = () => {
     if (!form.clientId) e.clientId = 'Client is required';
     if (!form.productId) e.productId = 'Product is required';
     if (!form.quantity.trim()) e.quantity = 'Quantity is required';
+    // min/max on the date input are advisory — a typed value still lands in
+    // state, so the window is re-checked here before we call the API.
+    const dateError = getOrderDateError(form.date);
+    if (dateError) e.date = dateError;
     if (tmRows.some((r) => !r.truckNo.trim() || !r.qty.trim())) {
       e.tmDetails = 'Each TM needs a truck number and quantity';
     }
@@ -469,6 +480,10 @@ const AddOrderPage = () => {
                 type="date"
                 label="Date"
                 value={form.date}
+                min={todayIso()}
+                max={maxOrderDateIso()}
+                error={!!errors.date}
+                errorMessage={errors.date}
                 onChange={(e) => set('date', e.target.value)}
               />
               <Input
@@ -478,6 +493,11 @@ const AddOrderPage = () => {
                 onChange={(e) => set('time', e.target.value)}
               />
             </div>
+
+            <p className="mt-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+              Orders can be scheduled up to {MAX_ORDER_MONTHS_AHEAD} months ahead
+              {' '}(latest {maxOrderDateLabel()}).
+            </p>
 
             <div className="mt-4">
               <Input
