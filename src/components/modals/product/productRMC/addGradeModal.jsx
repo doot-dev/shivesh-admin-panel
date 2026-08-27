@@ -15,11 +15,8 @@ const AddGradeModal = ({
 }) => {
   const [formData, setFormData] = useState({
     name: "",
-    subcategory: "",
     productId: productId || "",
   });
-
-  console.log("AddGradeModal - productId:", productId);
 
   const [errors, setErrors] = useState({});
 
@@ -38,7 +35,6 @@ const AddGradeModal = ({
     if (isOpen) {
       setFormData((prev) => ({
         name: "",
-        subcategory: "",
         productId: productId || prev.productId,
       }));
       setErrors({});
@@ -48,7 +44,7 @@ const AddGradeModal = ({
   const handleChange = (name, value) => {
     // Real-time validation for character limits
     let error = "";
-    if ((name === "name" || name === "subcategory") && value.length > 60) {
+    if (name === "name" && value.length > 60) {
       error = "Only 60 characters allowed";
     }
 
@@ -75,13 +71,6 @@ const AddGradeModal = ({
       newErrors.name = "Only 60 characters allowed";
     }
 
-    // Validate Sub-category
-    if (!formData.subcategory.trim()) {
-      newErrors.subcategory = "Please fill the field";
-    } else if (formData.subcategory.length > 60) {
-      newErrors.subcategory = "Only 60 characters allowed";
-    }
-
     // Validate Product ID
     if (!formData.productId) {
       newErrors.productId = "Product ID is required";
@@ -104,7 +93,6 @@ const AddGradeModal = ({
     // Reset form data when manually closing
     setFormData({
       name: "",
-      subcategory: "",
       productId: productId || "",
     });
     setErrors({});
@@ -115,51 +103,29 @@ const AddGradeModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Add Grade/Size and Subcategory"
+      title="Add Grade/Size"
       size="lg"
       maxWidth="700px"
       headerIcon={ICON_NAMES.PRODUCT_MODAL}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Grade/Size <span className="text-red-500" >*</span>
-            </label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Enter grade/size name (e.g., M30, M40)"
-              error={errors.name}
-              disabled={loading}
-              maxLength={60}
-            />
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-gray-500">
-                {formData.name.length}/60 characters
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sub-category
-            </label>
-            <Input
-              type="text"
-              value={formData.subcategory}
-              onChange={(e) => handleChange("subcategory", e.target.value)}
-              placeholder="Enter sub-category (e.g., Pure OPC)"
-              error={errors.subcategory}
-              disabled={loading}
-              maxLength={60}
-            />
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-gray-500">
-                {formData.subcategory.length}/60 characters
-              </span>
-            </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Grade/Size <span className="text-red-500" >*</span>
+          </label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            placeholder="Enter grade/size name (e.g., M30, M40)"
+            error={errors.name}
+            disabled={loading}
+            maxLength={60}
+          />
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-xs text-gray-500">
+              {formData.name.length}/60 characters
+            </span>
           </div>
         </div>
 

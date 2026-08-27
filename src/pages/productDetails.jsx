@@ -61,7 +61,6 @@ const ProductSubcategory = () => {
         productId: productData.id,
         gradeSize: item.name || "N/A",
         product: productData.name,
-        subCategory: item.subcategory || "N/A",
         status: item.isActive ? "Active" : "Inactive",
         isActive: item.isActive,
         name: item.name,
@@ -84,26 +83,24 @@ const ProductSubcategory = () => {
     loadProductData();
   }, [loadProductData]);
 
-  const handleEdit = (subcategory) => {
+  const handleEdit = (grade) => {
     setSelectedGrade({
-      id: subcategory.id,
-      name: subcategory.gradeSize,
-      subcategory: subcategory.subCategory,
-      isActive: subcategory.isActive,
+      id: grade.id,
+      name: grade.gradeSize,
+      isActive: grade.isActive,
       productId: id,
     });
     setShowEditModal(true);
   };
 
-  const handleDeleteGrade = (subcategory) => {
-    setSelectedGrade(subcategory);
+  const handleDeleteGrade = (grade) => {
+    setSelectedGrade(grade);
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = async (subcategory) => {
+  const handleConfirmDelete = async (grade) => {
     try {
-      console.log("subcategory", subcategory);
-       await dispatch(deleteGradeSize(subcategory.id)).unwrap();
+       await dispatch(deleteGradeSize(grade.id)).unwrap();
       await refreshGradeSize();
       setShowDeleteModal(false);
     } catch (err) {
@@ -142,7 +139,6 @@ const ProductSubcategory = () => {
     { key: "sNo", header: "S.No" },
     { key: "gradeSize", header: "Grade/Size" },
     { key: "product", header: "Product" },
-    { key: "subCategory", header: "Sub-category" },
     {
       key: "status", header: "Status", type: "badge", badgeConfig: {
         Active: {
