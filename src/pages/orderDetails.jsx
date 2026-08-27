@@ -26,6 +26,12 @@ import {
 } from '../features/orders/orderSlice';
 import { createBill } from '../features/bills/billSlice';
 import { fetchVendors } from '../features/vendors/vendorSlice';
+import {
+  MAX_ORDER_MONTHS_AHEAD,
+  getOrderDateError,
+  maxOrderDateIso,
+  maxOrderDateLabel,
+} from '../utils/orderDate';
 import vendorService from '../services/vendorService';
 import api from '../services/api';
 import { joinOrderRoom, leaveOrderRoom, onSocketEvent } from '../services/socket';
@@ -190,6 +196,7 @@ export default function OrderDetails() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
+  const [editDateError, setEditDateError] = useState('');
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -271,16 +278,29 @@ export default function OrderDetails() {
       time: order.time || '',
       deliveryAddress: order.deliveryAddress || '',
     });
+    setEditDateError('');
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditForm(EMPTY_EDIT_FORM);
+    setEditDateError('');
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    // Rescheduling is a booking too, so the 3-month window applies here as
+    // well. Only the upper bound is checked: an existing order can legitimately
+    // hold a past date, and the API allows that.
+    const dateError = getOrderDateError(editForm.date);
+    if (dateError) {
+      setEditDateError(dateError);
+      return;
+    }
+    setEditDateError('');
+
     setSaving(true);
     try {
       const result = await dispatch(updateOrder({
@@ -745,7 +765,13 @@ export default function OrderDetails() {
                     type="date"
                     label="Date"
                     value={editForm.date}
-                    onChange={(e) => setField('date', e.target.value)}
+                    max={maxOrderDateIso()}
+                    error={!!editDateError}
+                    errorMessage={editDateError}
+                    onChange={(e) => {
+                      setField('date', e.target.value);
+                      if (editDateError) setEditDateError('');
+                    }}
                   />
                   <Input
                     type="time"
@@ -754,6 +780,10 @@ export default function OrderDetails() {
                     onChange={(e) => setField('time', e.target.value)}
                   />
                 </div>
+                <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  Orders can be scheduled up to {MAX_ORDER_MONTHS_AHEAD} months ahead
+                  {' '}(latest {maxOrderDateLabel()}).
+                </p>
                 <Input
                   label="Delivery Address"
                   placeholder="Delivery address"
