@@ -45,6 +45,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: "/products",
     },
     {
+      key: "subcategories",
+      icon: ICON_NAMES.PRODUCT,
+      label: "Sub-category",
+      path: "/subcategories",
+    },
+    {
       key: "clients",
       icon: ICON_NAMES.CLIENT,
       label: "Client",

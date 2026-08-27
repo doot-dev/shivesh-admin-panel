@@ -4,6 +4,7 @@ import Dashboard from "../pages/dashboard";
 import Users from "../pages/userss";
 import Products from "../pages/products";
 import ProductDetails from "../pages/productDetails";
+import Subcategories from "../pages/subcategories";
 import Login from "../pages/login";
 import ProtectedRoute from "./protectedRoutess";
 import { useParams } from "react-router";
@@ -38,6 +39,7 @@ export default function AppRoutes() {
             <Route path="users" element={<Users />} />
             <Route path="products" element={<Products />} />
             <Route path="products/:id" element={<ProductDetails />} />
+            <Route path="subcategories" element={<Subcategories />} />
             <Route path="vendors" element={<Vendors />} />
             <Route path="vendors/:id" element={<VendorDetail />} />
             <Route path="clients" element={<Client />} />
