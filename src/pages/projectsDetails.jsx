@@ -107,13 +107,17 @@ export default function ProjectsDetails() {
   const filteredProjectsProd = currentProduct.filter((prod) => {
     const s = filters.search.toLowerCase();
     return (
-      !s || prod.productName?.toLowerCase().includes(s) || prod.productGrade?.toLowerCase().includes(s)
+      !s ||
+      prod.productName?.toLowerCase().includes(s) ||
+      prod.productGrade?.toLowerCase().includes(s) ||
+      prod.subcategory?.toLowerCase().includes(s)
     );
   }).map((u, i) => ({
     ...u,
     sNo: (i + 1).toString().padStart(2, "0"),
     productName: u.productName,
     productGrade: u.productGrade,
+    subcategory: u.subcategory || "N/A",
     costPrice: u.costPrice
   }))
 
@@ -121,6 +125,7 @@ export default function ProjectsDetails() {
     { key: "sNo", header: "S.No" },
     { key: "productName", header: "Product Name" },
     { key: "productGrade", header: "Product Grade" },
+    { key: "subcategory", header: "Sub-category" },
     { key: "costPrice", header: "Cost Price" },
 
   ];

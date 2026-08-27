@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { fetchProductsById } from "../../../features/product/productSlice";
+import { fetchSubcategories } from "../../../features/subcategory/subcategorySlice";
 
 import { ICON_NAMES } from "../../icons";
 import Modal from "../../ui/Modal";
@@ -12,6 +13,7 @@ import Dropdown from "../../ui/Dropdown";
 const initialState = {
   productId: "",
   gradeId: "",
+  subcategory: "",
   costPrice: "",
 };
 
@@ -25,10 +27,17 @@ const AddProjectProductModal = ({
   const dispatch = useDispatch();
 
   const { currentProduct } = useSelector((state) => state.products);
+  const { subcategoryList = [] } = useSelector((state) => state.subcategories);
 
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  // The sub-category master feeds this dropdown; the selected NAME is copied
+  // onto the project product, so there is no id relationship to maintain.
+  useEffect(() => {
+    if (isOpen) dispatch(fetchSubcategories());
+  }, [isOpen, dispatch]);
 
   /* ---------------- Handlers ---------------- */
 
@@ -76,6 +85,8 @@ const AddProjectProductModal = ({
 
     if (!formData.gradeId) newErrors.gradeId = "Grade is required";
 
+    if (!formData.subcategory) newErrors.subcategory = "Sub-category is required";
+
     if (!formData.costPrice) newErrors.costPrice = "Cost price is required";
 
     setErrors(newErrors);
@@ -102,6 +113,7 @@ const AddProjectProductModal = ({
       projectId: projectId,
       productName: selectedProduct?.name || "",
       productGrade: selectedGrade?.name || "",
+      subcategory: formData.subcategory,
       costPrice: Number(formData.costPrice),
     };
 
@@ -183,6 +195,28 @@ const AddProjectProductModal = ({
           onChange={handleGradeChange}
           disabled={!formData.productId}
           error={errors.gradeId}
+          className="mt-2"
+        />
+
+        {/* Sub-category */}
+        <label className="text-sm mb-2 font-medium text-text-primary">
+          Sub-category
+        </label>
+        <Dropdown
+          label="Sub-category"
+          options={subcategoryList
+            .filter((s) => s.isActive !== false)
+            .map((s) => ({
+              value: s.name,
+              label: s.name,
+            }))}
+          value={formData.subcategory}
+          placeholder="Select Sub-category"
+          searchable
+          width="100%"
+          height="40px"
+          onChange={(value) => handleChange("subcategory", value)}
+          error={errors.subcategory}
           className="mt-2"
         />
 

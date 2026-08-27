@@ -8,6 +8,7 @@ import {
 } from "../../../features/projects/projectProductSlice";
 
 import { fetchProductsById } from "../../../features/product/productSlice";
+import { fetchSubcategories } from "../../../features/subcategory/subcategorySlice";
 
 import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
@@ -18,6 +19,7 @@ import { ICON_NAMES } from "../../icons";
 const initialFormState = {
   productId: "",
   gradeId: "",
+  subcategory: "",
   costPrice: "",
 };
 
@@ -38,6 +40,8 @@ const EditProjectProductModal = ({
     (state) => state.products,
   );
 
+  const { subcategoryList = [] } = useSelector((state) => state.subcategories);
+
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
 
@@ -47,6 +51,12 @@ const EditProjectProductModal = ({
     if (!isOpen || !productId) return;
     dispatch(fetchProjectProductById({ projectId, productId }));
   }, [isOpen, productId, projectId, dispatch]);
+
+  // Sub-category options come from the master; the project product stores the
+  // chosen NAME by value, so prefill matches on the string it already holds.
+  useEffect(() => {
+    if (isOpen) dispatch(fetchSubcategories());
+  }, [isOpen, dispatch]);
 
   /* ---------------- PREFILL FORM (Single Source of Truth) ---------------- */
 
@@ -67,6 +77,7 @@ const EditProjectProductModal = ({
     setFormData({
       productId: matchedProduct.id,
       gradeId: "", // will be set after grades load
+      subcategory: currentProduct.subcategory || "",
       costPrice: currentProduct.costPrice || "",
     });
   }, [currentProduct, isOpen, productData, dispatch]);
@@ -92,11 +103,12 @@ const EditProjectProductModal = ({
   /* ---------------- HANDLERS ---------------- */
 
   const handleProductChange = (id) => {
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       productId: id,
       gradeId: "",
       costPrice: "",
-    });
+    }));
 
     dispatch(fetchProductsById(id));
   };
@@ -118,6 +130,7 @@ const EditProjectProductModal = ({
 
     if (!formData.productId) newErrors.productId = "Required";
     if (!formData.gradeId) newErrors.gradeId = "Required";
+    if (!formData.subcategory) newErrors.subcategory = "Required";
     if (!formData.costPrice) newErrors.costPrice = "Required";
 
     setErrors(newErrors);
@@ -143,6 +156,7 @@ const EditProjectProductModal = ({
       productId, // project-product id
       productName: selectedProduct?.name,
       productGrade: selectedGrade?.name,
+      subcategory: formData.subcategory,
       costPrice: Number(formData.costPrice),
     };
 
@@ -181,6 +195,22 @@ const EditProjectProductModal = ({
     [selectedProductDetails],
   );
 
+  // Keep the currently-saved sub-category selectable even if it was since
+  // deactivated or removed from the master, so editing cost doesn't silently
+  // wipe the product's existing sub-category.
+  const subcategoryOptions = useMemo(() => {
+    const options = subcategoryList
+      .filter((s) => s.isActive !== false)
+      .map((s) => ({ value: s.name, label: s.name }));
+
+    const saved = formData.subcategory;
+    if (saved && !options.some((o) => o.value === saved)) {
+      options.unshift({ value: saved, label: saved });
+    }
+
+    return options;
+  }, [subcategoryList, formData.subcategory]);
+
   /* ---------------- UI ---------------- */
 
   return (
@@ -210,6 +240,17 @@ const EditProjectProductModal = ({
           searchable
           disabled={!formData.productId}
           error={errors.gradeId}
+        />
+
+        <Dropdown
+          label="Sub-category"
+          options={subcategoryOptions}
+          value={formData.subcategory}
+          onChange={(value) =>
+            setFormData((prev) => ({ ...prev, subcategory: value }))
+          }
+          searchable
+          error={errors.subcategory}
         />
 
         <Input
