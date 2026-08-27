@@ -117,7 +117,7 @@ const ClientDetailsPage = () => {
 
   return (
     <>
-      <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="p-4 md:p-8 bg-white min-h-screen">
         {/* Breadcrumb */}
         <div className="text-sm text-gray-500 mb-4">
           <span
