@@ -174,7 +174,7 @@ const Modal = ({
           {footer && (
             <div 
               className={`
-                px-6 py-4 border-t bg-gray-50 flex items-center justify-end space-x-3
+                px-6 py-4 border-t bg-white flex items-center justify-end space-x-3
                 ${footerClassName}
               `}
               style={{ borderColor: 'var(--color-border)' }}

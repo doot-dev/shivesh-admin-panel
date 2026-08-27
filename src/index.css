@@ -23,13 +23,22 @@
   --color-text-secondary: #757575;
   --color-text-inverse: #ffffff;
   --color-text-light: #a6a6a6;
-  --color-background: #f8fafc;
-  --color-background-hover: #f1f5f9;
+  /* App surface is pure white; -hover is the subtle tint used for table row hover. */
+  --color-background: #ffffff;
+  --color-background-hover: #f5f7ff;
   --font-poppins: "Poppins", sans-serif;
 }
 
 :root {
   font-family: var(--font-poppins);
+}
+
+/* Base surface: every page paints on pure white. Set on html+body so no page
+   wrapper can fall through to the browser default or an off-white tint. */
+html,
+body,
+#root {
+  background-color: #ffffff;
 }
 
 

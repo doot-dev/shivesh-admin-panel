@@ -247,7 +247,6 @@ const Dashboard = () => {
                 actions={recentUsersActions}
                 showPagination={false}
                 className="shadow-none border-0 rounded-none"
-                headerClassName="bg-background"
               />
             </div>
           </div>
