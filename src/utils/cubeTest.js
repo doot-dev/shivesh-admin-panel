@@ -1,5 +1,14 @@
-// Once the order/delivery has reached one of these states, no further cube tests can be logged.
-export const CUBE_TEST_LOCKED_STATES = ['DELIVERED', 'COMPLETED'];
+// Cube tests are NEVER locked by order status.
+//
+// This used to be ['DELIVERED', 'COMPLETED']. It was removed by request: a
+// 7/14/21-day cube result arrives long after delivery, and often after the
+// order is closed and billed, so locking the form made it impossible to record
+// results that legitimately exist. Each row carries its own `createdAt`, which
+// is what tells the office a report was filed late.
+//
+// Kept as an exported empty list so the two call sites keep compiling and the
+// rule lives in exactly one place.
+export const CUBE_TEST_LOCKED_STATES = [];
 
 export const CUBE_TEST_PERIODS = [
   { value: 'SEVEN_DAYS', label: '7 Days' },
@@ -22,6 +31,9 @@ export const EMPTY_CUBE_TEST_FORM = {
   file: null,
 };
 
+/// Always false — cube tests can be added to an order at any point in its life.
+/// Retained (rather than deleted) so callers keep a single named concept to ask
+/// about, should a real lock rule ever come back.
 export const isOrderCubeTestLocked = (order) =>
   CUBE_TEST_LOCKED_STATES.includes(order?.status) || CUBE_TEST_LOCKED_STATES.includes(order?.deliveryStatus);
 

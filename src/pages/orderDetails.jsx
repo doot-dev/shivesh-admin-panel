@@ -47,8 +47,10 @@ const ORIGIN = api.defaults.baseURL;
 const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 const DELIVERY_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'];
 
-// Once the order/delivery has reached one of these states, no further cube tests can be logged.
-const CUBE_TEST_LOCKED_STATES = ['DELIVERED', 'COMPLETED'];
+// Cube tests are never locked by order status — a cube result legitimately
+// arrives after the order is delivered and closed. See src/utils/cubeTest.js,
+// which is the single source of truth for this rule.
+const CUBE_TEST_LOCKED_STATES = [];
 
 const CUBE_TEST_PERIODS = [
   { value: 'SEVEN_DAYS', label: '7 Days' },
