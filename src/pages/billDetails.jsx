@@ -9,6 +9,7 @@ import Input from '../components/ui/Input';
 import Dropdown from '../components/ui/Dropdown';
 import FullPageLoader from '../components/ui/FullPageLoader';
 import api from '../services/api';
+import billService from '../services/billService';
 import {
   clearCurrentBill,
   deleteBill,
@@ -196,6 +197,7 @@ export default function BillDetails() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const docInputRef = useRef(null);
 
   useEffect(() => {
@@ -261,6 +263,24 @@ export default function BillDetails() {
     }
   };
 
+  const handleGenerateInvoice = async () => {
+    // Open the tab synchronously so the popup blocker allows it, then fill it.
+    const tab = window.open('', '_blank');
+    setGeneratingInvoice(true);
+    try {
+      const blob = await billService.getInvoicePdf(billNo);
+      const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      if (tab) tab.location.href = url;
+      else window.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      tab?.close();
+      toast.error('Could not generate the invoice');
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm(`Delete bill ${billNo}? This cannot be undone.`)) return;
     setDeleting(true);
@@ -291,6 +311,17 @@ export default function BillDetails() {
           </div>
           <p className="text-sm text-gray-500 mt-0.5">{d.clientName}</p>
         </div>
+
+        <Button
+          onClick={handleGenerateInvoice}
+          leftIcon={ICON_NAMES.DOWNLOAD}
+          variant="primary"
+          size="md"
+          disabled={generatingInvoice}
+          className="px-4 py-2 md:px-5 md:py-2.5 text-sm whitespace-nowrap"
+        >
+          {generatingInvoice ? 'Generating...' : 'Generate Invoice'}
+        </Button>
 
         {bill.documentUrl ? (
           <Button

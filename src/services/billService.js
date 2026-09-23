@@ -33,6 +33,13 @@ const billService = {
     return response.data;
   },
 
+  // Invoice PDF with the bill document and challans appended. Fetched as a blob
+  // because the endpoint needs the auth header a plain link can't send.
+  getInvoicePdf: async (billNo) => {
+    const response = await api.get(`${BASE}/${billNo}/invoice`, { responseType: 'blob' });
+    return response.data;
+  },
+
   deleteBill: async (billNo) => {
     const response = await api.delete(`${BASE}/${billNo}`);
     return response.data;
