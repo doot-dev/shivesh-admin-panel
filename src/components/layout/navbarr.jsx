@@ -3,6 +3,7 @@ import { Icon, ICON_NAMES } from "../icons";
 import Logo from "../../assets/img/shivesh-logo.png";
 import { useSelector } from "react-redux";
 import UserIcon from "../../assets/img/profile.png";
+import NotificationBell from "./NotificationBell";
 // import { useUser } from '../../context/UserContext';
 const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -52,11 +53,8 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
 
         {/* Right section */}
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 relative">
-            <Icon name={ICON_NAMES.NOTIFICATION} size={30} />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-          </button>
+          {/* Notifications — live bell (new orders, status changes, messages) */}
+          <NotificationBell />
 
           {/* Profile dropdown */}
           <div className="relative">
