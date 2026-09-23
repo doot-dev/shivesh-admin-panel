@@ -4,14 +4,6 @@ import { Icon, ICON_NAMES } from "../../icons";
 const ViewUserModal = ({ isOpen, onClose, user, onEdit, onDelete }) => {
   if (!user) return null;
 
-  // Menu access options based on the image
-  const menuOptions = [
-    { id: 1, label: "Product Master" },
-    { id: 2, label: "Vendor master" },
-    { id: 3, label: "User master" },
-    { id: 4, label: "Project" },
-  ];
-
   const getRoleLabel = (roleValue) => {
     const roleMap = {
       FIELD_TECHNICIAN: "Field Technician",
@@ -133,30 +125,35 @@ const ViewUserModal = ({ isOpen, onClose, user, onEdit, onDelete }) => {
           <Input value="••••••••" readOnly className="bg-gray-50" />
         </div>
 
-        {/* Menu Access */}
+        {/* Panel access — comes from the access role now, not the old
+            per-user menuAccess list, which is no longer written. */}
         <div>
           <label className="block text-sm font-medium text-text-primary mb-2">
-            Menu access
+            Panel access
           </label>
-          <p className="text-xs text-text-secondary mb-3">
-            Access granted to the navigations to this user
-          </p>
-          <div className="space-y-3 max-h-32 overflow-y-auto border border-border rounded-lg p-3 bg-gray-50">
-            {menuOptions.map((option) => (
-              <div key={option.id} className="flex items-center">
-                <Checkbox
-                  checked={
-                    user.menuAccess && user.menuAccess.includes(option.id)
-                  }
-                  readOnly
-                  disabled
-                  className="mr-3"
-                />
-                <span className="text-sm text-text-primary">
-                  {option.label}
-                </span>
-              </div>
-            ))}
+          <div className="rounded-lg border border-border bg-gray-50 p-3">
+            {user.isSuperAdmin ? (
+              <p className="text-sm font-medium text-purple-700">
+                Super Admin — full access to everything
+              </p>
+            ) : user.roleRef?.name ? (
+              <>
+                <p className="text-sm font-medium text-text-primary">
+                  {user.roleRef.name}
+                </p>
+                {user.roleRef.isActive === false && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    This role is turned off, so the user currently has no
+                    access.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                No access role assigned — this user can sign in but sees no
+                menus.
+              </p>
+            )}
           </div>
         </div>
 

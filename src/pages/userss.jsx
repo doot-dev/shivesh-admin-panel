@@ -16,6 +16,8 @@ import {
   removeUser,
   changePassword,
 } from "../features/user/userSlice";
+import { Can } from "../components/auth/Can";
+import { MODULE, ACTIONS } from "../constant/permissions";
 
 // -----------------------------
 // Constants
@@ -236,15 +238,17 @@ const Users = () => {
             />
           </div>
 
-          <Button
-            onClick={() => setModalState((p) => ({ ...p, add: true }))}
-            leftIcon={ICON_NAMES.PLUS}
-            variant="primary"
-            size="md"
-            height="50px"
-          >
-            Add User
-          </Button>
+          <Can module={MODULE.USERS} action={ACTIONS.CREATE}>
+            <Button
+              onClick={() => setModalState((p) => ({ ...p, add: true }))}
+              leftIcon={ICON_NAMES.PLUS}
+              variant="primary"
+              size="md"
+              height="50px"
+            >
+              Add User
+            </Button>
+          </Can>
         </div>
       </section>
 

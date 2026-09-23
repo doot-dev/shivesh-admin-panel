@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
-import { Modal, Button, Input, Checkbox, Dropdown } from "../../ui";
+import { Modal, Button, Input, Dropdown } from "../../ui";
 import { ICON_NAMES } from "../../icons";
-import { updateUsers } from "../../../services/userService";
-import { toast } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { editUser } from "../../../features/user/userSlice";
+import {
+  getRoles,
+  getUserPermissions,
+  setUserPermissions,
+} from "../../../services/roleService";
+import { usePermission } from "../../../hooks/usePermission";
+import UserOverrides from "./UserOverrides";
 const EditUserModal = ({
   isOpen,
   onClose,
@@ -20,22 +25,20 @@ const EditUserModal = ({
     status: true,
     username: "",
     password: "",
-    menuAccess: {
-      client: false,
-      productMaster: false,
-      vendorMaster: false,
-      userMaster: false,
-      project: false,
-      ordersAndTrucks: false,
-      leads: false,
-    },
+    roleId: "",
+    isSuperAdmin: false,
   });
 
-  console.log("EditUserModal user prop:", user);
   const dispatch = useDispatch();
+  const { isSuperAdmin: viewerIsSuperAdmin } = usePermission();
   const [errors, setErrors] = useState({});
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [accessRoles, setAccessRoles] = useState([]);
+  // Per-user exceptions, loaded separately because they are saved through the
+  // role API rather than the user API.
+  const [overrides, setOverrides] = useState([]);
+  const [rolePermissions, setRolePermissions] = useState([]);
 
   // Role options for dropdown
   const roleOptions = [
@@ -46,47 +49,16 @@ const EditUserModal = ({
     { value: "ACCOUNTANT", label: "Accountant" },
   ];
 
-  // Menu access options with IDs
-  const menuAccessOptions = [
-    { key: "client", label: "Client", id: 1 },
-    { key: "productMaster", label: "Product Master", id: 2 },
-    { key: "vendorMaster", label: "Vendor master", id: 3 },
-    { key: "userMaster", label: "User master", id: 4 },
-    { key: "project", label: "Project", id: 5 },
-    { key: "ordersAndTrucks", label: "Orders & Trucks", id: 6 },
-    { key: "leads", label: "Leads", id: 7 },
+  const accessRoleOptions = [
+    { value: "", label: "No access role" },
+    ...accessRoles
+      .filter((r) => r.isActive && !r.isSystem)
+      .map((r) => ({ value: String(r.id), label: r.name })),
   ];
 
   // Update form data when user data changes
   useEffect(() => {
     if (user && user.data) {
-      console.log("Setting form data from user:", user.data);
-
-      // Convert menuAccess array to boolean object for checkboxes
-      const menuAccessObject = {
-        client: false,
-        productMaster: false,
-        vendorMaster: false,
-        userMaster: false,
-        project: false,
-        ordersAndTrucks: false,
-        leads: false,
-      };
-
-      // If user has menuAccess array, set the corresponding checkboxes to true
-      if (user.data.menuAccess && Array.isArray(user.data.menuAccess)) {
-        console.log("User menuAccess array:", user.data.menuAccess);
-
-        menuAccessOptions.forEach((option) => {
-          if (user.data.menuAccess.includes(option.id)) {
-            menuAccessObject[option.key] = true;
-            console.log(`Setting ${option.key} to true for id ${option.id}`);
-          }
-        });
-      }
-
-      console.log("Final menuAccess object:", menuAccessObject);
-
       setFormData({
         employeeName: user.data.name || "",
         employeeId: user.data.employeeId || "",
@@ -94,10 +66,36 @@ const EditUserModal = ({
         status: user.data.status !== undefined ? user.data.status : true,
         username: user.data.userName || "",
         password: user.data.password || "",
-        menuAccess: menuAccessObject,
+        roleId: user.data.roleId ? String(user.data.roleId) : "",
+        isSuperAdmin: Boolean(user.data.isSuperAdmin),
       });
     }
   }, [user]);
+
+  // Access role list + this user's current exceptions.
+  useEffect(() => {
+    if (!isOpen || !user?.data?.id) return;
+
+    getRoles()
+      .then((res) => setAccessRoles(res?.data ?? []))
+      .catch(() => setAccessRoles([]));
+
+    getUserPermissions(user.data.id)
+      .then((res) => {
+        setOverrides(res?.data?.overrides ?? []);
+        // Effective minus overrides = what the ROLE grants. Showing that lets
+        // an admin see which ticks come from the job and which are exceptions.
+        const effective = new Set(res?.data?.effectivePermissions ?? []);
+        for (const o of res?.data?.overrides ?? []) {
+          if (o.effect === "ALLOW") effective.delete(o.permission);
+        }
+        setRolePermissions([...effective]);
+      })
+      .catch(() => {
+        setOverrides([]);
+        setRolePermissions([]);
+      });
+  }, [isOpen, user?.data?.id]);
 
   const handleInputChange = (field) => (event) => {
     const value = event.target.value;
@@ -129,15 +127,7 @@ const EditUserModal = ({
     }
   };
 
-  const handleMenuAccessChange = (key) => (checked) => {
-    setFormData((prev) => ({
-      ...prev,
-      menuAccess: {
-        ...prev.menuAccess,
-        [key]: checked,
-      },
-    }));
-  };
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -169,12 +159,6 @@ const EditUserModal = ({
 
     setIsSubmitting(true);
     try {
-      // Convert menu access boolean object back to array of IDs
-      const selectedMenuAccess = menuAccessOptions
-        .filter((option) => formData.menuAccess[option.key])
-        .map((option) => option.id);
-
-      // Format data according to API structure
       const userData = {
         id: user.data.id,
         name: formData.employeeName,
@@ -182,19 +166,25 @@ const EditUserModal = ({
         userName: formData.username,
         role: formData.role,
         status: formData.status,
-        menuAccess: selectedMenuAccess,
+        roleId: formData.roleId ? Number(formData.roleId) : null,
       };
+
+      // Only a super admin may change this flag at all; the API enforces it
+      // again and also refuses to let someone drop their OWN super-admin bit.
+      if (viewerIsSuperAdmin) {
+        userData.isSuperAdmin = formData.isSuperAdmin;
+      }
 
       // Only include password if it's been changed (not the masked version)
       if (formData.password && formData.password !== "••••••••") {
         userData.password = formData.password;
       }
 
-      console.log("Updating user with data:", userData);
+      await dispatch(editUser(userData)).unwrap();
 
-      // Call the updateUsers API directly
-      const response = await dispatch(editUser(userData)).unwrap();
-      console.log("Update user API response:", response);
+      // Exceptions are a separate endpoint — saved after the user row so a
+      // failure here can't leave the user itself unsaved.
+      await setUserPermissions(user.data.id, overrides);
 
       // Show success message
       // toast.success(response.message || "User updated successfully");
@@ -220,7 +210,6 @@ const EditUserModal = ({
 
   const handleClose = () => {
     setErrors({});
-    setIsChangingPassword(false);
     setIsSubmitting(false);
     onClose();
   };
@@ -396,43 +385,60 @@ const EditUserModal = ({
             </button>
           </div>
 
-          {/* Menu Access */}
+          {/* Panel access */}
           <div>
             <h4
               className="text-sm font-medium mb-2"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Menu access
+              Panel access
             </h4>
             <p
               className="text-sm mb-4"
               style={{ color: "var(--color-text-secondary)" }}
             >
-              Access granted to the navigations to this user
+              The access role decides which menus and actions this user gets.
             </p>
 
-            <div
-              className="border rounded-[12px] p-4 max-h-60 overflow-y-auto space-y-3 bg-input-bg"
-              style={{
-                borderColor: "var(--color-border)",
-              }}
-            >
-              {menuAccessOptions.map((option) => {
-                console.log(
-                  `Rendering checkbox for ${option.key}: checked=${formData.menuAccess[option.key]
-                  }`
-                );
-                return (
-                  <Checkbox
-                    key={option.key}
-                    checked={formData.menuAccess[option.key]}
-                    onChange={handleMenuAccessChange(option.key)}
-                    label={option.label}
-                    className="w-full"
-                  />
-                );
-              })}
-            </div>
+            <Dropdown
+              options={accessRoleOptions}
+              value={formData.roleId}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, roleId: value }))
+              }
+              placeholder="Select an access role"
+              width="100%"
+              height="42px"
+              backgroundColor="input-bg"
+            />
+
+            {viewerIsSuperAdmin && (
+              <label className="mt-4 flex items-start gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={formData.isSuperAdmin}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      isSuperAdmin: e.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 h-4 w-4 accent-primary"
+                />
+                <span>
+                  Super Admin — full access to everything. Overrides the access
+                  role.
+                </span>
+              </label>
+            )}
+
+            {!formData.isSuperAdmin && (
+              <UserOverrides
+                overrides={overrides}
+                rolePermissions={rolePermissions}
+                onChange={setOverrides}
+              />
+            )}
           </div>
 
           {/* Submit Error */}

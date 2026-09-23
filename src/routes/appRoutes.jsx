@@ -7,7 +7,6 @@ import ProductDetails from "../pages/productDetails";
 import Subcategories from "../pages/subcategories";
 import Login from "../pages/login";
 import ProtectedRoute from "./protectedRoutess";
-import { useParams } from "react-router";
 import Vendors from "../pages/vendors";
 import VendorDetail from "../pages/vendorDetails";
 import ComingSoon from "../pages/comingSoonn";
@@ -23,6 +22,9 @@ import AddOrderPage from "../pages/addOrder";
 import BillingPage from "../pages/billing";
 import BillDetails from "../pages/billDetails";
 import CubeTestingPage from "../pages/cubeTesting";
+import ReportsPage from "../pages/reports";
+import RolesPage from "../pages/roles";
+import NoAccess from "../pages/noAccess";
 
 export default function AppRoutes() {
   return (
@@ -37,6 +39,10 @@ export default function AppRoutes() {
           <Route path="/*" element={<Layout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<Users />} />
+            <Route path="roles" element={<RolesPage />} />
+            {/* Reachable by any signed-in user — it is what we show someone
+                who has no modules granted at all. */}
+            <Route path="no-access" element={<NoAccess />} />
             <Route path="products" element={<Products />} />
             <Route path="products/:id" element={<ProductDetails />} />
             <Route path="subcategories" element={<Subcategories />} />
@@ -57,7 +63,7 @@ export default function AppRoutes() {
             <Route path="testing" element={<CubeTestingPage />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="billing/:billId" element={<BillDetails />} />
-            <Route path="reports" element={<ComingSoon />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<ComingSoon />} />
           </Route>
         </Route>

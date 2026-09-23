@@ -4,12 +4,15 @@ import { Icon, ICON_NAMES } from "../icons";
 import { useDispatch } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
 import { closeSocket } from "../../services/socket";
+import { usePermission } from "../../hooks/usePermission";
+import { MODULE } from "../../constant/permissions";
 import LogoImg from "../../assets/img/shivesh-logo.png";
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState({});
   const dispatch = useDispatch();
   const router = useNavigate();
+  const { canViewModule, isSuperAdmin, user } = usePermission();
   const toggleExpanded = (itemKey) => {
     setExpandedItems((prev) => ({
       ...prev,
@@ -31,54 +34,70 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: ICON_NAMES.DASHBOARD,
       label: "Dashboard",
       path: "/dashboard",
+      module: MODULE.DASHBOARD,
     },
     {
       key: "users",
       icon: ICON_NAMES.USER,
       label: "Users",
       path: "/users",
+      module: MODULE.USERS,
+    },
+    {
+      key: "roles",
+      icon: ICON_NAMES.USER,
+      label: "Roles & Permissions",
+      path: "/roles",
+      module: MODULE.ROLES,
     },
     {
       key: "products",
       icon: ICON_NAMES.PRODUCT,
       label: "Product",
       path: "/products",
+      module: MODULE.PRODUCTS,
     },
     {
       key: "subcategories",
       icon: ICON_NAMES.PRODUCT,
       label: "Sub-category",
       path: "/subcategories",
+      module: MODULE.SUBCATEGORIES,
     },
     {
       key: "clients",
       icon: ICON_NAMES.CLIENT,
       label: "Client",
       path: "/clients",
+      module: MODULE.CLIENTS,
     },
     {
       key: "vendors",
       icon: ICON_NAMES.VENDOR,
       label: "Vendor",
       path: "/vendors",
+      module: MODULE.VENDORS,
     },
     {
       key: "leads",
       icon: ICON_NAMES.LEADS,
       label: "Leads",
       path: "/leads",
+      module: MODULE.LEADS,
     },
     {
       key: "projects",
       icon: ICON_NAMES.PROJECTS,
       label: "Project",
       path: "/projects",
+      module: MODULE.PROJECTS,
     },
     {
       key: "orders",
       icon: ICON_NAMES.ORDERS,
       label: "Orders & Tracks",
       path: "/orders",
+      module: MODULE.ORDERS,
       // hasSubmenu: true,
       // submenu: [
       //   { label: "All Orders", path: "/orders/all" },
@@ -91,26 +110,37 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: ICON_NAMES.CUBE_TESTING,
       label: "Cube Testing",
       path: "/testing",
+      module: MODULE.CUBE_TESTS,
     },
     {
       key: "billing",
       icon: ICON_NAMES.BILLING,
       label: "Billing",
       path: "/billing",
+      module: MODULE.BILLING,
     },
     {
       key: "reports",
       icon: ICON_NAMES.REPORTS,
       label: "Reports",
       path: "/reports",
+      module: MODULE.REPORTS,
     },
     {
       key: "settings",
       icon: ICON_NAMES.SETTINGS,
       label: "Settings",
       path: "/settings",
+      module: MODULE.SETTINGS,
     },
   ];
+
+  // Only show what this user can actually open. An item with no `module` is
+  // never hidden, so adding a menu entry can't accidentally lock everyone out
+  // by forgetting to tag it.
+  const visibleMenuItems = menuItems.filter(
+    (item) => !item.module || canViewModule(item.module)
+  );
 
   const isActive = (path) => {
     // Special case for products - should be active for /products and /products/:id
@@ -207,7 +237,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         {/* Navigation */}
         <nav className="flex-1  py-6 overflow-y-auto">
           <ul className="space-y-2">
-            {menuItems.map((item) => (
+            {visibleMenuItems.map((item) => (
               <li key={item.key}>
                 {item.hasSubmenu ? (
                   <div>
@@ -283,7 +313,18 @@ const Sidebar = ({ isOpen, onClose }) => {
           </ul>
         </nav>
 
-        {/* Logout */}
+        {/* Which role the user is acting under. In a permissioned panel this
+          matters: it explains why a menu someone expects is missing. */}
+        <div className="px-6 pb-2 pt-1">
+          <p className="truncate text-xs font-medium text-gray-700">
+            {user?.name ?? user?.userName ?? ""}
+          </p>
+          <p className="truncate text-[11px] text-gray-400">
+            {isSuperAdmin ? "Super Admin" : user?.roleName ?? "No role assigned"}
+          </p>
+        </div>
+
+      {/* Logout */}
         <div className="p-4 border-t border-gray-200">
           <button
             type="button"

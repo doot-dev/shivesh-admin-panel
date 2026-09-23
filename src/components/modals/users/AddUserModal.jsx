@@ -1,13 +1,19 @@
-import { useState } from "react";
-import { Modal, Input, Dropdown, Checkbox, Button } from "../../ui";
-import { Icon, ICON_NAMES } from "../../icons";
-import { addUser } from "../../../services/userService";
+import { useEffect, useState } from "react";
+import { Modal, Input, Dropdown, Button } from "../../ui";
+import { ICON_NAMES } from "../../icons";
 import { toast } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { createUser } from "../../../features/user/userSlice";
+import { getRoles } from "../../../services/roleService";
+import { usePermission } from "../../../hooks/usePermission";
+
 const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
   const dispatch = useDispatch();
-  const { loading, error, list: users } = useSelector((state) => state.users);
+  const { isSuperAdmin } = usePermission();
+
+  // Access roles, loaded from the IAM engine rather than hardcoded, so a role
+  // created on the Roles screen is immediately assignable here.
+  const [accessRoles, setAccessRoles] = useState([]);
 
   const [formData, setFormData] = useState({
     employeeName: "",
@@ -15,16 +21,16 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     role: "",
     username: "",
     password: "",
-    menuAccess: {
-      client: false,
-      productMaster: false,
-      vendorMaster: false,
-      userMaster: false,
-      project: false,
-      ordersAndTrucks: false,
-      leads: false,
-    },
+    roleId: "",
+    isSuperAdmin: false,
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    getRoles()
+      .then((res) => setAccessRoles(res?.data ?? []))
+      .catch(() => setAccessRoles([]));
+  }, [isOpen]);
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);;
@@ -39,15 +45,11 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
 
   ];
 
-  // Menu access options with IDs
-  const menuAccessOptions = [
-    { key: "client", label: "Client", id: 1 },
-    { key: "productMaster", label: "Product Master", id: 2 },
-    { key: "vendorMaster", label: "Vendor master", id: 3 },
-    { key: "userMaster", label: "User master", id: 4 },
-    { key: "project", label: "Project", id: 5 },
-    { key: "ordersAndTrucks", label: "Orders & Trucks", id: 6 },
-    { key: "leads", label: "Leads", id: 7 },
+  const accessRoleOptions = [
+    { value: "", label: "No access role" },
+    ...accessRoles
+      .filter((r) => r.isActive && !r.isSystem)
+      .map((r) => ({ value: String(r.id), label: r.name })),
   ];
 
   const handleInputChange = (field) => (event) => {
@@ -80,15 +82,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     }
   };
 
-  const handleMenuAccessChange = (key) => (checked) => {
-    setFormData((prev) => ({
-      ...prev,
-      menuAccess: {
-        ...prev.menuAccess,
-        [key]: checked,
-      },
-    }));
-  };
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -123,20 +117,16 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     if (validateForm()) {
       setIsSubmitting(true);
       try {
-        // Convert menu access to array of IDs
-        const selectedMenuAccess = menuAccessOptions
-          .filter(option => formData.menuAccess[option.key])
-          .map(option => option.id);
-
-        // Format data according to API structure
+        // What the user can DO in the panel now comes from the access role, not
+        // from the job title in `role` (which is kept for the mobile apps).
         const userData = {
           name: formData.employeeName,
           employeeId: formData.employeeId,
           userName: formData.username,
           password: formData.password,
-          //   token: getToken(),
-          role: formData.role.toUpperCase(), // Convert to uppercase like "ADMIN"
-          menuAccess: selectedMenuAccess
+          role: formData.role.toUpperCase(),
+          roleId: formData.roleId ? Number(formData.roleId) : null,
+          isSuperAdmin: formData.isSuperAdmin,
         };
 
         console.log('Sending user data:', userData);
@@ -171,15 +161,8 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
       role: "",
       username: "",
       password: "",
-      menuAccess: {
-        client: false,
-        productMaster: false,
-        vendorMaster: false,
-        userMaster: false,
-        project: false,
-        ordersAndTrucks: false,
-        leads: false,
-      },
+      roleId: "",
+      isSuperAdmin: false,
     });
     setErrors({});
     onClose?.();
@@ -298,38 +281,64 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
           />
         </div>
 
-        {/* Menu Access */}
+        {/* Panel access */}
         <div>
           <h4
             className="text-sm font-medium mb-2"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Menu access
+            Panel access
           </h4>
           <p
             className="text-sm mb-4"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Grant access to specific navigations to this user
+            Pick the access role that decides which menus and actions this user
+            gets. Manage the roles themselves on the Roles &amp; Permissions
+            screen.
           </p>
 
-          <div
-            className="border rounded-[12px] p-4 max-h-60 overflow-y-auto space-y-3 bg-input-bg"
-            style={{
-              borderColor: "var(--color-border)",
+          <Dropdown
+            options={accessRoleOptions}
+            value={formData.roleId}
+            onChange={(value) =>
+              setFormData((prev) => ({ ...prev, roleId: value }))
+            }
+            placeholder="Select an access role"
+            width="100%"
+            height="42px"
+            backgroundColor="input-bg"
+          />
 
-            }}
-          >
-            {menuAccessOptions.map((option) => (
-              <Checkbox
-                key={option.key}
-                checked={formData.menuAccess[option.key]}
-                onChange={handleMenuAccessChange(option.key)}
-                label={option.label}
-                className="w-full"
+          {!formData.roleId && !formData.isSuperAdmin && (
+            <p className="mt-2 text-xs text-amber-600">
+              Without an access role this user can sign in but will not see any
+              menus.
+            </p>
+          )}
+
+          {/* Only an existing super admin can mint another one — the API
+              enforces this too, so the checkbox is a courtesy, not the guard. */}
+          {isSuperAdmin && (
+            <label className="mt-4 flex items-start gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={formData.isSuperAdmin}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isSuperAdmin: e.target.checked,
+                  }))
+                }
+                className="mt-0.5 h-4 w-4 accent-primary"
               />
-            ))}
-          </div>
+              <span>
+                Make this user a <strong>Super Admin</strong> — full access to
+                everything, now and to anything added later. Their access role
+                is ignored.
+              </span>
+            </label>
+          )}
         </div>
 
         {/* Submit Error */}
