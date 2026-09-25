@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { StatusChip } from '../components/ui/StatusChip';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -46,20 +47,7 @@ const Field = ({ label, value, action }) => (
   </div>
 );
 
-const StatusBadge = ({ value, badgeMap = BILL_STATUS_BADGE }) => {
-  const cfg = badgeMap[value] || {
-    color: 'var(--color-text-secondary)',
-    backgroundColor: 'var(--color-background)',
-  };
-  return (
-    <span
-      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-      style={{ color: cfg.color, backgroundColor: cfg.backgroundColor }}
-    >
-      {value}
-    </span>
-  );
-};
+const StatusBadge = ({ value }) => <StatusChip status={value} />;
 
 const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
   const fileInputRef = useRef(null);

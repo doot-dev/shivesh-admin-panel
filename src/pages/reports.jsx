@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { StatusChip } from '../components/ui/StatusChip';
 import Tabs from '../components/ui/Tabs';
 import usePermission from '../hooks/usePermission';
 import { PaymentBehaviourTab, CollectionsTab, OrderPatternsTab, AccountsTaxTab } from '../components/reports/ReportTabs';
@@ -36,15 +37,7 @@ const RISK_OPTIONS = [
 ];
 
 function RiskBadge({ level }) {
-  const s = RISK_STYLES[level] || RISK_STYLES.LOW;
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${s.bg} ${s.text}`}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      {level}
-    </span>
-  );
+  return <StatusChip status={level} />;
 }
 
 function SummaryTile({ label, value, hint, accent = 'text-gray-900' }) {

@@ -107,7 +107,15 @@ const Dropdown = ({
       ? "var(--color-primary)"
       : "var(--color-border)";
 
-  const openUpward = position === "top";
+  // Open upward when asked, or when there isn't room below (e.g. the rows-per-
+  // page picker at the bottom of a table) and there is more room above.
+  const listCap = parseInt(maxHeight, 10) || 240;
+  const menuEstimate = Math.min(listCap, Math.max(1, options.length) * 42) + (searchable ? 58 : 0) + 8;
+  const spaceBelow = menuRect ? window.innerHeight - menuRect.bottom - 12 : Infinity;
+  const spaceAbove = menuRect ? menuRect.top - 12 : 0;
+  const openUpward = position === "top" || (menuEstimate > spaceBelow && spaceAbove > spaceBelow);
+  // Never taller than the room on the side it opens to; the list scrolls.
+  const fitHeight = Math.max(120, Math.min(listCap, (openUpward ? spaceAbove : spaceBelow) - (searchable ? 66 : 14)));
 
   const menu =
     isOpen && menuRect
@@ -158,7 +166,7 @@ const Dropdown = ({
             )}
 
             {/* Options */}
-            <div style={{ maxHeight, overflowY: "auto" }}>
+            <div style={{ maxHeight: fitHeight, overflowY: "auto" }}>
               {filteredOptions.length === 0 ? (
                 <div
                   className="py-6 text-center text-sm"

@@ -137,10 +137,11 @@ const Button = ({
 
       {/* Left icon */}
       {leftIcon && !loading && (
-        <Icon 
-          name={leftIcon} 
-          size={iconSize} 
-          className={children ? 'mr-2' : ''} 
+        <Icon
+          name={leftIcon}
+          size={iconSize}
+          tint
+          className={children ? 'mr-2' : ''}
         />
       )}
 
@@ -149,10 +150,11 @@ const Button = ({
 
       {/* Right icon */}
       {rightIcon && !loading && (
-        <Icon 
-          name={rightIcon} 
-          size={iconSize} 
-          className={children ? 'ml-2' : ''} 
+        <Icon
+          name={rightIcon}
+          size={iconSize}
+          tint
+          className={children ? 'ml-2' : ''}
         />
       )}
     </button>

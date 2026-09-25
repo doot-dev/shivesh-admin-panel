@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { StatusChip } from '../components/ui/StatusChip';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -136,18 +137,8 @@ const todayDateStr = () => {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
-const StatusBadge = ({ value, badgeMap = STATUS_BADGE }) => {
-  const cfg = badgeMap[value] || { color: '#374151', backgroundColor: '#F3F4F6' };
-  return (
-    <span
-      className="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold"
-      style={{ color: cfg.color, backgroundColor: cfg.backgroundColor }}
-    >
-      <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: cfg.color }} />
-      {statusLabel(value)}
-    </span>
-  );
-};
+// One badge style everywhere: tone and label come from the status word.
+const StatusBadge = ({ value }) => <StatusChip status={value} />;
 
 const InfoRow = ({ label, value }) => (
   <div className="flex flex-col gap-0.5 border-b border-primary-light py-2.5 last:border-0 sm:flex-row sm:items-start sm:gap-0">

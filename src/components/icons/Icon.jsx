@@ -28,6 +28,7 @@ const Icon = ({
   size = 24,
   color = "currentColor",
   className = "",
+  tint = false,
   ...props
 }) => {
   const iconMap = {
@@ -563,6 +564,20 @@ const Icon = ({
   if (!IconComponent) {
     console.warn(`Icon "${name}" not found`);
     return null;
+  }
+
+  // Single-colour glyphs inside buttons: paint the SVG as a mask filled with the
+  // text colour, so the icon is white on a navy button instead of its own
+  // built-in dark stroke. (Not used for multi-colour icons like modal headers.)
+  if (typeof IconComponent === "string" && tint && color === "currentColor") {
+    const mask = `url("${IconComponent}") center / contain no-repeat`;
+    return (
+      <span
+        aria-hidden="true"
+        className={`inline-block shrink-0 ${className}`}
+        style={{ width: size, height: size, backgroundColor: "currentColor", WebkitMask: mask, mask, ...props.style }}
+      />
+    );
   }
 
   // If it's an imported SVG URL

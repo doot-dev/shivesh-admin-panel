@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Icon, ICON_NAMES } from "../icons";
 import Button from "./Button";
 import Dropdown from "./Dropdown";
+import { StatusChip } from "./StatusChip";
+import { statusLabel } from "../../utils/labels";
 
 const Table = ({
   data = [],
@@ -98,26 +100,8 @@ const Table = ({
 
     if (column.type === "badge") {
       const value = item[column.key];
-      const badgeConfig = column.badgeConfig?.[value] || {
-        color: "var(--color-text-secondary)",
-        backgroundColor: "var(--color-background)",
-      };
-
-      return (
-        <span
-          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-          style={{
-            color: badgeConfig.color,
-            backgroundColor: badgeConfig.backgroundColor,
-          }}
-        >
-          <span
-            className="inline-block w-1 h-1 rounded-full mr-1"
-            style={{ backgroundColor: badgeConfig.color }}
-          ></span>
-          {badgeConfig.label ?? value}
-        </span>
-      );
+      const cfg = column.badgeConfig?.[value];
+      return <StatusChip status={value}>{cfg?.label ?? statusLabel(value)}</StatusChip>;
     }
 
     return item[column.key];
