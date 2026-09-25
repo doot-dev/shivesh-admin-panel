@@ -4,7 +4,6 @@ import { ICON_NAMES } from "../../icons";
 
 const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
   const [formData, setFormData] = useState({
-    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -51,10 +50,6 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.currentPassword.trim()) {
-      newErrors.currentPassword = "Current password is required";
-    }
-
     if (!formData.newPassword.trim()) {
       newErrors.newPassword = "New password is required";
     } else if (formData.newPassword.length < 6) {
@@ -65,10 +60,6 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.newPassword !== formData.confirmPassword) {
       newErrors.confirmPassword = "Confirm password does not match with new password";
-    }
-
-    if (formData.currentPassword === formData.newPassword) {
-      newErrors.newPassword = "New password must be different from current password";
     }
 
     setErrors(newErrors);
@@ -84,11 +75,8 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
     try {
       const passwordData = {
         id: user?.id || user?.data?.id,
-        oldPassword: formData.currentPassword,
         newPassword: formData.newPassword,
       };
-
-      console.log("Resetting password for user:", passwordData);
 
       // Call the parent handler (this will show toast notifications)
       if (onResetPassword) {
@@ -97,8 +85,7 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
 
       // Reset form and close modal on success
       setFormData({
-        currentPassword: "",
-        newPassword: "",
+            newPassword: "",
         confirmPassword: "",
       });
       setErrors({});
@@ -109,7 +96,7 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
       // Just show a generic form error
       setErrors((prev) => ({
         ...prev,
-        submit: "An error occurred. Please check your current password and try again.",
+        submit: "Could not reset the password. Please try again.",
       }));
     } finally {
       setIsSubmitting(false);
@@ -118,8 +105,7 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
 
   const handleClose = () => {
     setFormData({
-      currentPassword: "",
-      newPassword: "",
+        newPassword: "",
       confirmPassword: "",
     });
     setErrors({});
@@ -177,20 +163,9 @@ const ResetPasswordModal = ({ isOpen, onClose, user, onResetPassword }) => {
         }}
       >
         <div className="space-y-6">
-          {/* Current Password */}
-          <div>
-            <Input
-              label="Current password"
-              type="password"
-              placeholder="Enter current password"
-              value={formData.currentPassword}
-              onChange={handleInputChange("currentPassword")}
-              error={!!errors.currentPassword}
-              errorMessage={errors.currentPassword}
-              required
-              backgroundColor="input-bg"
-            />
-          </div>
+          <p className="text-sm text-gray-600">
+            Set a new password for {user?.name || user?.data?.name || "this user"}. Tell them the new password.
+          </p>
 
           {/* New Password */}
           <div>

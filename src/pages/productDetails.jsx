@@ -37,7 +37,6 @@ const ProductSubcategory = () => {
     dispatch(fetchProductsById(id));
   }, [dispatch, id]);
   // const productInfo = dispatch(fetchProductsById(id));
-  console.log("Redresh grade size", refreshGradeSize)
 
   const loadProductData = useCallback(() => {
     if (!productData?.size) return;
@@ -55,6 +54,8 @@ const ProductSubcategory = () => {
           (filters.status === "Inactive" && !item.isActive);
         return matchesSearch && matchesStatus;
       })
+      // Natural order: M5, M10, M15 … not M10, M15, M5.
+      .sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? ""), undefined, { numeric: true }))
       .map((item, i) => ({
         id: item.id,
         sNo: String(i + 1).padStart(2, "0"),
@@ -181,15 +182,18 @@ const ProductSubcategory = () => {
       </nav>
 
       <div className="flex items-center justify-between mb-6">
-        <input
-          type="text"
-          placeholder="Search by name"
-          value={filters.search}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, search: e.target.value }))
-          }
-          className="w-full max-w-[65%] md:max-w-[35%] border rounded-lg px-3 py-2"
-        />
+        <div className="relative flex flex-1 max-w-[65%] md:max-w-[35%] md:h-[50px] border border-border rounded-lg">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search by grade"
+            value={filters.search}
+            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+            className="w-full pl-10 pr-4 py-2 md:h-[50px] rounded-lg focus:outline-none"
+          />
+        </div>
         <Button onClick={handleAdd}>Add Grade</Button>
       </div>
 

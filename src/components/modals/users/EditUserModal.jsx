@@ -24,7 +24,6 @@ const EditUserModal = ({
     role: "",
     status: true,
     username: "",
-    password: "",
     roleId: "",
     isSuperAdmin: false,
   });
@@ -44,7 +43,7 @@ const EditUserModal = ({
   const roleOptions = [
     { value: "", label: "Select a role" },
     { value: "FIELD_TECHNICIAN", label: "Field technician" },
-    { value: "PROJECT_MANAGER", label: "Manager" },
+    { value: "PROJECT_MANAGER", label: "Project Manager" },
     { value: "ADMIN", label: "Admin" },
     { value: "ACCOUNTANT", label: "Accountant" },
   ];
@@ -65,7 +64,6 @@ const EditUserModal = ({
         role: user.data.role || "",
         status: user.data.status !== undefined ? user.data.status : true,
         username: user.data.userName || "",
-        password: user.data.password || "",
         roleId: user.data.roleId ? String(user.data.roleId) : "",
         isSuperAdmin: Boolean(user.data.isSuperAdmin),
       });
@@ -175,10 +173,6 @@ const EditUserModal = ({
         userData.isSuperAdmin = formData.isSuperAdmin;
       }
 
-      // Only include password if it's been changed (not the masked version)
-      if (formData.password && formData.password !== "••••••••") {
-        userData.password = formData.password;
-      }
 
       await dispatch(editUser(userData)).unwrap();
 
@@ -296,7 +290,7 @@ const EditUserModal = ({
               className="block text-sm font-medium mb-2"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Role <span style={{ color: "var(--color-error)" }}>*</span>
+              Job <span style={{ color: "var(--color-error)" }}>*</span>
             </label>
             <Dropdown
               options={roleOptions}
@@ -364,18 +358,8 @@ const EditUserModal = ({
             />
           </div>
 
-          {/* Password */}
+          {/* Password: never shown — admins set a new one via Reset password */}
           <div>
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter password"
-              value={formData.password}
-              onChange={handleInputChange("password")}
-              error={!!errors.password}
-              errorMessage={errors.password}
-              backgroundColor="input-bg"
-            />
             <button
               type="button"
               onClick={() => handleResetPassword && handleResetPassword(user)}

@@ -104,7 +104,7 @@ const Table = ({
             className="inline-block w-1 h-1 rounded-full mr-1"
             style={{ backgroundColor: badgeConfig.color }}
           ></span>
-          {value}
+          {badgeConfig.label ?? value}
         </span>
       );
     }

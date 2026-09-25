@@ -44,7 +44,13 @@ const RolesPage = () => {
         getPermissionCatalog(),
       ]);
       setRoles(roleRes?.data ?? []);
-      setCatalog(catalogRes?.data?.modules ?? []);
+      // The API sends actions as { action, key }; the matrix works with plain action names.
+      setCatalog(
+        (catalogRes?.data?.modules ?? []).map((m) => ({
+          ...m,
+          actions: (m.actions ?? []).map((a) => (typeof a === "string" ? a : a.action)),
+        }))
+      );
     } catch (error) {
       toast.error(
         error?.response?.data?.message ?? "Could not load roles"

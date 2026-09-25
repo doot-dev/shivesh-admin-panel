@@ -8,6 +8,7 @@ import LeadsModal from "../components/modals/leads/leadsModal";
 import DeleteModal from "../components/modals/DeleteModal";
 import leadService from "../services/leadService";
 import { useFetch } from "../hooks/useFetch";
+import { statusLabel } from "../utils/labels";
 const LeadsPage = () => {
   // `leads` and `loading` are provided by useFetch below, avoid local duplicates
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -42,9 +43,9 @@ const LeadsPage = () => {
       phone: lead.phone,
       email: lead.email,
       requirement: lead.requirement,
-      source: lead.source,
+      source: statusLabel(lead.source),
       status: (lead.status || "").toUpperCase(),
-      assignedTo: lead.assignedToId,
+      assignedTo: lead.assignedTo?.name || (lead.assignedToId ? `#${lead.assignedToId}` : "—"),
     }));
   }, []);
 
@@ -146,18 +147,22 @@ const LeadsPage = () => {
       type: "badge",
       badgeConfig: {
         NEW: {
+          label: "New",
           color: "#2563EB",
           backgroundColor: "#DBEAFE",
         },
         IN_PROGRESS: {
+          label: "In progress",
           color: "#D97706",
           backgroundColor: "#FEF3C7",
         },
         CONVERTED: {
+          label: "Converted",
           color: "#16A34A",
           backgroundColor: "#DCFCE7",
         },
         LOST: {
+          label: "Lost",
           color: "#DC2626",
           backgroundColor: "#FEE2E2",
         },

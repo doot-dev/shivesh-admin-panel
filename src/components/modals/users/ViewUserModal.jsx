@@ -7,7 +7,7 @@ const ViewUserModal = ({ isOpen, onClose, user, onEdit, onDelete }) => {
   const getRoleLabel = (roleValue) => {
     const roleMap = {
       FIELD_TECHNICIAN: "Field Technician",
-      PROJECT_MANAGER: "Manager",
+      PROJECT_MANAGER: "Project Manager",
       ADMIN: "Admin",
     };
     return roleMap[roleValue] || roleValue;

@@ -40,10 +40,8 @@ const ProjectsTab = ({ clientId }) => {
     { key: "projectId", header: "Project ID" },
     { key: "projectName", header: "Project Name" },
     { key: "siteName", header: "Site" },
-    { key: "creditAmount", header: "Credit limit", render: (v) => (v ? inr(v) : "—") },
-    { key: "creditResetPeriodDays", header: "Credit days", render: (v) => v ?? "—" },
     { key: "status", header: "Status" },
-    { key: "view", header: "", render: (_v, p) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/projects/${p.projectId}`)}>View</button> },
+    { key: "view", header: "Action", render: (_v, p) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/projects/${p.projectId}`)}>View</button> },
   ];
   return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No projects found" />;
 };
@@ -58,7 +56,7 @@ const OrdersTab = ({ clientId }) => {
     { key: "quantity", header: "Qty" },
     { key: "status", header: "Order Status" },
     { key: "bill", header: "Bill", render: (_v, o) => o.bill?.billNo || "—" },
-    { key: "view", header: "", render: (_v, o) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/orders/${o.orderId}`)}>View</button> },
+    { key: "view", header: "Action", render: (_v, o) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/orders/${o.orderId}`)}>View</button> },
   ];
   return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No orders found" />;
 };
@@ -72,7 +70,7 @@ const BillingTab = ({ clientId }) => {
     { key: "amount", header: "Amount", render: inr },
     { key: "dueDate", header: "Due", render: fmtDate },
     { key: "status", header: "Status", render: (v, b) => <span>{v}{b.daysOverdue > 0 && <span className="text-red-600 text-xs"> · {b.daysOverdue}d overdue</span>}</span> },
-    { key: "view", header: "", render: (_v, b) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/billing/${b.billNo}`)}>View</button> },
+    { key: "view", header: "Action", render: (_v, b) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/billing/${b.billNo}`)}>View</button> },
   ];
   const open = (rows || []).filter((b) => ["PENDING", "SENT", "OVERDUE"].includes(b.status)).reduce((s, b) => s + b.amount, 0);
   return (

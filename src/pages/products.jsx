@@ -50,14 +50,15 @@ const Products = () => {
 
   const filteredProducts = productData.filter((prod) => {
     const s = filters.search.toLowerCase();
-    const matchesSearch = !s || prod.product?.toLowerCase().includes(s) || prod.gradeSize?.toLowerCase().includes(s) || prod.status?.toLowerCase().includes(s);
+    const matchesSearch = !s || prod.product?.toLowerCase().includes(s) || String(prod.unit ?? '').toLowerCase().includes(s) || prod.status?.toLowerCase().includes(s);
     const matchesStatus = !filters.status || (filters.status === "Active" && prod.status) || (filters.status === "Inactive" && !prod.status);
     return matchesSearch && matchesStatus;
   }).map((u, i) => ({
     ...u,
     sNo: (i + 1).toString().padStart(2, "0"),
     product: u.name,
-    gradeSize: u.sizeCount,
+    gradeSize: `${u.sizeCount ?? 0} grade${u.sizeCount === 1 ? '' : 's'}`,
+    unit: u.unit || "—",
     status: u.isActive ? "Active" : "Inactive",
   }));
 
@@ -185,7 +186,12 @@ const Products = () => {
     },
     {
       key: "gradeSize",
-      header: "Grade/Size",
+      header: "Grades",
+      hideOnMobile: true,
+    },
+    {
+      key: "unit",
+      header: "Unit",
       hideOnMobile: true,
     },
     {

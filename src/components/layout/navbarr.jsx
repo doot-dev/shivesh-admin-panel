@@ -4,11 +4,13 @@ import Logo from "../../assets/img/shivesh-logo.png";
 import { useSelector } from "react-redux";
 import UserIcon from "../../assets/img/profile.png";
 import NotificationBell from "./NotificationBell";
+import usePermission from "../../hooks/usePermission";
 // import { useUser } from '../../context/UserContext';
 const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   // const { getUserName, getUserRole } = useUser();
   const user = useSelector((state) => state.auth.user);
+  const { isSuperAdmin } = usePermission();
 
   return (
     <nav className="bg-white border-b border-primary h-[65px] xl:h-[100px] px-4 inline-flex justify-center w-full  md:px-6">
@@ -69,7 +71,7 @@ const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
               />
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-gray-700">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.role}</p>
+                <p className="text-xs text-gray-500">{isSuperAdmin ? "Super Admin" : user.roleName ?? user.role}</p>
               </div>
             </button>
 

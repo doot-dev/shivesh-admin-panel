@@ -25,7 +25,8 @@ import { MODULE, ACTIONS } from "../constant/permissions";
 const roleOptions = [
   { value: "", label: "All Roles" },
   { value: "FIELD_TECHNICIAN", label: "Field Technician" },
-  { value: "PROJECT_MANAGER", label: "Manager" },
+  { value: "PROJECT_MANAGER", label: "Project Manager" },
+  { value: "ACCOUNTANT", label: "Accountant" },
   { value: "ADMIN", label: "Admin" },
 ];
 
@@ -152,7 +153,6 @@ const Users = () => {
       sno: (i + 1).toString().padStart(2, "0"),
       employeeName: u.name,
       username: u.userName,
-      password: "••••••••",
       role: getRoleLabel(u.role),
       status: u.status ? "Active" : "Inactive",
     }));
@@ -163,7 +163,6 @@ const Users = () => {
     { key: "role", header: "Role", hideOnMobile: true },
     { key: "employeeId", header: "Employee ID", hideOnMobile: true },
     { key: "username", header: "Username", hideOnMobile: true },
-    { key: "password", header: "Password", hideOnMobile: true },
     {
       key: "status",
       header: "Status",

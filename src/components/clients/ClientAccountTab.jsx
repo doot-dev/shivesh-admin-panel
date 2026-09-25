@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import paymentService from '../../services/paymentService';
 import usePermission from '../../hooks/usePermission';
+import { Modal, Button, Input } from '../ui';
 
 /**
  * Client → Account (Phase 2): credit N/M, extra credit, unpaid bills with paid
@@ -29,6 +30,8 @@ export default function ClientAccountTab({ clientId }) {
   const [ledger, setLedger] = useState(null);
   const [selected, setSelected] = useState([]);
   const [showPay, setShowPay] = useState(false);
+  // One small form popup for credit, extra credit, revoke and reverse.
+  const [ask, setAsk] = useState(null); // { title, note?, fields: [{ key, label, type?, value? }], submit(values) }
 
   const load = useCallback(async () => {
     if (!clientId) return;
@@ -40,34 +43,39 @@ export default function ClientAccountTab({ clientId }) {
   if (acc === false) return <p className="text-sm text-gray-500 py-4">You need the Payments or Billing permission.</p>;
   const c = acc.credit;
 
-  const editCredit = async () => {
-    const limit = window.prompt('Credit limit ₹ (N):', acc.client.creditLimit ?? '');
-    if (limit === null) return;
-    const days = window.prompt('Credit period in days (M):', acc.client.creditDays ?? '');
-    if (days === null) return;
-    try { await paymentService.setCredit(clientId, { creditLimit: limit, creditDays: days }); toast.success('Credit updated'); load(); }
-    catch (e) { toast.error(errMsg(e, 'Update failed')); }
+  const run = (fn, ok, fail) => async (v) => {
+    try { await fn(v); toast.success(ok); setAsk(null); load(); }
+    catch (e) { toast.error(errMsg(e, fail)); }
   };
-  const addExtra = async () => {
-    const amount = window.prompt('Extra credit ₹ (one-time, no end date, gone once used):');
-    if (!amount) return;
-    const reason = window.prompt('Reason:');
-    if (!reason) return;
-    try { await paymentService.grantExtra(clientId, { amount, reason }); toast.success('Extra credit added'); load(); }
-    catch (e) { toast.error(errMsg(e, 'Could not add')); }
-  };
-  const revoke = async (x) => {
-    const reason = window.prompt('Revoke the unused part — reason:');
-    if (!reason) return;
-    try { await paymentService.revokeExtra(clientId, x.id, reason); toast.success('Revoked'); load(); }
-    catch (e) { toast.error(errMsg(e, 'Could not revoke')); }
-  };
-  const reverse = async (p) => {
-    const reason = window.prompt(`Reverse ${p.receiptNo} (₹${p.amount})? Reason (e.g. cheque bounced):`);
-    if (!reason) return;
-    try { await paymentService.reverse(p.id, reason); toast.success('Payment reversed'); load(); }
-    catch (e) { toast.error(errMsg(e, 'Could not reverse')); }
-  };
+  const editCredit = () => setAsk({
+    title: 'Edit credit limit and days',
+    fields: [
+      { key: 'creditLimit', label: 'Credit limit ₹', type: 'number', value: acc.client.creditLimit ?? '' },
+      { key: 'creditDays', label: 'Credit period (days)', type: 'number', value: acc.client.creditDays ?? '' },
+    ],
+    submit: run((v) => paymentService.setCredit(clientId, v), 'Credit updated', 'Update failed'),
+  });
+  const addExtra = () => setAsk({
+    title: 'Add extra credit',
+    note: 'One-time top-up above the limit. It has no end date and is gone once used.',
+    fields: [
+      { key: 'amount', label: 'Amount ₹', type: 'number' },
+      { key: 'reason', label: 'Reason' },
+    ],
+    submit: run((v) => paymentService.grantExtra(clientId, v), 'Extra credit added', 'Could not add'),
+  });
+  const revoke = (x) => setAsk({
+    title: 'Revoke unused extra credit',
+    note: `Removes the unused part of ${inr(x.amount)}. The part already used stays.`,
+    fields: [{ key: 'reason', label: 'Reason' }],
+    submit: run((v) => paymentService.revokeExtra(clientId, x.id, v.reason), 'Revoked', 'Could not revoke'),
+  });
+  const reverse = (p) => setAsk({
+    title: `Reverse payment ${p.receiptNo}`,
+    note: `${inr(p.amount)} will be taken off the bills it was applied to.`,
+    fields: [{ key: 'reason', label: 'Reason (e.g. cheque bounced)' }],
+    submit: run((v) => paymentService.reverse(p.id, v.reason), 'Payment reversed', 'Could not reverse'),
+  });
   const adjust = async (p) => {
     if (!selected.length) return toast.info('Tick the bills to adjust the advance against, then press Adjust.');
     try { const r = await paymentService.adjust(p.id, { billIds: selected }); toast.success(`Adjusted — ₹${r.data.unallocated} still in advance`); setSelected([]); load(); }
@@ -78,8 +86,8 @@ export default function ClientAccountTab({ clientId }) {
     <div className="space-y-4">
       <Box title="Credit" action={can('clients', 'update') && <button className="text-xs text-primary hover:underline" onClick={editCredit}>Edit limit / days</button>}>
         <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
-          <Stat label="Limit (N)" value={c.limit ? inr(c.limit) : 'Not set'} />
-          <Stat label="Days (M)" value={c.creditDays ?? '—'} />
+          <Stat label="Credit limit" value={c.limit ? inr(c.limit) : 'Not set'} />
+          <Stat label="Credit days" value={c.creditDays ?? '—'} />
           <Stat label="Extra credit" value={`${inr(c.extraUnused)} unused${c.extraInUse ? ` · ${inr(c.extraInUse)} in use` : ''}`} />
           <Stat label="Used" value={inr(c.used)} />
           <Stat label="Available" value={inr(c.available)} tone={c.available < 0 ? 'text-red-700' : 'text-green-700'} />
@@ -101,13 +109,14 @@ export default function ClientAccountTab({ clientId }) {
       <Box title={`Unpaid bills (${acc.bills.length})`} action={can('payments', 'create') && <button className="px-3 py-1.5 rounded-lg bg-primary text-white text-sm" onClick={() => setShowPay(true)}>Record payment</button>}>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead><tr className="text-left text-xs text-gray-500"><th className="p-2"></th><th>Bill</th><th>Project</th><th>Date</th><th>Due</th><th className="text-right">Amount</th><th className="text-right">Paid</th><th className="text-right">Pending</th><th>Status</th></tr></thead>
-            <tbody>
+            <thead><tr className="text-left text-xs text-gray-500 [&>th]:px-3 [&>th]:py-2"><th></th><th>Bill</th><th>Project</th><th>Date</th><th>Due</th><th className="text-right">Amount</th><th className="text-right">Paid</th><th className="text-right">Pending</th><th>Status</th></tr></thead>
+            <tbody className="[&_td]:px-3 [&_td]:py-2">
+              {!acc.bills.length && <tr><td colSpan={9} className="text-gray-500">No unpaid bills</td></tr>}
               {acc.bills.map((b) => {
                 const late = b.dueDate && new Date(b.dueDate) < new Date() ? Math.floor((new Date() - new Date(b.dueDate)) / 864e5) : 0;
                 return (
                   <tr key={b.id} className="border-t">
-                    <td className="p-2"><input type="checkbox" checked={selected.includes(b.billNo)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, b.billNo] : s.filter((x) => x !== b.billNo)))} /></td>
+                    <td><input type="checkbox" checked={selected.includes(b.billNo)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, b.billNo] : s.filter((x) => x !== b.billNo)))} /></td>
                     <td>{b.billNo}</td><td>{b.projectName}</td><td>{d(b.issueDate)}</td><td>{d(b.dueDate)}</td>
                     <td className="text-right">{inr(b.amount)}</td><td className="text-right">{inr(b.paid)}</td><td className="text-right font-medium">{inr(b.balance)}</td>
                     <td>{b.status}{late > 0 && <span className="text-xs text-red-600"> · {late}d overdue</span>}</td>
@@ -118,6 +127,8 @@ export default function ClientAccountTab({ clientId }) {
           </table>
         </div>
       </Box>
+
+      {ask && <AskDialog {...ask} onClose={() => setAsk(null)} />}
 
       {showPay && <RecordPayment clientId={clientId} bills={acc.bills} selected={selected} onClose={() => setShowPay(false)} onDone={() => { setShowPay(false); setSelected([]); load(); }} />}
 
@@ -142,8 +153,8 @@ export default function ClientAccountTab({ clientId }) {
       <Box title="Ledger" action={<button className="text-xs text-primary hover:underline" onClick={async () => setLedger((await paymentService.ledger(clientId)).data)}>{ledger ? 'Refresh' : 'Show ledger'}</button>}>
         {ledger && (
           <table className="min-w-full text-sm">
-            <thead><tr className="text-left text-xs text-gray-500"><th>Date</th><th>Ref</th><th>Detail</th><th className="text-right">Debit</th><th className="text-right">Credit</th><th className="text-right">Balance</th></tr></thead>
-            <tbody>{ledger.map((r, i) => (
+            <thead><tr className="text-left text-xs text-gray-500 [&>th]:px-3 [&>th]:py-2"><th>Date</th><th>Ref</th><th>Detail</th><th className="text-right">Debit</th><th className="text-right">Credit</th><th className="text-right">Balance</th></tr></thead>
+            <tbody className="[&_td]:px-3 [&_td]:py-2">{ledger.map((r, i) => (
               <tr key={i} className="border-t"><td>{d(r.date)}</td><td>{r.ref}</td><td>{r.detail}</td><td className="text-right">{r.debit ? inr(r.debit) : ''}</td><td className="text-right">{r.credit ? inr(r.credit) : ''}</td><td className="text-right font-medium">{inr(r.balance)}</td></tr>
             ))}</tbody>
           </table>
@@ -209,5 +220,24 @@ function RecordPayment({ clientId, bills, selected, onClose, onDone }) {
         </div>
       )}
     </div>
+  );
+}
+
+function AskDialog({ title, note, fields, submit, onClose }) {
+  const [v, setV] = useState(() => Object.fromEntries(fields.map((f) => [f.key, f.value ?? ''])));
+  const [saving, setSaving] = useState(false);
+  const ready = fields.every((f) => String(v[f.key]).trim() !== '');
+  const go = async () => { setSaving(true); try { await submit(v); } finally { setSaving(false); } };
+  return (
+    <Modal isOpen onClose={onClose} title={title} maxWidth="480px" headerIcon="none"
+      footer={<div className="flex justify-end gap-3"><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={go} disabled={!ready || saving}>{saving ? 'Saving…' : 'Save'}</Button></div>}>
+      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (ready) go(); }}>
+        {note && <p className="text-sm text-gray-600">{note}</p>}
+        {fields.map((f, i) => (
+          <Input key={f.key} label={f.label} type={f.type || 'text'} value={v[f.key]} autoFocus={i === 0} required
+            onChange={(e) => setV((x) => ({ ...x, [f.key]: e.target.value }))} backgroundColor="input-bg" />
+        ))}
+      </form>
+    </Modal>
   );
 }

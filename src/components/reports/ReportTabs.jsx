@@ -79,7 +79,8 @@ export function CollectionsTab() {
   const max = Math.max(1, ...p.trend.map((m) => Math.max(m.billed, m.collected)));
   const ages = [['Not due', p.pendingByAge.notDue], ['1–30', p.pendingByAge.d1_30], ['31–60', p.pendingByAge.d31_60], ['61–90', p.pendingByAge.d61_90], ['90+', p.pendingByAge.d90plus]];
   const ageMax = Math.max(1, ...ages.map((a) => a[1]));
-  const top = [...data.clients].sort((a, b) => (b.payment.pendingByAge.d90plus + b.payment.pendingByAge.d61_90 + b.payment.pendingByAge.d31_60 + b.payment.pendingByAge.d1_30) - (a.payment.pendingByAge.d90plus + a.payment.pendingByAge.d61_90 + a.payment.pendingByAge.d31_60 + a.payment.pendingByAge.d1_30)).slice(0, 10);
+  const overdue = (c) => c.payment.pendingByAge.d90plus + c.payment.pendingByAge.d61_90 + c.payment.pendingByAge.d31_60 + c.payment.pendingByAge.d1_30;
+  const top = data.clients.filter((c) => overdue(c) > 0).sort((a, b) => overdue(b) - overdue(a)).slice(0, 10);
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -105,9 +106,10 @@ export function CollectionsTab() {
         ))}
       </div>
       <div className="bg-white border rounded-lg p-4 overflow-x-auto">
-        <h4 className="text-sm font-semibold mb-3">10 most overdue clients</h4>
+        <h4 className="text-sm font-semibold mb-3">Most overdue clients (top 10)</h4>
         <table className="min-w-full"><thead><tr><Th>Client</Th><Th>1–30</Th><Th>31–60</Th><Th>61–90</Th><Th>90+</Th></tr></thead>
-          <tbody>{top.map((c) => (<tr key={c.clientId} className="border-t"><Td>{c.companyName}</Td><Td>{inr(c.payment.pendingByAge.d1_30)}</Td><Td>{inr(c.payment.pendingByAge.d31_60)}</Td><Td>{inr(c.payment.pendingByAge.d61_90)}</Td><Td className="text-red-700">{inr(c.payment.pendingByAge.d90plus)}</Td></tr>))}</tbody>
+          <tbody>{top.map((c) => (<tr key={c.clientId} className="border-t"><Td>{c.companyName}</Td><Td>{inr(c.payment.pendingByAge.d1_30)}</Td><Td>{inr(c.payment.pendingByAge.d31_60)}</Td><Td>{inr(c.payment.pendingByAge.d61_90)}</Td><Td className={c.payment.pendingByAge.d90plus ? 'text-red-700' : ''}>{inr(c.payment.pendingByAge.d90plus)}</Td></tr>))}
+            {!top.length && <tr><Td>No client is overdue.</Td></tr>}</tbody>
         </table>
       </div>
     </div>

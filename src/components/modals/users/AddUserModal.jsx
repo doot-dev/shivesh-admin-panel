@@ -37,9 +37,9 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
 
   // Role options for dropdown
   const roleOptions = [
-    { value: "", label: "Select a role" },
-    { value: "FIELD_TECHNICIAN", label: "Field technician" },
-    { value: "PROJECT_MANAGER", label: "Manager" },
+    { value: "", label: "Select a job" },
+    { value: "FIELD_TECHNICIAN", label: "Field Technician" },
+    { value: "PROJECT_MANAGER", label: "Project Manager" },
     { value: "ADMIN", label: "Admin" },
     { value: "ACCOUNTANT", label: "Accountant" },
 
@@ -69,9 +69,14 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const handleRoleChange = (value) => {
+    // Pre-pick the access role named after the job (e.g. Accountant), so the
+    // two fields don't have to be matched by hand. Still editable below.
+    const jobLabel = roleOptions.find((r) => r.value === value)?.label;
+    const match = accessRoles.find((r) => r.isActive && !r.isSystem && r.name === jobLabel);
     setFormData((prev) => ({
       ...prev,
       role: value,
+      roleId: prev.roleId || (match ? String(match.id) : ""),
     }));
 
     if (errors.role) {
@@ -237,13 +242,13 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
             className="block text-sm font-medium mb-2"
             style={{ color: "var(--color-text-primary)" }}
           >
-            Role <span style={{ color: "var(--color-error)" }}>*</span>
+            Job <span style={{ color: "var(--color-error)" }}>*</span>
           </label>
           <Dropdown
             options={roleOptions}
             value={formData.role}
             onChange={handleRoleChange}
-            placeholder="Select a role"
+            placeholder="Select a job"
             width="100%"
             height="42px"
             error={!!errors.role}

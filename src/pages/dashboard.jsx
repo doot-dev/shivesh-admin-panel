@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { statusLabel } from '../utils/labels';
 
 /**
  * Dashboard (W28 / P2.12). Replaces the old hard-coded sample numbers with the
@@ -73,7 +74,7 @@ const Dashboard = () => {
           <tbody>{s.recentOrders.map((o) => (
             <tr key={o.id} className="border-t cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/orders/${o.orderId}`)}>
               <td className="py-1.5 font-medium">{o.orderId}</td><td>{o.client?.companyName}</td><td>{o.project?.projectName}</td>
-              <td>{o.productName} {o.productGrade}</td><td>{o.status}{o.creditHold ? ' · credit hold' : ''}</td>
+              <td>{o.productName} {o.productGrade}</td><td>{statusLabel(o.status)}{o.creditHold ? ' · credit hold' : ''}</td>
             </tr>
           ))}</tbody>
         </table>
