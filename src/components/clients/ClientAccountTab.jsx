@@ -3,6 +3,8 @@ import { toast } from 'react-toastify';
 import paymentService from '../../services/paymentService';
 import usePermission from '../../hooks/usePermission';
 import { Modal, Button, Input } from '../ui';
+import { StatusChip } from '../ui/StatusChip';
+import { statusLabel } from '../../utils/labels';
 
 /**
  * Client → Account (Phase 2): credit N/M, extra credit, unpaid bills with paid
@@ -10,19 +12,23 @@ import { Modal, Button, Input } from '../ui';
  * the D17 "not adjusted" prompt, payments with Adjust / Reverse, and the ledger.
  */
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+// en-CA gives YYYY-MM-DD in local time (toISOString is UTC — yesterday before 5:30 AM IST).
 const d = (v) => (v ? new Date(v).toLocaleDateString('en-IN') : '—');
 const errMsg = (e, f) => e.response?.data?.message || f;
-const MODES = ['CHEQUE', 'ONLINE', 'BANK_TRANSFER', 'CASH', 'OTHER'];
 
-const Box = ({ title, children, action }) => (
-  <div className="bg-white border rounded-lg p-4">
-    <div className="flex items-center justify-between mb-3"><h4 className="text-sm font-semibold">{title}</h4>{action}</div>
+const Box = ({ title, children, action, className = '' }) => (
+  <section className={`sv-card p-4 sm:p-6 ${className}`}>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h4 className="text-lg font-semibold text-primary-second">{title}</h4>{action}</div>
     {children}
+  </section>
+);
+const Stat = ({ label, value, tone = 'text-text-primary' }) => (
+  <div className="rounded-2xl bg-background-hover p-3.5 sm:p-4">
+    <div className="text-xs font-medium text-text-secondary">{label}</div>
+    <div className={`mt-1 text-base font-semibold tabular-nums sm:text-[17px] ${tone}`}>{value}</div>
   </div>
 );
-const Stat = ({ label, value, tone = '' }) => (
-  <div className="border rounded-lg p-3"><div className="text-xs text-gray-500">{label}</div><div className={`text-base font-semibold ${tone}`}>{value}</div></div>
-);
+const linkBtn = 'h-10 rounded-xl border border-primary-light bg-white px-3.5 text-[13px] font-semibold text-primary transition-colors hover:bg-primary-light';
 
 export default function ClientAccountTab({ clientId }) {
   const { can } = usePermission();
@@ -39,8 +45,8 @@ export default function ClientAccountTab({ clientId }) {
   }, [clientId]);
   useEffect(() => { load(); }, [load]);
 
-  if (acc === null) return <p className="text-sm text-gray-500 py-4">Loading…</p>;
-  if (acc === false) return <p className="text-sm text-gray-500 py-4">You need the Payments or Billing permission.</p>;
+  if (acc === null) return <div className="sv-card h-48 animate-pulse bg-primary-light/40" />;
+  if (acc === false) return <p className="py-4 text-sm text-text-secondary">You need the Payments or Billing permission.</p>;
   const c = acc.credit;
 
   const run = (fn, ok, fail) => async (v) => {
@@ -82,91 +88,188 @@ export default function ClientAccountTab({ clientId }) {
     catch (e) { toast.error(errMsg(e, 'Could not adjust')); }
   };
 
+  const usedPct = c.limit ? Math.min(100, Math.max(0, (c.used / c.limit) * 100)) : 0;
+  const billStatus = (b) => (b.status === 'PARTIALLY_PAID' ? 'Part paid' : b.status === 'OVERDUE' ? 'Overdue' : b.status === 'SENT' ? 'Sent' : 'Pending');
+  const lateDays = (b) => (b.dueDate && new Date(b.dueDate) < new Date() ? Math.floor((new Date() - new Date(b.dueDate)) / 864e5) : 0);
+  const toggle = (billNo, on) => setSelected((s) => (on ? [...s, billNo] : s.filter((x) => x !== billNo)));
+
   return (
-    <div className="space-y-4">
-      <Box title="Credit" action={can('clients', 'update') && <button className="text-xs text-primary hover:underline" onClick={editCredit}>Edit limit / days</button>}>
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
-          <Stat label="Credit limit" value={c.limit ? inr(c.limit) : 'Not set'} />
-          <Stat label="Credit days" value={c.creditDays ?? '—'} />
-          <Stat label="Extra credit" value={`${inr(c.extraUnused)} unused${c.extraInUse ? ` · ${inr(c.extraInUse)} in use` : ''}`} />
-          <Stat label="Used" value={inr(c.used)} />
-          <Stat label="Available" value={inr(c.available)} tone={c.available < 0 ? 'text-red-700' : 'text-green-700'} />
-          <Stat label="Overdue" value={inr(c.overdueAmount)} tone={c.overdueAmount ? 'text-red-700' : ''} />
-          <Stat label="Advance" value={inr(c.advance)} />
-        </div>
-        {c.flag !== 'OK' && <p className="text-xs text-red-700 mt-2">{c.flag === 'OVERDUE' ? 'Overdue — new orders are held for approval.' : 'Over limit — new orders are held for approval.'}</p>}
-      </Box>
-
-      <Box title="Extra credit" action={can('orders', 'approve') && <button className="text-xs text-primary hover:underline" onClick={addExtra}>+ Add extra credit</button>}>
-        {acc.extras.length ? acc.extras.map((x) => (
-          <div key={x.id} className="flex items-center justify-between text-sm border-t py-1">
-            <span>{inr(x.amount)} · {x.reason} · {d(x.createdAt)} {x.status === 'REVOKED' && <span className="text-gray-500">(revoked, {inr(x.revokedAmount)} unused removed)</span>}</span>
-            {x.status === 'ACTIVE' && can('orders', 'approve') && <button className="text-xs text-red-600 hover:underline" onClick={() => revoke(x)}>Revoke unused</button>}
+    <div className="space-y-5">
+      {/* Credit */}
+      <section className="sv-card grid grid-cols-1 gap-6 p-5 sm:p-6 lg:grid-cols-12">
+        <div className="flex flex-col gap-3 lg:col-span-5">
+          <span className="text-sm font-medium text-text-secondary">Available credit</span>
+          <span className={`text-3xl font-bold tabular-nums tracking-tight sm:text-[40px] ${c.available < 0 ? 'text-error' : 'text-primary-second'}`}>{inr(c.available)}</span>
+          {c.limit ? (
+            <>
+              <div className="h-3 overflow-hidden rounded-full bg-primary-light">
+                <div className={`sv-grow-x h-full rounded-full ${usedPct >= 100 ? 'bg-error' : 'bg-primary'}`} style={{ width: `${Math.max(usedPct, 2)}%`, animationDelay: '.3s' }} />
+              </div>
+              <span className="text-sm text-text-primary"><b className="font-semibold">{inr(c.used)}</b> used of {inr(c.limit)} limit</span>
+            </>
+          ) : <span className="text-sm text-text-secondary">No credit limit set yet.</span>}
+          {c.flag !== 'OK' && (
+            <p className="rounded-xl bg-error-light px-3 py-2 text-[13px] font-medium text-error">
+              {c.flag === 'OVERDUE' ? 'Overdue — new orders are held for approval.' : 'Over limit — new orders are held for approval.'}
+            </p>
+          )}
+          <div className="mt-1 flex flex-wrap gap-2">
+            {can('clients', 'update') && <button type="button" className={linkBtn} onClick={editCredit}>Edit limit &amp; days</button>}
+            {can('orders', 'approve') && <button type="button" className={linkBtn} onClick={addExtra}>+ Add extra credit</button>}
           </div>
-        )) : <p className="text-sm text-gray-500">None</p>}
-      </Box>
+        </div>
+        <div className="grid grid-cols-2 content-start gap-3 sm:grid-cols-3 lg:col-span-7">
+          <Stat label="Credit days" value={c.creditDays ? `${c.creditDays} days` : '—'} />
+          <Stat label="Credit limit" value={c.limit ? inr(c.limit) : 'Not set'} />
+          <Stat label="Overdue" value={inr(c.overdueAmount)} tone={c.overdueAmount ? 'text-error' : 'text-success'} />
+          <Stat label="Advance" value={inr(c.advance)} />
+          <Stat label="Extra credit" value={c.extraUnused || c.extraInUse ? `${inr(c.extraUnused)} unused` : 'None'} />
+          <Stat label="Status" value={c.flag === 'OK' ? 'Within limit' : c.flag === 'OVERDUE' ? 'Overdue' : 'Over limit'} tone={c.flag === 'OK' ? 'text-success' : 'text-error'} />
+        </div>
+      </section>
 
-      <Box title={`Unpaid bills (${acc.bills.length})`} action={can('payments', 'create') && <button className="px-3 py-1.5 rounded-lg bg-primary text-white text-sm" onClick={() => setShowPay(true)}>Record payment</button>}>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead><tr className="text-left text-xs text-gray-500 [&>th]:px-3 [&>th]:py-2"><th></th><th>Bill</th><th>Project</th><th>Date</th><th>Due</th><th className="text-right">Amount</th><th className="text-right">Paid</th><th className="text-right">Pending</th><th>Status</th></tr></thead>
-            <tbody className="[&_td]:px-3 [&_td]:py-2">
-              {!acc.bills.length && <tr><td colSpan={9} className="text-gray-500">No unpaid bills</td></tr>}
+      {acc.extras.length > 0 && (
+        <Box title="Extra credit">
+          <div className="divide-y divide-primary-light">
+            {acc.extras.map((x) => (
+              <div key={x.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                <span className="text-text-primary"><b className="font-semibold tabular-nums">{inr(x.amount)}</b> · {x.reason} · <span className="text-text-secondary">{d(x.createdAt)}</span>
+                  {x.status === 'REVOKED' && <span className="text-text-secondary"> (revoked, {inr(x.revokedAmount)} unused removed)</span>}</span>
+                {x.status === 'ACTIVE' && can('orders', 'approve') && (
+                  <button type="button" className="h-9 rounded-xl px-3 text-[13px] font-semibold text-error hover:bg-error-light" onClick={() => revoke(x)}>Revoke unused</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Box>
+      )}
+
+      {/* Unpaid bills */}
+      <section className="sv-card overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <h4 className="text-lg font-semibold text-primary-second">Unpaid bills</h4>
+            <StatusChip dot={false}>{acc.bills.length}</StatusChip>
+          </div>
+          {can('payments', 'create') && (
+            <button type="button" onClick={() => setShowPay(true)}
+              className="h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(30,58,138,.22)] transition-all hover:-translate-y-px hover:bg-primary-second">
+              Record payment
+            </button>
+          )}
+        </div>
+        {!acc.bills.length ? (
+          <p className="border-t border-primary-light px-6 py-8 text-center text-sm text-text-secondary">No unpaid bills. Everything is settled.</p>
+        ) : (
+          <>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full text-sm">
+                <thead className="bg-background-hover text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                  <tr className="[&>th]:px-4 [&>th]:py-3"><th className="w-10"><span className="sr-only">Select</span></th><th>Bill</th><th>Project</th><th>Date</th><th>Due</th><th className="text-right">Amount</th><th className="text-right">Paid</th><th className="text-right">Pending</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  {acc.bills.map((b) => {
+                    const late = lateDays(b);
+                    return (
+                      <tr key={b.id} className="border-t border-primary-light transition-colors hover:bg-background-hover [&>td]:px-4 [&>td]:py-3.5">
+                        <td><input type="checkbox" aria-label={`Select ${b.billNo}`} className="h-[18px] w-[18px] accent-primary" checked={selected.includes(b.billNo)} onChange={(e) => toggle(b.billNo, e.target.checked)} /></td>
+                        <td className="font-semibold text-primary">{b.billNo}</td><td className="max-w-[220px] truncate">{b.projectName}</td>
+                        <td className="whitespace-nowrap text-text-secondary">{d(b.issueDate)}</td><td className="whitespace-nowrap text-text-secondary">{d(b.dueDate)}</td>
+                        <td className="text-right tabular-nums">{inr(b.amount)}</td><td className="text-right tabular-nums">{inr(b.paid)}</td><td className="text-right font-semibold tabular-nums">{inr(b.balance)}</td>
+                        <td className="whitespace-nowrap"><StatusChip tone={late > 0 ? 'err' : 'warn'}>{late > 0 ? `${late}d overdue` : billStatus(b)}</StatusChip></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="divide-y divide-primary-light border-t border-primary-light md:hidden">
               {acc.bills.map((b) => {
-                const late = b.dueDate && new Date(b.dueDate) < new Date() ? Math.floor((new Date() - new Date(b.dueDate)) / 864e5) : 0;
+                const late = lateDays(b);
                 return (
-                  <tr key={b.id} className="border-t">
-                    <td><input type="checkbox" checked={selected.includes(b.billNo)} onChange={(e) => setSelected((s) => (e.target.checked ? [...s, b.billNo] : s.filter((x) => x !== b.billNo)))} /></td>
-                    <td>{b.billNo}</td><td>{b.projectName}</td><td>{d(b.issueDate)}</td><td>{d(b.dueDate)}</td>
-                    <td className="text-right">{inr(b.amount)}</td><td className="text-right">{inr(b.paid)}</td><td className="text-right font-medium">{inr(b.balance)}</td>
-                    <td>{b.status}{late > 0 && <span className="text-xs text-red-600"> · {late}d overdue</span>}</td>
-                  </tr>
+                  <label key={b.id} className="flex cursor-pointer gap-3 px-5 py-4 active:bg-background-hover">
+                    <input type="checkbox" className="mt-1 h-[18px] w-[18px] shrink-0 accent-primary" checked={selected.includes(b.billNo)} onChange={(e) => toggle(b.billNo, e.target.checked)} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="flex items-center justify-between gap-2"><span className="font-semibold text-primary">{b.billNo}</span><span className="font-semibold tabular-nums">{inr(b.balance)}</span></span>
+                      <span className="truncate text-sm text-text-primary">{b.projectName}</span>
+                      <span className="flex items-center justify-between gap-2 text-xs text-text-secondary"><span>Due {d(b.dueDate)}</span><StatusChip tone={late > 0 ? 'err' : 'warn'}>{late > 0 ? `${late}d overdue` : billStatus(b)}</StatusChip></span>
+                    </span>
+                  </label>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      </Box>
+            </div>
+          </>
+        )}
+      </section>
 
       {ask && <AskDialog {...ask} onClose={() => setAsk(null)} />}
-
       {showPay && <RecordPayment clientId={clientId} bills={acc.bills} selected={selected} onClose={() => setShowPay(false)} onDone={() => { setShowPay(false); setSelected([]); load(); }} />}
 
-      <Box title={`Payments (${acc.payments.length})`}>
-        {acc.payments.length ? acc.payments.map((p) => (
-          <div key={p.id} className="border-t py-2 text-sm">
-            <div className="flex flex-wrap items-center gap-3">
-              <b>{p.receiptNo}</b><span>{d(p.receivedOn)}</span><span>{inr(p.amount)}</span><span>{p.mode}{p.reference ? ` · ${p.reference}` : ''}</span>
-              {p.status === 'REVERSED' ? <span className="text-red-600 text-xs">Reversed — {p.reversalReason}</span> : (
-                <>
-                  {p.unallocated > 0 && <span className="text-amber-700 text-xs">Advance {inr(p.unallocated)}</span>}
-                  {p.unallocated > 0 && can('payments', 'create') && <button className="text-xs text-primary hover:underline" onClick={() => adjust(p)}>Adjust from advance → ticked bills</button>}
-                  {can('payments', 'delete') && <button className="text-xs text-red-600 hover:underline" onClick={() => reverse(p)}>Reverse</button>}
-                </>
-              )}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <Box title={`Payments (${acc.payments.length})`}>
+          {acc.payments.length ? (
+            <div className="divide-y divide-primary-light">
+              {acc.payments.map((p) => (
+                <div key={p.id} className="space-y-1.5 py-3 text-sm first:pt-0">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <b className="font-semibold text-primary-second">{p.receiptNo}</b>
+                    <span className="text-text-secondary">{d(p.receivedOn)}</span>
+                    <span className="font-semibold tabular-nums">{inr(p.amount)}</span>
+                    <span className="text-text-secondary">{statusLabel(p.mode)}{p.reference ? ` · ${p.reference}` : ''}</span>
+                    {p.status === 'REVERSED' && <StatusChip tone="err">Reversed</StatusChip>}
+                    {p.status !== 'REVERSED' && p.unallocated > 0 && <StatusChip tone="warn">Advance {inr(p.unallocated)}</StatusChip>}
+                  </div>
+                  <div className="text-xs text-text-secondary">
+                    {p.status === 'REVERSED' ? p.reversalReason : p.allocations.filter((a) => !a.isReversed).map((a) => `${a.bill.billNo} ${inr(a.amount)}`).join(' · ') || 'Not allocated'}
+                  </div>
+                  {p.status !== 'REVERSED' && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {p.unallocated > 0 && can('payments', 'create') && <button type="button" className={linkBtn} onClick={() => adjust(p)}>Adjust advance → ticked bills</button>}
+                      {can('payments', 'delete') && <button type="button" className="h-10 rounded-xl px-3.5 text-[13px] font-semibold text-error hover:bg-error-light" onClick={() => reverse(p)}>Reverse</button>}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="text-xs text-gray-600">{p.allocations.filter((a) => !a.isReversed).map((a) => `${a.bill.billNo} ${inr(a.amount)}`).join(' · ') || 'Not allocated'}</div>
-          </div>
-        )) : <p className="text-sm text-gray-500">No payments yet</p>}
-      </Box>
+          ) : (
+            <p className="py-6 text-center text-sm text-text-secondary">No payments yet. Record a cheque or transfer and it is applied to the oldest bill first.</p>
+          )}
+        </Box>
 
-      <Box title="Ledger" action={<button className="text-xs text-primary hover:underline" onClick={async () => setLedger((await paymentService.ledger(clientId)).data)}>{ledger ? 'Refresh' : 'Show ledger'}</button>}>
-        {ledger && (
-          <table className="min-w-full text-sm">
-            <thead><tr className="text-left text-xs text-gray-500 [&>th]:px-3 [&>th]:py-2"><th>Date</th><th>Ref</th><th>Detail</th><th className="text-right">Debit</th><th className="text-right">Credit</th><th className="text-right">Balance</th></tr></thead>
-            <tbody className="[&_td]:px-3 [&_td]:py-2">{ledger.map((r, i) => (
-              <tr key={i} className="border-t"><td>{d(r.date)}</td><td>{r.ref}</td><td>{r.detail}</td><td className="text-right">{r.debit ? inr(r.debit) : ''}</td><td className="text-right">{r.credit ? inr(r.credit) : ''}</td><td className="text-right font-medium">{inr(r.balance)}</td></tr>
-            ))}</tbody>
-          </table>
-        )}
-      </Box>
+        <Box title="Ledger" action={<button type="button" className={linkBtn} onClick={async () => setLedger((await paymentService.ledger(clientId)).data)}>{ledger ? 'Refresh' : 'Show ledger'}</button>}>
+          {ledger ? (
+            <div className="-mx-4 overflow-x-auto sm:-mx-6">
+              <table className="min-w-full text-sm">
+                <thead className="bg-background-hover text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                  <tr className="[&>th]:whitespace-nowrap [&>th]:px-4 [&>th]:py-2.5"><th>Date</th><th>Ref</th><th>Detail</th><th className="text-right">Debit</th><th className="text-right">Credit</th><th className="text-right">Balance</th></tr>
+                </thead>
+                <tbody>{ledger.map((r, i) => (
+                  <tr key={i} className="border-t border-primary-light [&>td]:px-4 [&>td]:py-3">
+                    <td className="whitespace-nowrap text-text-secondary">{d(r.date)}</td><td className="whitespace-nowrap font-medium">{r.ref}</td><td className="min-w-[160px]">{r.detail}</td>
+                    <td className="text-right tabular-nums">{r.debit ? inr(r.debit) : ''}</td><td className="text-right tabular-nums">{r.credit ? inr(r.credit) : ''}</td><td className="text-right font-semibold tabular-nums">{inr(r.balance)}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          ) : <p className="text-sm text-text-secondary">Every bill and payment for this client, with a running balance.</p>}
+        </Box>
+      </div>
     </div>
   );
 }
 
+const MODE_LABEL = { CHEQUE: 'Cheque', ONLINE: 'Online', BANK_TRANSFER: 'Bank transfer', CASH: 'Cash', OTHER: 'Other' };
+const inputCls = 'h-11 w-full rounded-xl border border-primary-light bg-input-bg px-3 text-sm text-text-primary transition-colors focus:border-border focus:bg-white focus:outline-none';
+const Field = ({ label, children, className = '' }) => (
+  <label className={`flex flex-col gap-1.5 ${className}`}>
+    <span className="text-[13px] font-semibold text-text-primary">{label}</span>
+    {children}
+  </label>
+);
+
 function RecordPayment({ clientId, bills, selected, onClose, onDone }) {
   const projects = useMemo(() => [...new Map(bills.map((b) => [b.projectId, b.projectName])).entries()], [bills]);
-  const [f, setF] = useState({ amount: '', receivedOn: new Date().toISOString().slice(0, 10), mode: 'CHEQUE', reference: '', bankName: '', chequeDate: '', tdsAmount: '', notes: '', scope: selected.length ? 'BILLS' : 'CLIENT', projectId: projects[0]?.[0] || '' });
+  const [f, setF] = useState({ amount: '', receivedOn: new Date().toLocaleDateString('en-CA'), mode: 'CHEQUE', reference: '', bankName: '', chequeDate: '', tdsAmount: '', notes: '', scope: selected.length ? 'BILLS' : 'CLIENT', projectId: projects[0]?.[0] || '' });
   const [plan, setPlan] = useState(null);
   const [saving, setSaving] = useState(false);
   const set = (k, v) => { setF((x) => ({ ...x, [k]: v })); setPlan(null); };
@@ -183,43 +286,85 @@ function RecordPayment({ clientId, bills, selected, onClose, onDone }) {
   };
 
   const needsRef = ['CHEQUE', 'ONLINE', 'BANK_TRANSFER'].includes(f.mode);
+  const scopes = [
+    { key: 'CLIENT', title: 'Oldest bills first', sub: 'All projects' },
+    { key: 'PROJECT', title: 'One project', sub: 'Pick the site' },
+    { key: 'BILLS', title: 'Ticked bills', sub: `${selected.length} selected` },
+  ];
+  const primary = 'h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(30,58,138,.22)] transition-colors hover:bg-primary-second disabled:opacity-60';
+
+  const footer = (
+    <>
+      <button type="button" onClick={onClose} className="h-11 rounded-xl border border-primary-light bg-white px-5 text-sm font-semibold text-primary hover:bg-background-hover">Cancel</button>
+      {!plan ? (
+        <button type="button" className={primary} disabled={!Number(f.amount)} onClick={preview}>Preview allocation</button>
+      ) : plan.unallocated > 0 ? (
+        <button type="button" className={primary} disabled={saving} onClick={() => save(true)}>{saving ? 'Saving…' : `Save and keep ${inr(plan.unallocated)} as advance`}</button>
+      ) : (
+        <button type="button" className={primary} disabled={saving} onClick={() => save(false)}>{saving ? 'Saving…' : 'Save payment'}</button>
+      )}
+    </>
+  );
+
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-      <div className="flex justify-between"><h4 className="text-sm font-semibold">Record payment</h4><button className="text-xs text-gray-500" onClick={onClose}>Close</button></div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-        <label>Amount ₹<input className="w-full border rounded px-2 py-1" type="number" value={f.amount} onChange={(e) => set('amount', e.target.value)} /></label>
-        <label>Received on<input className="w-full border rounded px-2 py-1" type="date" value={f.receivedOn} onChange={(e) => set('receivedOn', e.target.value)} /></label>
-        <label>Mode<select className="w-full border rounded px-2 py-1" value={f.mode} onChange={(e) => set('mode', e.target.value)}>{MODES.map((m) => <option key={m}>{m}</option>)}</select></label>
-        <label>{f.mode === 'CHEQUE' ? 'Cheque no.' : 'UTR / transaction id'}{needsRef && ' *'}<input className="w-full border rounded px-2 py-1" value={f.reference} onChange={(e) => set('reference', e.target.value)} /></label>
-        <label>Bank<input className="w-full border rounded px-2 py-1" value={f.bankName} onChange={(e) => set('bankName', e.target.value)} /></label>
-        {f.mode === 'CHEQUE' && <label>Cheque date<input className="w-full border rounded px-2 py-1" type="date" value={f.chequeDate} onChange={(e) => set('chequeDate', e.target.value)} /></label>}
-        <label>TDS ₹ (optional)<input className="w-full border rounded px-2 py-1" type="number" value={f.tdsAmount} onChange={(e) => set('tdsAmount', e.target.value)} /></label>
-        <label className="col-span-2">Notes<input className="w-full border rounded px-2 py-1" value={f.notes} onChange={(e) => set('notes', e.target.value)} /></label>
-      </div>
-      <div className="flex flex-wrap gap-4 text-sm items-center">
-        Apply to:
-        <label><input type="radio" checked={f.scope === 'CLIENT'} onChange={() => set('scope', 'CLIENT')} /> Oldest bills, all projects</label>
-        <label><input type="radio" checked={f.scope === 'PROJECT'} onChange={() => set('scope', 'PROJECT')} /> One project</label>
-        {f.scope === 'PROJECT' && <select className="border rounded px-2 py-1" value={f.projectId} onChange={(e) => set('projectId', e.target.value)}>{projects.map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select>}
-        <label><input type="radio" checked={f.scope === 'BILLS'} onChange={() => set('scope', 'BILLS')} /> Ticked bills ({selected.length})</label>
-      </div>
-      <button className="px-3 py-1.5 rounded-lg border border-primary text-primary text-sm" onClick={preview}>Preview allocation</button>
-      {plan && (
-        <div className="text-sm bg-white border rounded p-3">
-          {plan.allocations.map((a) => <div key={a.billId}>{a.billNo}: {inr(a.amount)}</div>)}
-          {plan.unallocated > 0 ? (
-            <div className="mt-2 text-amber-800">
-              <b>{inr(plan.unallocated)} not adjusted.</b> Tick more bills (and preview again), or keep it as the client's extra credit (advance).
-              <div className="mt-2 flex gap-2">
-                <button disabled={saving} className="px-3 py-1.5 rounded-lg bg-amber-600 text-white" onClick={() => save(true)}>Save and move {inr(plan.unallocated)} to extra credit</button>
-              </div>
-            </div>
-          ) : (
-            <button disabled={saving} className="mt-2 px-3 py-1.5 rounded-lg bg-primary text-white" onClick={() => save(false)}>{saving ? 'Saving…' : 'Save payment'}</button>
+    <Modal isOpen onClose={onClose} title="Record payment" maxWidth="760px" headerIcon="none" footer={footer}>
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <span className="text-[13px] font-semibold text-text-primary">Mode</span>
+          <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-background-hover p-1.5 sm:grid-cols-5" role="radiogroup" aria-label="Payment mode">
+            {Object.entries(MODE_LABEL).map(([m, label]) => (
+              <button key={m} type="button" role="radio" aria-checked={f.mode === m} onClick={() => set('mode', m)}
+                className={`h-10 rounded-xl text-[13px] font-semibold transition-all ${f.mode === m ? 'bg-primary text-white shadow-[0_6px_14px_rgba(30,58,138,.25)]' : 'text-text-primary hover:bg-white'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Amount ₹"><input className={inputCls} type="number" inputMode="decimal" autoFocus value={f.amount} onChange={(e) => set('amount', e.target.value)} /></Field>
+          <Field label={`${f.mode === 'CHEQUE' ? 'Cheque no.' : 'UTR / transaction id'}${needsRef ? ' *' : ''}`}><input className={inputCls} value={f.reference} onChange={(e) => set('reference', e.target.value)} /></Field>
+          <Field label="Received on"><input className={inputCls} type="date" value={f.receivedOn} onChange={(e) => set('receivedOn', e.target.value)} /></Field>
+          <Field label="Bank"><input className={inputCls} value={f.bankName} onChange={(e) => set('bankName', e.target.value)} /></Field>
+          {f.mode === 'CHEQUE' && <Field label="Cheque date"><input className={inputCls} type="date" value={f.chequeDate} onChange={(e) => set('chequeDate', e.target.value)} /></Field>}
+          <Field label="TDS ₹ (optional)"><input className={inputCls} type="number" inputMode="decimal" value={f.tdsAmount} onChange={(e) => set('tdsAmount', e.target.value)} /></Field>
+          <Field label="Notes" className="sm:col-span-2 lg:col-span-3"><input className={inputCls} value={f.notes} onChange={(e) => set('notes', e.target.value)} /></Field>
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[13px] font-semibold text-text-primary">Apply to</span>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            {scopes.map((sc) => (
+              <label key={sc.key} className={`flex cursor-pointer gap-3 rounded-2xl border-[1.5px] p-3.5 transition-colors ${f.scope === sc.key ? 'border-primary bg-primary-light' : 'border-primary-light hover:bg-background-hover'}`}>
+                <input type="radio" name="scope" className="mt-0.5 accent-primary" checked={f.scope === sc.key} onChange={() => set('scope', sc.key)} />
+                <span className="flex flex-col"><span className="text-sm font-semibold text-primary-second">{sc.title}</span><span className="text-xs text-text-secondary">{sc.sub}</span></span>
+              </label>
+            ))}
+          </div>
+          {f.scope === 'PROJECT' && (
+            <select className={inputCls} value={f.projectId} onChange={(e) => set('projectId', e.target.value)} aria-label="Project">
+              {projects.map(([id, n]) => <option key={id} value={id}>{n}</option>)}
+            </select>
           )}
         </div>
-      )}
-    </div>
+
+        {plan && (
+          <div className="sv-rise overflow-hidden rounded-2xl border border-primary-light">
+            <div className="flex justify-between bg-background-hover px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-text-secondary"><span>How it will be applied</span><span>Amount</span></div>
+            {plan.allocations.map((a) => (
+              <div key={a.billId} className="flex items-center justify-between border-t border-primary-light px-4 py-3 text-sm">
+                <span className="font-semibold">{a.billNo}</span><span className="font-semibold tabular-nums">{inr(a.amount)}</span>
+              </div>
+            ))}
+            {plan.unallocated > 0 && (
+              <div className="border-t border-primary-light bg-warning-light px-4 py-3 text-sm text-text-primary">
+                <b>{inr(plan.unallocated)} is not adjusted against any bill.</b> Tick more bills and preview again, or keep it as advance (extra credit) for this client.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
 
@@ -232,7 +377,7 @@ function AskDialog({ title, note, fields, submit, onClose }) {
     <Modal isOpen onClose={onClose} title={title} maxWidth="480px" headerIcon="none"
       footer={<div className="flex justify-end gap-3"><Button variant="outline" onClick={onClose}>Cancel</Button><Button onClick={go} disabled={!ready || saving}>{saving ? 'Saving…' : 'Save'}</Button></div>}>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (ready) go(); }}>
-        {note && <p className="text-sm text-gray-600">{note}</p>}
+        {note && <p className="text-sm text-text-secondary">{note}</p>}
         {fields.map((f, i) => (
           <Input key={f.key} label={f.label} type={f.type || 'text'} value={v[f.key]} autoFocus={i === 0} required
             onChange={(e) => setV((x) => ({ ...x, [f.key]: e.target.value }))} backgroundColor="input-bg" />

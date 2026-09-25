@@ -1,112 +1,96 @@
 import { useState } from "react";
-import { Icon, ICON_NAMES } from "../icons";
-import Logo from "../../assets/img/shivesh-logo.png";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import UserIcon from "../../assets/img/profile.png";
+import { toast } from "react-toastify";
+import { Menu, Search } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import usePermission from "../../hooks/usePermission";
-// import { useUser } from '../../context/UserContext';
+import { initials } from "../../utils/labels";
+
+// First URL segment → the name people know the page by.
+const TITLES = {
+  dashboard: "Dashboard", orders: "Orders & Tracks", testing: "Cube Testing", projects: "Projects",
+  clients: "Clients", vendors: "Vendors", leads: "Leads", billing: "Billing", reports: "Reports",
+  products: "Products", subcategories: "Sub-categories", users: "Users", roles: "Roles & Permissions",
+  settings: "Settings",
+};
+
+/**
+ * Codes people actually type → the page for that record. The panel has no
+ * global search API, so this box does exactly what it promises: jump by code.
+ */
+const JUMPS = [
+  [/^ORD-\d{4}-\d+$/i, (c) => `/orders/${c}`],
+  [/^BILL-\d{4}-\d+$/i, (c) => `/billing/${c}`],
+  [/^CL-[\w-]+$/i, (c) => `/clients/${c}`],
+  [/^PRJ?-[\w-]+$/i, (c) => `/projects/${c}`],
+];
+
 const Navbar = ({ onToggleSidebar, isSidebarOpen }) => {
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  // const { getUserName, getUserRole } = useUser();
   const user = useSelector((state) => state.auth.user);
   const { isSuperAdmin } = usePermission();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [code, setCode] = useState("");
+
+  const segs = location.pathname.split("/").filter(Boolean);
+  const title = TITLES[segs[0]] ?? "";
+  const record = segs[1] === "add" ? "New" : segs.length > 1 ? decodeURIComponent(segs[1]) : "";
+
+  const jump = (e) => {
+    e.preventDefault();
+    const c = code.trim().toUpperCase();
+    if (!c) return;
+    const hit = JUMPS.find(([re]) => re.test(c));
+    if (!hit) {
+      toast.info("Type an order, bill, client or project code — e.g. ORD-2026-0041");
+      return;
+    }
+    navigate(hit[1](c));
+    setCode("");
+  };
+
+  const name = user?.name ?? user?.userName ?? "";
 
   return (
-    <nav className="bg-white border-b border-primary h-[65px] xl:h-[100px] px-4 inline-flex justify-center w-full  md:px-6">
-      <div className="flex items-center justify-between w-full">
-        {/* Left section */}
-        <div className="flex items-center space-x-4">
-          {/* Mobile menu button */}
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 md:hidden"
-          >
-            {isSidebarOpen ? (
-              <Icon name={ICON_NAMES.X} size={20} />
-            ) : (
-              <Icon name={ICON_NAMES.MENU} size={20} />
-            )}
-          </button>
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-primary-light bg-white/85 px-3 backdrop-blur sm:px-5 lg:h-[72px] lg:gap-5 lg:px-8">
+      <button type="button" onClick={onToggleSidebar} aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+        aria-expanded={isSidebarOpen}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary-light text-primary lg:hidden">
+        <Menu size={20} />
+      </button>
 
-          {/* Search bar */}
-          {/* <div className="relative hidden md:block">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div> */}
-          <div className="hidden md:flex items-center gap-3">
-            <img src={Logo} alt="Logo" className="h-14 xl:h-16" />
-            <div className="flex flex-col leading-tight">
-              <span className="text-base font-bold text-primary tracking-wide">
-                SHIVESH
-              </span>
-              <span className="text-[11px] text-gray-500 font-medium">
-                Group of Companies
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right section */}
-        <div className="flex items-center space-x-4">
-          {/* Notifications — live bell (new orders, status changes, messages) */}
-          <NotificationBell />
-
-          {/* Profile dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
-            >
-              <img
-                src={UserIcon}
-                alt="Profile"
-                className="h-10 w-10 rounded-full"
-              />
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-700">{user.name}</p>
-                <p className="text-xs text-gray-500">{isSuperAdmin ? "Super Admin" : user.roleName ?? user.role}</p>
-              </div>
-            </button>
-
-            {/* Profile dropdown menu */}
-            {/* {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Your Profile
-                </a>
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Settings
-                </a>
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Sign out
-                </a>
-              </div>
-            )} */}
-          </div>
-        </div>
+      <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+        <span className={`truncate ${record ? "hidden text-text-secondary sm:inline" : "font-semibold text-primary-second"}`}>{title}</span>
+        {record && (
+          <>
+            <span className="hidden text-text-light sm:inline">/</span>
+            <span className="truncate font-semibold text-primary-second">{record}</span>
+          </>
+        )}
       </div>
 
-      {/* Mobile search */}
-      {/* <div className="mt-3 md:hidden">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Icon name={ICON_NAMES.SEARCH} size={16} color="#9CA3AF" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      <form onSubmit={jump} role="search"
+        className="hidden h-11 w-[300px] items-center gap-2 rounded-xl border border-primary-light bg-white px-3 text-text-secondary transition-colors focus-within:border-border md:flex xl:w-[340px]">
+        <Search size={17} className="shrink-0" />
+        <input value={code} onChange={(e) => setCode(e.target.value)} aria-label="Go to an order, bill or client code"
+          placeholder="Go to ORD / BILL / CL code"
+          className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary" />
+        <kbd className="hidden rounded-md border border-primary-light px-1.5 py-0.5 text-[11px] font-semibold xl:inline">Enter</kbd>
+      </form>
+
+      <NotificationBell />
+
+      <div className="flex items-center gap-3 rounded-xl py-1 pl-1 pr-1 sm:pr-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+          {initials(name)}
         </div>
-      </div> */}
-    </nav>
+        <div className="hidden text-left leading-tight sm:block">
+          <p className="max-w-[140px] truncate text-sm font-semibold text-text-primary">{name}</p>
+          <p className="max-w-[140px] truncate text-xs text-text-secondary">{isSuperAdmin ? "Super Admin" : user?.roleName ?? user?.role}</p>
+        </div>
+      </div>
+    </header>
   );
 };
 

@@ -116,12 +116,12 @@ const Table = ({
     if (!actions || actions.length === 0) return null;
 
     return (
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-1">
         {actions.map((action, index) => (
           <button
             key={index}
             onClick={() => action.onClick(item)}
-            className={`px-2 py-1 text-xs font-medium rounded hover:bg-gray-50 transition-colors border-none outline-none ${
+            className={`min-h-9 px-2.5 py-1.5 text-[13px] font-semibold rounded-lg transition-colors border-none outline-none focus-visible:ring-2 focus-visible:ring-border ${
               action.className || ""
             }`}
             style={{
@@ -149,11 +149,12 @@ const Table = ({
     return (
       <div
         key={item.id || index}
-        className={`p-4 border-b border-border ${mobileCardClassName}`}
+        className={`p-4 border-b border-primary-light last:border-b-0 active:bg-background-hover ${mobileCardClassName}`}
         onClick={() => onRowClick?.(item)}
       >
         {columns.map((column, colIndex) => {
-          if (column.hideOnMobile) return null;
+          // A running serial number is noise on a phone card.
+          if (column.hideOnMobile || /^s\.?\s?no\.?$/i.test(String(column.header ?? '').trim())) return null;
 
           return (
             <div key={colIndex} className="mb-2 last:mb-0">
@@ -200,9 +201,9 @@ const Table = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="sv-card overflow-hidden">
         <div className="flex items-center justify-center py-12">
-          <div className="text-text-secondary">Loading...</div>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-light border-t-primary" aria-label="Loading" />
         </div>
       </div>
     );
@@ -211,11 +212,11 @@ const Table = ({
   return (
     <>
       <div
-        className={`bg-white rounded-lg shadow overflow-hidden ${className}`}
+        className={`sv-card overflow-hidden ${className}`}
       >
         {/* Search Bar */}
         {searchable && (
-          <div className="p-4 border-b border-border">
+          <div className="p-4 border-b border-primary-light">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Icon
@@ -229,7 +230,7 @@ const Table = ({
                 placeholder={searchPlaceholder}
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full h-11 pl-10 pr-4 border border-primary-light rounded-xl focus:outline-none focus:border-border"
               />
             </div>
           </div>
@@ -259,17 +260,17 @@ const Table = ({
 
         {/* Desktop Table View - Always show headers */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
+          <table className="min-w-full">
             <thead
-              className={`bg-border text-white md:h-[64px] ${headerClassName}`}
+              className={`bg-background-hover text-text-secondary ${headerClassName}`}
             >
               <tr>
                 {columns.map((column, index) => (
                   <th
                     key={index}
-                    className={`px-6 py-3 text-left md:text-base font-semibold   tracking-wider ${
+                    className={`px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap ${
                       sortable && column.sortable !== false
-                        ? "cursor-pointer select-none group hover:bg-background-hover"
+                        ? "cursor-pointer select-none group hover:text-primary"
                         : ""
                     }`}
                     onClick={() =>
@@ -285,7 +286,7 @@ const Table = ({
                   </th>
                 ))}
                 {actions && actions.length > 0 && (
-                  <th className="px-6 py-3 text-left md:text-base font-semibold   tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">
                     Actions
                   </th>
                 )}
@@ -296,7 +297,7 @@ const Table = ({
                 currentData.map((item, index) => (
                   <tr
                     key={item.id || index}
-                    className={`hover:bg-background-hover transition-colors md:h-[64px] border-b border-[#E2E2E2] 
+                    className={`hover:bg-background-hover transition-colors border-t border-primary-light 
                    
       ${onRowClick ? "cursor-pointer" : ""}`}
                     onClick={() => onRowClick?.(item)}
@@ -304,7 +305,7 @@ const Table = ({
                     {columns.map((column, colIndex) => (
                       <td
                         key={colIndex}
-                        className={`px-6 py-4 whitespace-nowrap text-xs font-medium ${
+                        className={`px-5 py-3.5 whitespace-nowrap text-sm ${
                           column.className ||
                           (colIndex === 0
                             ? "text-text-primary font-medium"
@@ -315,7 +316,7 @@ const Table = ({
                       </td>
                     ))}
                     {actions && actions.length > 0 && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-5 py-3 whitespace-nowrap text-sm font-medium">
                         {renderActions(item)}
                       </td>
                     )}
@@ -347,7 +348,7 @@ const Table = ({
       </div>
       {/* Pagination */}
       {showPagination && safeData.length > 0 && (
-        <div className="px-0 py-3 bg-white ">
+        <div className="px-0 py-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center space-x-2 text-sm text-text-secondary">
               <span className="hidden sm:inline">

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon, ICON_NAMES } from '../components/icons';
 import Button from '../components/ui/Button';
 import { Table } from '../components/ui';
+import { statusLabel } from '../utils/labels';
 import { fetchOrders } from '../features/orders/orderSlice';
 
 const STATUS_TABS = ['All', 'NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
@@ -97,13 +98,14 @@ const OrdersPage = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            aria-pressed={activeTab === tab}
+            className={`h-10 px-4 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
               activeTab === tab
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary text-white shadow-[0_6px_14px_rgba(30,58,138,.22)]'
+                : 'bg-white border border-primary-light text-text-secondary hover:bg-primary-light hover:text-primary'
             }`}
           >
-            {tab}
+            {tab === 'All' ? 'All' : statusLabel(tab)}
           </button>
         ))}
       </div>

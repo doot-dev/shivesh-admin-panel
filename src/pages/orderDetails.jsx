@@ -48,6 +48,8 @@ import Dropdown from '../components/ui/Dropdown';
 import FullPageLoader from '../components/ui/FullPageLoader';
 import DeleteModal from '../components/modals/DeleteModal';
 import { ICON_NAMES, Icon } from '../components/icons';
+import { ChevronLeft, Check, CircleCheck, TriangleAlert, Pencil, Trash2, Ban } from 'lucide-react';
+import { statusLabel } from '../utils/labels';
 
 
 const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
@@ -148,30 +150,67 @@ const StatusBadge = ({ value, badgeMap = STATUS_BADGE }) => {
   const cfg = badgeMap[value] || { color: '#374151', backgroundColor: '#F3F4F6' };
   return (
     <span
-      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+      className="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold"
       style={{ color: cfg.color, backgroundColor: cfg.backgroundColor }}
     >
       <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: cfg.color }} />
-      {value}
+      {statusLabel(value)}
     </span>
   );
 };
 
 const InfoRow = ({ label, value }) => (
-  <div className="flex items-start py-2 border-b border-gray-100 last:border-0">
-    <span className="w-40 text-sm text-gray-500 shrink-0">{label}</span>
-    <span className="text-sm font-medium text-gray-800">{value || '—'}</span>
+  <div className="flex flex-col gap-0.5 border-b border-primary-light py-2.5 last:border-0 sm:flex-row sm:items-start sm:gap-0">
+    <span className="shrink-0 text-[13px] text-text-secondary sm:w-40 sm:text-sm">{label}</span>
+    <span className="text-sm font-medium text-text-primary">{value || '—'}</span>
   </div>
 );
 
+/** Placed → Confirmed → In progress → Delivered → Completed, with the current step marked. */
+const FLOW = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
+const FLOW_LABEL = { NEW: 'Placed', CONFIRMED: 'Confirmed', IN_PROGRESS: 'In progress', DELIVERED: 'Delivered', COMPLETED: 'Completed' };
+const OrderStepper = ({ status }) => {
+  if (status === 'CANCELLED') {
+    return (
+      <div className="sv-card flex items-center gap-3 p-4 text-sm text-error">
+        <Ban size={20} /> This order was cancelled.
+      </div>
+    );
+  }
+  const at = Math.max(0, FLOW.indexOf(status));
+  return (
+    <div className="sv-card px-2 py-5 sm:px-6">
+      <ol className="flex">
+        {FLOW.map((step, i) => {
+          const done = i <= at;
+          const last = i === FLOW.length - 1;
+          return (
+            <li key={step} className="relative flex flex-1 flex-col items-center gap-2 text-center">
+              {!last && (
+                <span className={`absolute left-[calc(50%+18px)] right-[calc(-50%+18px)] top-[13px] h-[3px] sm:top-[15px] rounded-full ${i < at ? 'sv-grow-x bg-primary' : 'bg-primary-light'}`}
+                  style={i < at ? { animationDelay: `${0.2 + i * 0.12}s` } : undefined} />
+              )}
+              <span className={`relative flex h-7 w-7 items-center justify-center rounded-full text-white ring-4 sm:h-8 sm:w-8 sm:ring-[5px] ${done ? (status === 'COMPLETED' && last ? 'bg-success ring-success-light' : 'bg-primary ring-primary-light') : 'bg-white text-text-light ring-primary-light'}`}
+                aria-current={i === at ? 'step' : undefined}>
+                {done ? <Check size={16} strokeWidth={2.6} /> : <span className="h-2 w-2 rounded-full bg-primary-light" />}
+              </span>
+              <span className={`text-[11px] leading-tight sm:text-sm ${i === at ? 'font-semibold text-primary-second' : done ? 'font-medium text-text-primary' : 'text-text-secondary'}`}>{FLOW_LABEL[step]}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+};
+
 const SectionCard = ({ title, children, action }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-base font-semibold text-gray-800">{title}</h3>
+  <section className="sv-card p-4 sm:p-6">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <h3 className="text-lg font-semibold text-primary-second">{title}</h3>
       {action}
     </div>
     {children}
-  </div>
+  </section>
 );
 
 const FieldLabel = ({ children }) => (
@@ -272,7 +311,10 @@ export default function OrderDetails() {
   }, [order?.status, order?.deliveryStatus]);
 
   useEffect(() => {
-    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll only the comments box to its newest message — scrollIntoView would
+    // also drag the whole page down to the comments on every load.
+    const box = commentsEndRef.current?.parentElement;
+    if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
   }, [order?.comments?.length]);
 
   const refreshOrder = () => dispatch(fetchOrderById(orderId));
@@ -697,42 +739,48 @@ export default function OrderDetails() {
     CUBE_TEST_LOCKED_STATES.includes(order.status) || CUBE_TEST_LOCKED_STATES.includes(order.deliveryStatus);
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 ">
+    <div className="space-y-5 p-4 sm:p-6 lg:p-8">
       {/* Back + Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-start gap-3 sm:gap-4">
         <button
+          type="button"
           onClick={() => navigate('/orders')}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors"
+          aria-label="Back to orders"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary-light bg-white text-primary transition-colors hover:bg-primary-light"
         >
-          <Icon name={ICON_NAMES.CHEVRON_LEFT} size={16} />
+          <ChevronLeft size={20} />
         </button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-semibold text-gray-900">{order.orderId}</h1>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-primary-second sm:text-[28px]">{order.orderId}</h1>
             <StatusBadge value={order.status} />
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="mt-1 text-sm text-text-secondary">
             {order.project?.projectName} · {order.client?.companyName}
           </p>
         </div>
 
         {isEditing ? (
-          <div className="flex gap-2">
-            <Button type="button" onClick={handleCancelEdit} disabled={saving}>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <button type="button" onClick={handleCancelEdit} disabled={saving}
+              className="h-11 flex-1 rounded-xl border border-primary-light bg-white px-5 text-sm font-semibold text-primary transition-colors hover:bg-background-hover sm:flex-none">
               Cancel
-            </Button>
-            <Button type="button" variant="primary" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
+            </button>
+            <button type="button" onClick={handleSave} disabled={saving}
+              className="h-11 flex-1 rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(30,58,138,.22)] transition-colors hover:bg-primary-second disabled:opacity-60 sm:flex-none">
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <Button type="button" variant="success" onClick={handleEnterEdit}>
-              Edit
-            </Button>
-            <Button type="button" variant="danger" onClick={() => setShowDeleteModal(true)}>
-              Delete
-            </Button>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <button type="button" onClick={handleEnterEdit}
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-primary-light bg-white px-4 text-sm font-semibold text-primary transition-colors hover:bg-background-hover sm:flex-none">
+              <Pencil size={16} />Edit
+            </button>
+            <button type="button" onClick={() => setShowDeleteModal(true)}
+              className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-error-light bg-white px-4 text-sm font-semibold text-error transition-colors hover:bg-error-light sm:flex-none">
+              <Trash2 size={16} />Delete
+            </button>
           </div>
         )}
       </div>
@@ -740,22 +788,25 @@ export default function OrderDetails() {
       {/* Bill banner */}
       {billBanner && (
         <div
-          className={`mb-5 rounded-lg border p-4 flex items-center justify-between gap-3 flex-wrap ${
-            billBanner.billNo ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
+          className={`sv-rise flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 ${
+            billBanner.billNo ? 'border-success/20 bg-success-light' : 'border-warning/30 bg-warning-light'
           }`}
         >
           {billBanner.billNo ? (
             <>
-              <span className="text-sm text-green-800">Bill {billBanner.billNo} generated.</span>
-              <Link to={`/billing/${billBanner.billNo}`} className="text-sm font-medium text-primary underline">
-                View Bill
+              <span className="flex items-center gap-3 text-sm font-semibold text-success">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-white"><CircleCheck size={18} /></span>
+                Bill {billBanner.billNo} created automatically
+              </span>
+              <Link to={`/billing/${billBanner.billNo}`} className="flex h-10 items-center rounded-xl bg-white px-4 text-sm font-semibold text-primary shadow-sm hover:bg-primary-light">
+                View bill
               </Link>
             </>
           ) : billBanner.pending ? (
-            <span className="text-sm text-amber-800">Completed — the bill will be created once challans are in: {billBanner.pending}</span>
+            <span className="flex items-start gap-3 text-sm text-text-primary"><TriangleAlert size={20} className="shrink-0 text-warning" />Completed — the bill will be created once challans are in: {billBanner.pending}</span>
           ) : (
             <>
-              <span className="text-sm text-amber-800">{billBanner.error}</span>
+              <span className="flex items-start gap-3 text-sm text-text-primary"><TriangleAlert size={20} className="shrink-0 text-warning" />{billBanner.error}</span>
               <Button type="button" variant="primary" onClick={handleGenerateBillManually} disabled={generatingBill}>
                 {generatingBill ? 'Generating...' : 'Generate bill manually'}
               </Button>
@@ -765,22 +816,23 @@ export default function OrderDetails() {
       )}
 
       {order.creditHold && (
-        <div className="mb-5 rounded-lg border p-4 bg-amber-50 border-amber-300 text-sm text-amber-900">
-          <b>On credit hold:</b> {order.creditHoldReason}. It can't be confirmed until an approver releases it.
+        <div className="rounded-2xl border border-warning/40 bg-warning-light p-4 text-sm text-text-primary">
+          <p className="flex items-start gap-3"><TriangleAlert size={20} className="shrink-0 text-warning" />
+            <span><b>On credit hold:</b> {order.creditHoldReason}. It can&apos;t be confirmed until an approver releases it.</span></p>
           {can('orders', 'approve') && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button className="px-3 py-1.5 rounded-lg bg-green-600 text-white" onClick={() => releaseHold('RELEASE')}>Release</button>
-              <button className="px-3 py-1.5 rounded-lg bg-blue-600 text-white" onClick={() => releaseHold('RELEASE_WITH_EXTRA')}>Release + add extra credit</button>
-              <button className="px-3 py-1.5 rounded-lg bg-red-600 text-white" onClick={() => releaseHold('CANCEL')}>Cancel order</button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button className="h-10 rounded-xl bg-primary px-4 font-semibold text-white hover:bg-primary-second" onClick={() => releaseHold('RELEASE')}>Release</button>
+              <button className="h-10 rounded-xl border border-primary-light bg-white px-4 font-semibold text-primary hover:bg-primary-light" onClick={() => releaseHold('RELEASE_WITH_EXTRA')}>Release + add extra credit</button>
+              <button className="h-10 rounded-xl border border-error-light bg-white px-4 font-semibold text-error hover:bg-error-light" onClick={() => releaseHold('CANCEL')}>Cancel order</button>
             </div>
           )}
         </div>
       )}
       {order.cancelReason && order.status === 'CANCELLED' && (
-        <div className="mb-5 rounded-lg border p-3 bg-gray-50 text-sm text-gray-700">Cancelled: {order.cancelReason}</div>
+        <div className="rounded-2xl border border-primary-light bg-white p-4 text-sm text-text-primary">Cancelled: {order.cancelReason}</div>
       )}
       {credit && credit.flag !== 'OK' && (
-        <div className="mb-5 rounded-lg border p-4 bg-red-50 border-red-200 text-sm text-red-800">
+        <div className="rounded-2xl border border-error/20 bg-error-light p-4 text-sm text-error">
           <b>Credit warning:</b>{' '}
           {credit.flag === 'OVERDUE'
             ? `${credit.overdueBillCount} overdue bill(s), ₹${credit.overdueAmount.toLocaleString('en-IN')}, oldest ${credit.oldestOverdueDays} days past due.`
@@ -788,21 +840,29 @@ export default function OrderDetails() {
         </div>
       )}
       {order.editableUntil && (
-        <div className={`mb-5 text-xs inline-block rounded-full px-3 py-1 ${new Date(order.editableUntil) < new Date() ? 'bg-gray-200 text-gray-700' : 'bg-blue-50 text-blue-700'}`}>
+        <div className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${new Date(order.editableUntil) < new Date() ? 'bg-background-hover text-text-secondary' : 'bg-primary-light text-primary'}`}>
           {new Date(order.editableUntil) < new Date() ? 'Locked since' : 'Editable until'}{' '}
           {new Date(order.editableUntil).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <OrderStepper status={order.status} />
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {/* Left Column: Order Info + Vendor + TM Details */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="space-y-5 xl:col-span-2">
 
           {/* Order Summary */}
           <SectionCard title="Order Summary">
             <InfoRow label="Order ID" value={order.orderId} />
             <InfoRow label="Project" value={order.project?.projectName} />
             <InfoRow label="Client" value={order.client?.companyName} />
+            {order.placedBy && (
+              <InfoRow
+                label="Placed by"
+                value={`${order.placedBy.name}${order.placedBy.role?.name ? ` (${order.placedBy.role.name})` : ''}${order.placedBy.phone ? ` · ${order.placedBy.phone}` : ''}`}
+              />
+            )}
             <InfoRow label="Product" value={`${order.productName || ''} ${order.productGrade ? `(${order.productGrade})` : ''}`} />
             <InfoRow label="Quantity" value={order.quantity} />
 
@@ -897,7 +957,7 @@ export default function OrderDetails() {
                 <p className="text-sm text-gray-400 py-2">No vendors added yet.</p>
               )}
               {orderVendors.map((v) => (
-                <div key={v.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div key={v.id} className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   {vendorFormKey === v.id ? (
                     <VendorForm
                       form={vendorForm}
@@ -932,7 +992,7 @@ export default function OrderDetails() {
                 </div>
               ))}
               {vendorFormKey === 'new' && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   <VendorForm
                     form={vendorForm}
                     vendorOptions={vendorOptions}
@@ -966,7 +1026,7 @@ export default function OrderDetails() {
                 <p className="text-sm text-gray-400 py-2">No TM details added yet.</p>
               )}
               {tmDetails.map((tm) => (
-                <div key={tm.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div key={tm.id} className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   {tmFormKey === tm.id ? (
                     <TmForm form={tmForm} onChange={setTmField} onSave={saveTmForm} onCancel={cancelTmForm} saving={savingTm} />
                   ) : (
@@ -998,7 +1058,7 @@ export default function OrderDetails() {
                 </div>
               ))}
               {tmFormKey === 'new' && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   <TmForm form={tmForm} onChange={setTmField} onSave={saveTmForm} onCancel={cancelTmForm} saving={savingTm} />
                 </div>
               )}
@@ -1024,7 +1084,7 @@ export default function OrderDetails() {
                 <p className="text-sm text-gray-400 py-2">No cube tests added yet.</p>
               )}
               {cubeTests.map((ct) => (
-                <div key={ct.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div key={ct.id} className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   {cubeTestFormKey === ct.id ? (
                     <CubeTestForm
                       form={cubeTestForm}
@@ -1074,7 +1134,7 @@ export default function OrderDetails() {
                 </div>
               ))}
               {cubeTestFormKey === 'new' && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   <CubeTestForm
                     form={cubeTestForm}
                     onChange={setCubeTestField}
@@ -1108,7 +1168,7 @@ export default function OrderDetails() {
                 <p className="text-sm text-gray-400 py-2">No field tech assigned.</p>
               )}
               {orderTechnicians.map((t) => (
-                <div key={t.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div key={t.id} className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   {techFormKey === t.id ? (
                     <div>
                       <FieldLabel>Technician</FieldLabel>
@@ -1147,7 +1207,7 @@ export default function OrderDetails() {
                 </div>
               ))}
               {techFormKey === 'new' && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   <FieldLabel>Technician</FieldLabel>
                   <Dropdown
                     options={techOptions}
@@ -1211,12 +1271,12 @@ export default function OrderDetails() {
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendComment()}
                 placeholder="Add a comment…"
-                className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="h-11 min-w-0 flex-1 rounded-xl border border-primary-light bg-input-bg px-3 text-sm focus:border-border focus:bg-white focus:outline-none"
               />
               <button
                 onClick={handleSendComment}
                 disabled={sendingComment || !commentText.trim()}
-                className="px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-colors"
+                className="h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-second disabled:opacity-50"
               >
                 {sendingComment ? '…' : 'Send'}
               </button>

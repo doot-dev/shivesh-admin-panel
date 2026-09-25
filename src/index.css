@@ -42,25 +42,55 @@ body,
 }
 
 
-/* width */
+/* Thin, quiet scrollbars in the brand tint. */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
-
-/* Track */
 ::-webkit-scrollbar-track {
-  background: #e1e0e0;
+  background: transparent;
 }
-
-/* Handle */
 ::-webkit-scrollbar-thumb {
-  background: #688beca8;
+  background: #9bb3f4;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6d8fef;
 }
 
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-  background: #688bec88;
+/* ── Motion (redesign) ───────────────────────────────────────────────
+   Small, purposeful: content rises in on load, cards lift on hover.
+   Everything is switched off for people who ask for reduced motion. */
+@keyframes sv-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes sv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sv-pop { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes sv-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes sv-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes sv-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes sv-pulse { 0% { box-shadow: 0 0 0 0 rgba(46, 125, 50, .45); } 100% { box-shadow: 0 0 0 10px rgba(46, 125, 50, 0); } }
+@keyframes sv-draw { from { stroke-dashoffset: 700; } to { stroke-dashoffset: 0; } }
+@keyframes sv-slide-in { from { transform: translateX(-100%); } to { transform: none; } }
+
+.sv-rise { animation: sv-rise .55s cubic-bezier(.2, .7, .2, 1) both; }
+.sv-fade { animation: sv-fade .3s ease both; }
+.sv-pop { animation: sv-pop .4s cubic-bezier(.2, .7, .2, 1) both; }
+.sv-grow-y { transform-origin: bottom; animation: sv-grow-y .9s cubic-bezier(.2, .7, .2, 1) both; }
+.sv-grow-x { transform-origin: left; animation: sv-grow-x .9s cubic-bezier(.2, .7, .2, 1) both; }
+.sv-float { animation: sv-float 6.5s ease-in-out infinite; }
+.sv-pulse { animation: sv-pulse 1.6s ease-out infinite; }
+
+/* Card surface used across pages: white, hairline tint border, soft navy shadow. */
+.sv-card {
+  background: #ffffff;
+  border: 1px solid #e5ecff;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(30, 58, 138, .04), 0 10px 28px rgba(30, 58, 138, .06);
+}
+.sv-card-hover { transition: box-shadow .25s ease, transform .25s ease; }
+.sv-card-hover:hover { box-shadow: 0 2px 4px rgba(30, 58, 138, .05), 0 18px 40px rgba(30, 58, 138, .10); transform: translateY(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
 /* Add this in your global CSS or Tailwind global styles */

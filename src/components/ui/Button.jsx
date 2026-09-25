@@ -49,9 +49,9 @@ const Button = ({
 
   // Variant classes using your custom colors
   const variantClasses = {
-    primary: 'bg-primary text-text-inverse border-primary hover:bg-primary-second hover:border-primary-second focus:ring-primary',
+    primary: 'bg-primary text-text-inverse border-primary shadow-[0_6px_16px_rgba(30,58,138,.22)] hover:bg-primary-second hover:border-primary-second focus:ring-primary',
     secondary: 'bg-stroke-alt text-text-primary border-stroke-alt hover:bg-bg-alt2 hover:border-bg-alt2 focus:ring-stroke-alt',
-    success: 'bg-success text-text-inverse border-success hover:opacity-90 focus:ring-success',
+    success: 'bg-success-light text-success border-success/20 hover:bg-success hover:text-text-inverse focus:ring-success',
     danger: 'bg-error text-text-inverse border-error hover:opacity-90 focus:ring-error',
     warning: 'bg-warning text-text-inverse border-warning hover:opacity-90 focus:ring-warning',
     info: 'bg-primary-bg-alt text-text-primary border-primary-bg-alt hover:bg-primary-light hover:border-primary-light focus:ring-primary-bg-alt',
@@ -72,7 +72,7 @@ const Button = ({
 
   // Build classes
   const baseClasses = [
-    'inline-flex items-center justify-center font-medium transition-colors duration-200',
+    'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 active:scale-[.98]',
     'focus:outline-none focus:ring-2 focus:ring-offset-2',
     'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
   ];

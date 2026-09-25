@@ -1,24 +1,64 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { Icon, ICON_NAMES } from "../icons";
 import { useDispatch } from "react-redux";
+import {
+  LayoutDashboard, Truck, FlaskConical, BriefcaseBusiness, Building2, Store, Filter,
+  ReceiptText, ChartLine, Package, Layers, Users, ShieldCheck, SlidersHorizontal, LogOut, X,
+} from "lucide-react";
 import { logout } from "../../features/auth/authSlice";
 import { closeSocket } from "../../services/socket";
 import { usePermission } from "../../hooks/usePermission";
 import { MODULE } from "../../constant/permissions";
 import LogoImg from "../../assets/img/shivesh-logo.png";
+import { initials } from "../../utils/labels";
+
+/**
+ * Navy sidebar, grouped by what people do (operations, money, catalogue,
+ * administration). Only modules the user can open are shown, and a group with
+ * nothing visible disappears — so an accountant never sees an empty
+ * "Administration" heading.
+ */
+const GROUPS = [
+  { label: "Overview", items: [
+    { key: "dashboard", icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", module: MODULE.DASHBOARD },
+  ] },
+  { label: "Operations", items: [
+    { key: "orders", icon: Truck, label: "Orders & Tracks", path: "/orders", module: MODULE.ORDERS },
+    { key: "testing", icon: FlaskConical, label: "Cube Testing", path: "/testing", module: MODULE.CUBE_TESTS },
+    { key: "projects", icon: BriefcaseBusiness, label: "Projects", path: "/projects", module: MODULE.PROJECTS },
+    { key: "clients", icon: Building2, label: "Clients", path: "/clients", module: MODULE.CLIENTS },
+    { key: "vendors", icon: Store, label: "Vendors", path: "/vendors", module: MODULE.VENDORS },
+    { key: "leads", icon: Filter, label: "Leads", path: "/leads", module: MODULE.LEADS },
+  ] },
+  { label: "Money", items: [
+    { key: "billing", icon: ReceiptText, label: "Billing", path: "/billing", module: MODULE.BILLING },
+    { key: "reports", icon: ChartLine, label: "Reports", path: "/reports", module: MODULE.REPORTS },
+  ] },
+  { label: "Catalogue", items: [
+    { key: "products", icon: Package, label: "Products", path: "/products", module: MODULE.PRODUCTS },
+    { key: "subcategories", icon: Layers, label: "Sub-categories", path: "/subcategories", module: MODULE.SUBCATEGORIES },
+  ] },
+  { label: "Administration", items: [
+    { key: "users", icon: Users, label: "Users", path: "/users", module: MODULE.USERS },
+    { key: "roles", icon: ShieldCheck, label: "Roles & Permissions", path: "/roles", module: MODULE.ROLES },
+    { key: "settings", icon: SlidersHorizontal, label: "Settings", path: "/settings", module: MODULE.SETTINGS },
+  ] },
+];
+
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState({});
   const dispatch = useDispatch();
-  const router = useNavigate();
+  const navigate = useNavigate();
   const { canViewModule, isSuperAdmin, user } = usePermission();
-  const toggleExpanded = (itemKey) => {
-    setExpandedItems((prev) => ({
-      ...prev,
-      [itemKey]: !prev[itemKey],
-    }));
-  };
+
+  // Escape closes the drawer on phones and tablets.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (e) => e.key === "Escape" && onClose?.();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
+
   const handleLogout = () => {
     // Close the realtime socket BEFORE clearing storage: it is authenticated
     // with this user's token, so leaving it open would let the next person to
@@ -26,316 +66,85 @@ const Sidebar = ({ isOpen, onClose }) => {
     closeSocket();
     dispatch(logout());
     localStorage.clear();
-    router.push("/");
+    navigate("/");
   };
-  const menuItems = [
-    {
-      key: "dashboard",
-      icon: ICON_NAMES.DASHBOARD,
-      label: "Dashboard",
-      path: "/dashboard",
-      module: MODULE.DASHBOARD,
-    },
-    {
-      key: "users",
-      icon: ICON_NAMES.USER,
-      label: "Users",
-      path: "/users",
-      module: MODULE.USERS,
-    },
-    {
-      key: "roles",
-      icon: ICON_NAMES.USER,
-      label: "Roles & Permissions",
-      path: "/roles",
-      module: MODULE.ROLES,
-    },
-    {
-      key: "products",
-      icon: ICON_NAMES.PRODUCT,
-      label: "Product",
-      path: "/products",
-      module: MODULE.PRODUCTS,
-    },
-    {
-      key: "subcategories",
-      icon: ICON_NAMES.PRODUCT,
-      label: "Sub-category",
-      path: "/subcategories",
-      module: MODULE.SUBCATEGORIES,
-    },
-    {
-      key: "clients",
-      icon: ICON_NAMES.CLIENT,
-      label: "Client",
-      path: "/clients",
-      module: MODULE.CLIENTS,
-    },
-    {
-      key: "vendors",
-      icon: ICON_NAMES.VENDOR,
-      label: "Vendor",
-      path: "/vendors",
-      module: MODULE.VENDORS,
-    },
-    {
-      key: "leads",
-      icon: ICON_NAMES.LEADS,
-      label: "Leads",
-      path: "/leads",
-      module: MODULE.LEADS,
-    },
-    {
-      key: "projects",
-      icon: ICON_NAMES.PROJECTS,
-      label: "Project",
-      path: "/projects",
-      module: MODULE.PROJECTS,
-    },
-    {
-      key: "orders",
-      icon: ICON_NAMES.ORDERS,
-      label: "Orders & Tracks",
-      path: "/orders",
-      module: MODULE.ORDERS,
-      // hasSubmenu: true,
-      // submenu: [
-      //   { label: "All Orders", path: "/orders/all" },
-      //   { label: "Pending Orders", path: "/orders/pending" },
-      //   { label: "Completed Orders", path: "/orders/completed" },
-      // ],
-    },
-    {
-      key: "testing",
-      icon: ICON_NAMES.CUBE_TESTING,
-      label: "Cube Testing",
-      path: "/testing",
-      module: MODULE.CUBE_TESTS,
-    },
-    {
-      key: "billing",
-      icon: ICON_NAMES.BILLING,
-      label: "Billing",
-      path: "/billing",
-      module: MODULE.BILLING,
-    },
-    {
-      key: "reports",
-      icon: ICON_NAMES.REPORTS,
-      label: "Reports",
-      path: "/reports",
-      module: MODULE.REPORTS,
-    },
-    {
-      key: "settings",
-      icon: ICON_NAMES.SETTINGS,
-      label: "Settings",
-      path: "/settings",
-      module: MODULE.SETTINGS,
-    },
-  ];
 
-  // Only show what this user can actually open. An item with no `module` is
-  // never hidden, so adding a menu entry can't accidentally lock everyone out
-  // by forgetting to tag it.
-  const visibleMenuItems = menuItems.filter(
-    (item) => !item.module || canViewModule(item.module)
-  );
+  // /orders is active on /orders and /orders/ORD-…, and so on for every module.
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
-  const isActive = (path) => {
-    // Special case for products - should be active for /products and /products/:id
-    if (path === "/products") {
-      return (
-        location.pathname === "/products" ||
-        location.pathname.startsWith("/products/")
-      );
-    }
+  const groups = GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.module || canViewModule(i.module)) }))
+    .filter((g) => g.items.length);
 
-    // Special case for vendors - should be active for /vendors and /vendors/:id
-    if (path === "/vendors") {
-      return (
-        location.pathname === "/vendors" ||
-        location.pathname.startsWith("/vendors/")
-      );
-    }
-
-    if (path === "/leads") {
-      return (
-        location.pathname === "/leads" ||
-        location.pathname.startsWith("/leads/")
-      );
-    }
-
-    if (path === "/clients") {
-      return (
-        location.pathname === "/clients" ||
-        location.pathname.startsWith("/clients/")
-      );
-    }
-
-    if (path === "/projects") {
-      return (
-        location.pathname === "/projects" ||
-        location.pathname.startsWith("/projects/")
-      );
-    }
-
-    if (path === "/orders") {
-      return (
-        location.pathname === "/orders" ||
-        location.pathname.startsWith("/orders/")
-      );
-    }
-
-    if (path === "/billing") {
-      return (
-        location.pathname === "/billing" ||
-        location.pathname.startsWith("/billing/")
-      );
-    }
-
-    // Default exact match for other paths
-    return location.pathname === path;
-  };
+  const name = user?.name ?? user?.userName ?? "";
+  const role = isSuperAdmin ? "Super Admin" : user?.roleName ?? "No role assigned";
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-[#00000059] bg-opacity-50 z-40 md:hidden"
-          onClick={onClose}
-        />
+        <div className="sv-fade fixed inset-0 z-40 bg-primary-second/55 lg:hidden" onClick={onClose} aria-hidden="true" />
       )}
 
-      {/* Sidebar */}
-      <div
-        className={`
-        fixed top-0 left-0 h-[100vh] overflow-y-auto md:h-[calc(100vh-100px)] bg-white border-r border-t border-primary z-50 transition-transform duration-300 ease-in-out
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:static md:z-auto md:w-64 lg:w-52
-        xl:w-64
-      `}
+      <aside
+        aria-label="Main navigation"
+        className={`fixed inset-y-0 left-0 z-50 flex w-[272px] max-w-[86vw] flex-col overflow-hidden bg-primary-second text-white shadow-2xl transition-transform duration-300 ease-out
+          lg:static lg:z-auto lg:w-[260px] lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:shadow-none
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex items-center md:hidden justify-center h-[65px] xl:h-[100px] border-b border-primary">
-          <img src={LogoImg} alt="Logo" className="h-12 xl:h-20" />
-        </div>
+        {/* Soft decorative disc — depth without an image. */}
+        <div className="pointer-events-none absolute -right-44 -top-36 h-80 w-80 rounded-full bg-primary opacity-55" />
 
-        {/* Desktop logo */}
-        {/* <div className="hidden md:flex items-center gap-3 px-5 py-4 border-b border-gray-100">
-          <img src={LogoImg} alt="Logo" className="h-10 w-10 object-contain" />
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-bold text-primary tracking-wide">
-              SHIVESH
-            </span>
-            <span className="text-[10px] text-gray-400 font-medium">
-              Group of Companies
-            </span>
+        <div className="relative flex items-center gap-3 px-6 pb-5 pt-6">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-[0_8px_20px_rgba(10,20,60,.3)]">
+            <img src={LogoImg} alt="" className="h-8 w-8 object-contain" />
           </div>
-        </div> */}
-
-        {/* Navigation */}
-        <nav className="flex-1  py-6 overflow-y-auto">
-          <ul className="space-y-2">
-            {visibleMenuItems.map((item) => (
-              <li key={item.key}>
-                {item.hasSubmenu ? (
-                  <div>
-                    <button
-                      onClick={() => toggleExpanded(item.key)}
-                      className={`
-                        w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors
-                        ${
-                          isActive(item.path)
-                            ? "bg-primary-light text-blue-700 border-l-4 border-blue-700"
-                            : "text-gray-700 hover:bg-gray-100"
-                        }
-                      `}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Icon name={item.icon} size={18} />
-                        <span>{item.label}</span>
-                      </div>
-                      {expandedItems[item.key] ? (
-                        <Icon name={ICON_NAMES.CHEVRON_DOWN} size={16} />
-                      ) : (
-                        <Icon name={ICON_NAMES.CHEVRON_RIGHT} size={16} />
-                      )}
-                    </button>
-                    {expandedItems[item.key] && (
-                      <ul className="mt-2 ml-6 space-y-1">
-                        {item.submenu.map((subItem) => (
-                          <li key={subItem.path}>
-                            <Link
-                              to={subItem.path}
-                              className={`
-                                block px-3 py-2 text-sm rounded-lg transition-colors
-                                ${
-                                  isActive(subItem.path)
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "text-gray-600 hover:bg-gray-100"
-                                }
-                              `}
-                              onClick={onClose}
-                            >
-                              {subItem.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    to={item.path}
-                    className={`
-                      flex items-center space-x-3 px-6 py-2 h-[48px] text-sm font-medium  transition-colors
-                      ${
-                        isActive(item.path)
-                          ? "bg-primary-light text-primary border-l-4 border-primary"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }
-                    `}
-                    onClick={onClose}
-                  >
-                    <Icon
-                      name={item.icon}
-                      size={24}
-                      color={
-                        isActive(item.path) ? "text-primary" : "text-black"
-                      }
-                    />
-                    <span>{item.label}</span>
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* Which role the user is acting under. In a permissioned panel this
-          matters: it explains why a menu someone expects is missing. */}
-        <div className="px-6 pb-2 pt-1">
-          <p className="truncate text-xs font-medium text-gray-700">
-            {user?.name ?? user?.userName ?? ""}
-          </p>
-          <p className="truncate text-[11px] text-gray-400">
-            {isSuperAdmin ? "Super Admin" : user?.roleName ?? "No role assigned"}
-          </p>
-        </div>
-
-      {/* Logout */}
-        <div className="p-4 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-primary-light rounded-lg transition-colors w-full"
-          >
-            <Icon name={ICON_NAMES.LOG_OUT} size={18} />
-            <span>Log out</span>
+          <div className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[17px] font-bold tracking-[.08em]">SHIVESH</span>
+            <span className="text-[11px] text-primary-bg-alt">Group of Companies</span>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close menu"
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-xl text-primary-light hover:bg-white/10 lg:hidden">
+            <X size={20} />
           </button>
         </div>
-      </div>
+
+        <nav className="relative flex-1 space-y-5 overflow-y-auto px-4 pb-4">
+          {groups.map((g) => (
+            <div key={g.label} className="space-y-0.5">
+              <div className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[.12em] text-primary-bg-alt">{g.label}</div>
+              {g.items.map(({ key, icon, label, path }) => {
+                const active = isActive(path);
+                const IconCmp = icon;
+                return (
+                  <Link key={key} to={path} onClick={onClose} aria-current={active ? "page" : undefined}
+                    className={`flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm transition-colors duration-200
+                      ${active
+                        ? "bg-primary-light font-semibold text-primary shadow-[0_6px_16px_rgba(10,20,60,.25)]"
+                        : "font-medium text-primary-light/80 hover:bg-white/10 hover:text-white"}`}>
+                    <IconCmp size={19} strokeWidth={1.8} className="shrink-0" />
+                    <span className="truncate">{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Who you are acting as — explains why a menu someone expects is missing. */}
+        <div className="relative m-4 mt-0 flex items-center gap-3 rounded-2xl bg-white/[.08] p-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-bg-alt text-sm font-bold text-primary-second">
+            {initials(name)}
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col leading-tight">
+            <span className="truncate text-sm font-semibold">{name}</span>
+            <span className="truncate text-xs text-primary-bg-alt">{role}</span>
+          </div>
+          <button type="button" onClick={handleLogout} aria-label="Log out" title="Log out"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-primary-light transition-colors hover:bg-white/10 hover:text-white">
+            <LogOut size={18} />
+          </button>
+        </div>
+      </aside>
     </>
   );
 };

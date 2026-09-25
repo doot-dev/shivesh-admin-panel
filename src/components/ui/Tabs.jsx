@@ -8,7 +8,8 @@ export default function Tabs({ tabs }) {
   return (
     <div className="w-full">
       {/* Tab Buttons */}
-      <div className="flex gap-6  pb-2 mb-4">
+      {/* One row that scrolls sideways on phones instead of wrapping labels. */}
+      <div role="tablist" className="mb-5 flex gap-6 overflow-x-auto border-b border-primary-light [scrollbar-width:none] sm:gap-7">
         {tabs.map((tab, index) => (
           <TabButton
             key={index}
@@ -20,7 +21,7 @@ export default function Tabs({ tabs }) {
       </div>
 
       {/* Active Content */}
-      <div>{tabs[active].content}</div>
+      <div key={active} className="sv-fade">{tabs[active].content}</div>
     </div>
   );
 }

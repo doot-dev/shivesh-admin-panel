@@ -1,14 +1,17 @@
 export default function TabButton({ label, isActive, onClick }) {
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={isActive}
       onClick={onClick}
-      className={`pb-2 text-sm font-medium relative 
-        ${isActive ? "text-blue-600" : "text-gray-500"}`}
+      className={`relative h-11 shrink-0 whitespace-nowrap px-1 text-[15px] transition-colors
+        ${isActive ? "font-semibold text-primary" : "font-medium text-text-secondary hover:text-primary"}`}
     >
       {label}
-      {isActive && (
-        <span className="absolute -bottom-[1px] left-0 w-full h-[2px] bg-blue-600 rounded-full"></span>
-      )}
+      <span
+        className={`absolute inset-x-0 -bottom-px h-[3px] rounded-full bg-primary transition-transform duration-300 ${isActive ? "scale-x-100" : "scale-x-0"}`}
+      />
     </button>
   );
 }

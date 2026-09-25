@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon, ICON_NAMES } from '../icons';
 
 const Modal = ({
@@ -91,100 +92,70 @@ const Modal = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div 
-      className="fixed inset-0 z-50 overflow-y-auto"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+  // Phones: a bottom sheet (thumb-reachable, full width). Tablets and up: a
+  // centred card. Either way the body scrolls inside, so long forms never push
+  // the footer buttons off screen.
+  // Portalled to <body>: the page content animates in with a transform, and a
+  // transformed ancestor would trap a fixed overlay inside the content pane.
+  return createPortal(
+    <div
+      className="sv-fade fixed inset-0 z-[60] flex items-end justify-center bg-primary-second/55 sm:items-center sm:p-4"
       onClick={handleOverlayClick}
+      role="presentation"
     >
-      <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-        <div
-          ref={modalRef}
-          tabIndex={-1}
-          className={`
-            relative transform overflow-hidden rounded-[18px] bg-white text-left shadow-xl transition-all
-            w-full mx-4 sm:mx-auto sm:my-8
-            ${maxWidth ? '' : sizeClasses[size] || sizeClasses.md}
-            ${className}
-          `}
-          style={{ 
-            maxWidth: maxWidth || undefined,
-            maxHeight 
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          {!hideHeader && (title || showCloseButton) && (
-            <div 
-              className={`
-                flex items-center justify-between px-6 py-4 border-b border-[#EAEAEA]
-                ${headerClassName}
-              `}
-             
-            >
-              <div className="flex items-center space-x-3">
-                {showHeaderIcon && (
-                //   <div 
-                //     className="flex items-center justify-center w-10 h-10 rounded-full"
-                //     style={{ backgroundColor: 'var(--color-primary-light)' }}
-                //   >
-                    <Icon 
-                      name={headerIcon} 
-                      size={60} 
-                     
-                    />
-                //   </div>
-                )}
-                {title && (
-                  <h3 
-                    className="text-lg font-semibold leading-6"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    {title}
-                  </h3>
-                )}
-              </div>
-              
-              {showCloseButton && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  aria-label="Close modal"
-                >
-                  <Icon 
-                    name={ICON_NAMES.X} 
-                    size={20} 
-                    color="var(--color-text-secondary)" 
-                  />
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Body */}
-          <div 
-            className={`px-6 py-4 overflow-y-auto ${bodyClassName}`}
-            style={{ maxHeight: 'calc(90vh - 120px)' }}
-          >
-            {children}
-          </div>
-
-          {/* Footer */}
-          {footer && (
-            <div 
-              className={`
-                px-6 py-4 border-t bg-white flex items-center justify-end space-x-3
-                ${footerClassName}
-              `}
-              style={{ borderColor: 'var(--color-border)' }}
-            >
-              {footer}
-            </div>
-          )}
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={typeof title === 'string' ? title : undefined}
+        className={`
+          sv-pop relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white text-left shadow-[0_30px_80px_rgba(8,18,55,.45)] outline-none
+          sm:max-h-[88dvh] sm:rounded-[22px]
+          ${maxWidth ? '' : sizeClasses[size] || sizeClasses.md}
+          ${className}
+        `}
+        style={{ maxWidth: maxWidth || undefined, maxHeight: maxHeight || undefined }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Grab handle — phones only, signals the sheet */}
+        <div className="flex justify-center pt-2.5 sm:hidden" aria-hidden="true">
+          <span className="h-1.5 w-10 rounded-full bg-primary-light" />
         </div>
+
+        {!hideHeader && (title || showCloseButton) && (
+          <div className={`flex shrink-0 items-center justify-between gap-3 border-b border-primary-light px-5 py-4 sm:px-6 ${headerClassName}`}>
+            <div className="flex min-w-0 items-center gap-3">
+              {showHeaderIcon && headerIcon && headerIcon !== 'none' && (
+                <span className="hidden shrink-0 sm:block"><Icon name={headerIcon} size={48} /></span>
+              )}
+              {title && <h3 className="truncate text-lg font-semibold text-primary-second">{title}</h3>}
+            </div>
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-background-hover"
+                aria-label="Close"
+              >
+                <Icon name={ICON_NAMES.X} size={20} color="var(--color-text-secondary)" />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className={`min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 ${bodyClassName}`}>
+          {children}
+        </div>
+
+        {footer && (
+          <div className={`flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-primary-light bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 ${footerClassName}`}>
+            {footer}
+          </div>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
