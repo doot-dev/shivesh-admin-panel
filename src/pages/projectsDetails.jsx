@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import { addProjectDetails, fetchProjectById, updateProject, updateProjectCredit, updateProjectCommission } from "../features/projects/projectSlice";
+import { addProjectDetails, fetchProjectById, updateProject, updateProjectCommission } from "../features/projects/projectSlice";
 import { fetchClients } from "../features/clients/clientsSlice";
 import { fetchProducts } from "../features/product/productSlice";
 
@@ -16,7 +16,6 @@ import { Table } from "../components/ui";
 import EditProjectProductModal from "../components/modals/project/editProjectProductModal";
 import ProjectVendorModal from "../components/modals/project/projectVendorModal";
 import EditCommissionModal from "../components/modals/project/editCommissionModal";
-import EditCreditModal from "../components/modals/project/editCreditModal";
 import DeleteProjectProduct from "../components/modals/project/deleteProjectProduct";
 import { BiEdit } from "react-icons/bi";
 import { FaEdit } from "react-icons/fa";
@@ -57,7 +56,6 @@ export default function ProjectsDetails() {
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showCommissionModal, setShowCommissionModal] = useState(false);
-  const [showCreditModal, setShowCreditModal] = useState(false);
 
   const openVendors = (product) => {
     setSelectedProduct(product);
@@ -213,22 +211,6 @@ export default function ProjectsDetails() {
       toast.error("Failed to update commission");
     }
   };
-  const handleUpdateCredit = async (creditData) => {
-    const resultAction = await dispatch(
-      updateProjectCredit({ projectId: id, ...creditData })
-    );
-
-    if (updateProjectCredit.fulfilled.match(resultAction)) {
-      setShowCreditModal(false);
-      dispatch(fetchProjectById(id));
-
-      toast.success(
-        resultAction.payload?.message ||
-        "Credit details updated successfully"
-      );
-    }
-  };
-
   const handleDeleteProjectProduct = async (product) => {
     if (!product?.id) return;
 
@@ -341,9 +323,10 @@ export default function ProjectsDetails() {
         </div>
       </div>
 
-      {/* ---------------- Commission & Credit Details Section ---------------- */}
+      {/* ---------------- Commission Details ---------------- */}
+      {/* Credit is set per client (limit + days) on the client's Account tab. */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      <div className="grid grid-cols-1 gap-6 mt-8">
 
         {/* Commission Details Card */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -402,41 +385,6 @@ export default function ProjectsDetails() {
           </div>
         </div>
 
-        {/* Credit Details Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Credit Details
-            </h2>
-            <button
-              className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-              onClick={() => setShowCreditModal(true)}
-            >
-              <span><FiEdit2 className="text-lg" /></span>
-              <span>Edit</span>
-            </button>
-          </div>
-
-          <p className="text-xs text-amber-700 bg-amber-50 rounded p-2 mb-3">
-            Credit is now set per client (limit + days) on the client's Account tab. These project values are legacy and no longer used.
-          </p>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Amount</p>
-              <p className="text-base font-medium text-gray-900">
-                ₹{currentProject.creditAmount || "N/A"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Reset period(in days)</p>
-              <p className="text-base font-medium text-gray-900">
-                {currentProject.creditResetPeriodDays || "N/A"} days
-              </p>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       {/* ---------------- Modals ---------------- */}
@@ -474,14 +422,6 @@ export default function ProjectsDetails() {
         isOpen={showCommissionModal}
         onClose={() => setShowCommissionModal(false)}
         onSubmit={handleUpdateCommission}
-        project={currentProject}
-        loading={loading}
-      />
-
-      <EditCreditModal
-        isOpen={showCreditModal}
-        onClose={() => setShowCreditModal(false)}
-        onSubmit={handleUpdateCredit}
         project={currentProject}
         loading={loading}
       />
