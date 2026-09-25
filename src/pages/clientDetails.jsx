@@ -42,9 +42,8 @@ const ProjectsTab = ({ clientId }) => {
     { key: "projectName", header: "Project Name" },
     { key: "siteName", header: "Site" },
     { key: "status", header: "Status" },
-    { key: "view", header: "Action", render: (_v, p) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/projects/${p.projectId}`)}>View</button> },
   ];
-  return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No projects found" />;
+  return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No projects found" onRowClick={(p) => navigate(`/projects/${p.projectId}`)} />;
 };
 
 const OrdersTab = ({ clientId }) => {
@@ -57,9 +56,8 @@ const OrdersTab = ({ clientId }) => {
     { key: "quantity", header: "Qty" },
     { key: "status", header: "Order Status" },
     { key: "bill", header: "Bill", render: (_v, o) => o.bill?.billNo || "—" },
-    { key: "view", header: "Action", render: (_v, o) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/orders/${o.orderId}`)}>View</button> },
   ];
-  return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No orders found" />;
+  return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No orders found" onRowClick={(o) => navigate(`/orders/${o.orderId}`)} />;
 };
 
 const BillingTab = ({ clientId }) => {
@@ -71,13 +69,12 @@ const BillingTab = ({ clientId }) => {
     { key: "amount", header: "Amount", render: inr },
     { key: "dueDate", header: "Due", render: fmtDate },
     { key: "status", header: "Status", render: (v, b) => <span>{v}{b.daysOverdue > 0 && <span className="text-red-600 text-xs"> · {b.daysOverdue}d overdue</span>}</span> },
-    { key: "view", header: "Action", render: (_v, b) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/billing/${b.billNo}`)}>View</button> },
   ];
   const open = (rows || []).filter((b) => ["PENDING", "SENT", "OVERDUE"].includes(b.status)).reduce((s, b) => s + b.amount, 0);
   return (
     <div>
       <p className="text-sm text-gray-700 mb-2">{(rows || []).length} bill(s) · Unpaid {inr(open)}</p>
-      <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No invoices found" />
+      <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No invoices found" onRowClick={(b) => navigate(`/billing/${b.billNo}`)} />
     </div>
   );
 };

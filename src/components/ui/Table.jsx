@@ -6,7 +6,7 @@ import Dropdown from "./Dropdown";
 const Table = ({
   data = [],
   columns = [],
-  onRowClick,
+  onRowClick: onRowClickProp,
   showPagination = true,
   itemsPerPage = 10,
   searchable = false,
@@ -19,7 +19,7 @@ const Table = ({
   headerClassName = "",
   mobileCardClassName = "",
   showMobileCards = true,
-  actions = [],
+  actions: actionsProp = [],
   loading = false,
   sortable = false,
   onSort,
@@ -30,6 +30,17 @@ const Table = ({
   onItemPerPageChange = () => {},
   onPageChange = () => {},
 }) => {
+  // A "View" action becomes the row itself: tap or click anywhere on the row
+  // to open it, and the separate View link is dropped. Edit/Delete stay.
+  const viewAction = !onRowClickProp && (actionsProp || []).find((a) => /^view$/i.test(String(a?.text ?? a?.title ?? "").trim()));
+  const onRowClick = onRowClickProp ?? (viewAction ? (item) => viewAction.onClick(item) : undefined);
+  const actions = viewAction ? actionsProp.filter((a) => a !== viewAction) : actionsProp;
+  const rowKeyDown = (item) => (e) => {
+    if (onRowClick && (e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
+      e.preventDefault();
+      onRowClick(item);
+    }
+  };
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPageState, setItemsPerPageState] = useState(itemsPerPage);
 
@@ -120,7 +131,11 @@ const Table = ({
         {actions.map((action, index) => (
           <button
             key={index}
-            onClick={() => action.onClick(item)}
+            onClick={(e) => {
+              // Don't also open the row when Edit/Delete is pressed.
+              e.stopPropagation();
+              action.onClick(item);
+            }}
             className={`min-h-9 px-2.5 py-1.5 text-[13px] font-semibold rounded-lg transition-colors border-none outline-none focus-visible:ring-2 focus-visible:ring-border ${
               action.className || ""
             }`}
@@ -149,8 +164,11 @@ const Table = ({
     return (
       <div
         key={item.id || index}
-        className={`p-4 border-b border-primary-light last:border-b-0 active:bg-background-hover ${mobileCardClassName}`}
+        className={`p-4 border-b border-primary-light last:border-b-0 active:bg-background-hover ${onRowClick ? "cursor-pointer" : ""} ${mobileCardClassName}`}
         onClick={() => onRowClick?.(item)}
+        onKeyDown={rowKeyDown(item)}
+        tabIndex={onRowClick ? 0 : undefined}
+        role={onRowClick ? "link" : undefined}
       >
         {columns.map((column, colIndex) => {
           // A running serial number is noise on a phone card.
@@ -172,7 +190,7 @@ const Table = ({
                       </p>
                     )}
                   </div>
-                  {actions && <div className="ml-2">{renderActions(item)}</div>}
+                  {actions?.length > 0 && <div className="ml-2">{renderActions(item)}</div>}
                 </div>
               )}
 
@@ -190,7 +208,7 @@ const Table = ({
           );
         })}
 
-        {actions && !columns.some((col) => col.mobileLabel) && (
+        {actions?.length > 0 && !columns.some((col) => col.mobileLabel) && (
           <div className="mt-3 flex items-center justify-end">
             {renderActions(item)}
           </div>
@@ -299,8 +317,10 @@ const Table = ({
                     key={item.id || index}
                     className={`hover:bg-background-hover transition-colors border-t border-primary-light 
                    
-      ${onRowClick ? "cursor-pointer" : ""}`}
+      ${onRowClick ? "cursor-pointer focus-visible:bg-background-hover focus-visible:outline-none" : ""}`}
                     onClick={() => onRowClick?.(item)}
+                    onKeyDown={rowKeyDown(item)}
+                    tabIndex={onRowClick ? 0 : undefined}
                   >
                     {columns.map((column, colIndex) => (
                       <td

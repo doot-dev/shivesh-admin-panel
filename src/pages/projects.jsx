@@ -94,11 +94,6 @@ const ProjectsPage = () => {
   };
   const actions = [
     {
-      text: "Edit",
-      onClick: handleEdit,
-      textColor: "var(--color-primary)",
-    },
-    {
       text: "Delete",
       onClick: handleDelete,
       textColor: "var(--color-error)",
@@ -192,6 +187,7 @@ const ProjectsPage = () => {
               data={filteredProjects}
               columns={columns}
               actions={actions}
+              onRowClick={handleEdit}
               itemsPerPage={10}
               emptyMessage="No projects found"
             />

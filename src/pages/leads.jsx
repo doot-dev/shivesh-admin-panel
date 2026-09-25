@@ -172,13 +172,6 @@ const LeadsPage = () => {
   ];
 
   const actions = [
-
-    {
-      text: "Edit",
-      onClick: handleEditLead,
-      textColor: "var(--color-success)",
-      hoverBackgroundColor: "var(--color-success-light)",
-    },
     {
       text: "Delete",
       onClick: handleDeleteLead,
@@ -227,6 +220,7 @@ const LeadsPage = () => {
           data={filteredLeads}
           columns={columns}
           actions={actions}
+          onRowClick={handleEditLead}
           showPagination={true}
           itemsPerPage={10}
           emptyMessage="No leads found"

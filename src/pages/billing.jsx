@@ -108,20 +108,6 @@ const BillsList = () => {
         </div>
       ),
     },
-    {
-      key: 'action',
-      header: 'Action',
-      render: (_v, item) => (
-        <button
-          type="button"
-          onClick={() => navigate(`/billing/${item.billNo}`)}
-          className="text-xs font-medium hover:underline"
-          style={{ color: 'var(--color-primary)' }}
-        >
-          View
-        </button>
-      ),
-    },
   ];
 
   const rows = bills
@@ -210,6 +196,7 @@ const BillsList = () => {
             itemsPerPage={10}
             emptyMessage="No bills found"
             mainTotalItems={total}
+            onRowClick={(item) => navigate(`/billing/${item.billNo}`)}
           />
         </div>
       </div>
