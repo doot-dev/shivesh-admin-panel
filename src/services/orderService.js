@@ -112,6 +112,12 @@ const orderService = {
     return response.data;
   },
 
+  // Every cube test whose test date is in the window, with its order (one request).
+  getAllCubeTests: async (params = {}) => {
+    const response = await api.get(`${BASE}/cube-tests`, { params });
+    return response.data;
+  },
+
   getCubeTests: async (orderId) => {
     const response = await api.get(`${BASE}/${orderId}/cube-test`);
     return response.data;

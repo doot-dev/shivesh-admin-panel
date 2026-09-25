@@ -7,6 +7,8 @@ import Button from '../components/ui/Button';
 import { Table } from '../components/ui';
 import { statusLabel } from '../utils/labels';
 import { fetchOrders } from '../features/orders/orderSlice';
+import DateRangeFilter from '../components/ui/DateRangeFilter';
+import { defaultWindow } from '../utils/dateWindow';
 
 import { ORDER_STATUSES, STATUS_BADGE } from '../constant/orderStatus';
 
@@ -16,15 +18,17 @@ const OrdersPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { list: orders = [], total, loading } = useSelector((s) => s.orders);
+  const { list: orders = [], loading } = useSelector((s) => s.orders);
 
   // P1.8: /orders?status=NEW preselects a tab.
   const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get('status') || 'All');
   const [searchTerm, setSearchTerm] = useState('');
+  // Delivery-date window fetched from the server (default: last 7 → next 10 days).
+  const [range, setRange] = useState(defaultWindow);
 
   const refresh = useCallback(() => {
-    dispatch(fetchOrders({ limit: 200 }));
-  }, [dispatch]);
+    dispatch(fetchOrders({ limit: 500, dateFrom: range.from || undefined, dateTo: range.to || undefined }));
+  }, [dispatch, range]);
 
   useEffect(() => {
     refresh();
@@ -71,7 +75,8 @@ const OrdersPage = () => {
       projectName: o.project?.projectName || '—',
       clientName: o.client?.companyName || '—',
       product: `${o.productName || ''}${o.productGrade ? ` (${o.productGrade})` : ''}`,
-      assignedToName: o.assignedTo?.name || 'Unassigned',
+      // Technicians come as a list; the old single assignedTo field is gone.
+      assignedToName: (o.technicians || []).map((t) => t.user?.name).filter(Boolean).join(', ') || o.assignedTo?.name || 'Unassigned',
       date: o.date || '—',
     }));
 
@@ -83,6 +88,10 @@ const OrdersPage = () => {
           Orders & Tracks
         </h1>
         <p className="text-sm md:text-base text-gray-600">View and manage orders</p>
+      </div>
+
+      <div className="mb-4">
+        <DateRangeFilter label="Delivery" value={range} onChange={setRange} count={loading ? undefined : orders.length} />
       </div>
 
       {/* Status Tabs */}
@@ -139,7 +148,7 @@ const OrdersPage = () => {
             loading={loading}
             itemsPerPage={10}
             emptyMessage="No orders found"
-            mainTotalItems={total}
+            mainTotalItems={filteredOrders.length}
           />
         </div>
       </div>

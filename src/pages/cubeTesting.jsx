@@ -9,6 +9,9 @@ import Modal from '../components/ui/Modal';
 import { Table } from '../components/ui';
 import CubeTestForm, { FieldLabel } from '../components/cubeTest/CubeTestForm';
 import orderService from '../services/orderService';
+import DateRangeFilter from '../components/ui/DateRangeFilter';
+import { StatusChip } from '../components/ui/StatusChip';
+import { defaultWindow, shiftDays } from '../utils/dateWindow';
 import {
   CUBE_TEST_PERIOD_LABEL,
   EMPTY_CUBE_TEST_FORM,
@@ -24,6 +27,8 @@ export default function CubeTestingPage() {
   const [cubeTests, setCubeTests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  // Test-date window fetched from the server (default: last 7 → next 10 days).
+  const [range, setRange] = useState(defaultWindow);
 
   // "+ Add Cube Test"
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,31 +45,21 @@ export default function CubeTestingPage() {
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const ordersRes = await orderService.getOrders({ limit: 500 });
-      const orderList = ordersRes.data || [];
-      setOrders(orderList);
-
-      const perOrder = await Promise.all(
-        orderList.map(async (order) => {
-          try {
-            const res = await orderService.getCubeTests(order.orderId);
-            return (res.data || []).map((ct) => ({
-              ...ct,
-              orderCode: order.orderId,
-              clientName: order.client?.companyName || '—',
-            }));
-          } catch {
-            return [];
-          }
-        })
-      );
-      setCubeTests(perOrder.flat());
+      // One request for the tests in the window (this used to fetch 500 orders
+      // and then one request per order). Orders for the "Add" picker: recent
+      // and upcoming deliveries only.
+      const [testsRes, ordersRes] = await Promise.all([
+        orderService.getAllCubeTests({ dateFrom: range.from || undefined, dateTo: range.to || undefined }),
+        orderService.getOrders({ limit: 500, dateFrom: shiftDays(-60), dateTo: shiftDays(10) }),
+      ]);
+      setCubeTests(testsRes.data || []);
+      setOrders(ordersRes.data || []);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to load cube tests');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [range]);
 
   useEffect(() => {
     loadAll();
@@ -169,27 +164,22 @@ export default function CubeTestingPage() {
       label: `${o.orderId}${o.client?.companyName ? ` — ${o.client.companyName}` : ''}`,
     }));
 
+  const day = (v) => (v ? new Date(v).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
+  const CUBE_STATUS = { DUE: ['warn', 'Result due'], SCHEDULED: ['primary', 'Scheduled'], RESULT_ADDED: ['ok', 'Result added'] };
   const columns = [
     { key: 'orderCode', header: 'Order ID' },
-    { key: 'quantity', header: 'Quantity' },
+    { key: 'clientName', header: 'Client' },
+    { key: 'period', header: 'Test', render: (v) => CUBE_TEST_PERIOD_LABEL[v] || v || '—' },
+    { key: 'quantity', header: 'Cubes' },
+    { key: 'castingDate', header: 'Cast on', render: day },
+    { key: 'toDate', header: 'Test date', render: day },
     {
-      key: 'castingDate',
-      header: 'Date & Time',
-      render: (value) => (value ? new Date(value).toLocaleString() : '—'),
-    },
-    {
-      key: 'action',
-      header: 'Action',
-      render: (_v, item) => (
-        <button
-          type="button"
-          onClick={() => openView(item)}
-          className="text-xs font-medium hover:underline"
-          style={{ color: 'var(--color-primary)' }}
-        >
-          View
-        </button>
-      ),
+      key: 'status',
+      header: 'Status',
+      render: (v) => {
+        const [tone, label] = CUBE_STATUS[v] ?? ['muted', v || '—'];
+        return <StatusChip tone={tone}>{label}</StatusChip>;
+      },
     },
   ];
 
@@ -217,6 +207,10 @@ export default function CubeTestingPage() {
         </Button>
       </div>
 
+      <div className="mb-4">
+        <DateRangeFilter label="Test date" value={range} onChange={setRange} count={loading ? undefined : cubeTests.length} />
+      </div>
+
       {/* Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4 md:mb-6">
         <div className="relative flex-1 max-w-full sm:max-w-[300px]">
@@ -241,6 +235,7 @@ export default function CubeTestingPage() {
             columns={columns}
             loading={loading}
             itemsPerPage={10}
+            onRowClick={openView}
             emptyMessage="No cube tests found"
           />
         </div>

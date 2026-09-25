@@ -11,6 +11,9 @@ import billService from '../services/billService';
 import Tabs from '../components/ui/Tabs';
 import { PaymentsTab, BillingLogTab } from '../components/billing/BillingTabs';
 import { saveBlob } from '../services/reportService';
+import DateRangeFilter from '../components/ui/DateRangeFilter';
+import { defaultWindow } from '../utils/dateWindow';
+import { statusLabel } from '../utils/labels';
 import { BILL_STATUSES, BILL_STATUS_BADGE } from '../constant/billingData';
 
 const StatusBadge = ({ value }) => <StatusChip status={value} />;
@@ -25,8 +28,10 @@ const BillsList = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  // Invoice-date window fetched from the server (default: last 7 → next 10 days).
+  const [range, setRange] = useState(defaultWindow);
+  const dateFrom = range.from;
+  const dateTo = range.to;
 
   // G16: every filter runs on the server — no 200-row cap, totals are exact.
   const params = useCallback(() => ({
@@ -65,7 +70,7 @@ const BillsList = () => {
 
   const statusOptions = [
     { value: 'All', label: 'All' },
-    ...BILL_STATUSES.map((s) => ({ value: s, label: s })),
+    ...BILL_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })),
   ];
 
   const columns = [
@@ -115,8 +120,12 @@ const BillsList = () => {
           Billing list
         </h1>
         <p className="text-sm md:text-base text-gray-600">
-          View and manage orders and trucks
+          Invoices raised automatically from completed orders
         </p>
+      </div>
+
+      <div className="mb-4">
+        <DateRangeFilter label="Invoice" value={range} onChange={setRange} count={loading ? undefined : total} />
       </div>
 
       {/* Search + Filters + New Bill */}
@@ -148,9 +157,6 @@ const BillsList = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-2 py-2" title="Invoice date from" />
-          <span className="text-sm text-gray-500">to</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-2 py-2" title="Invoice date to" />
           <Button onClick={exportExcel} variant="primary" size="md" className="px-4 py-2 text-sm whitespace-nowrap">
             Export Excel
           </Button>
