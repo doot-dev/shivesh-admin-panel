@@ -41,7 +41,16 @@ export const EMPTY_CUBE_TEST_FORM = {
   period: '',
   toDate: '',
   toTime: '',
-  file: null,
+  files: [], // new files to upload; each save ADDS them as attachments
+};
+
+/** Who logged a test or added a file. */
+export const ADDED_BY_LABEL = { USER: 'Office', FIELD_TECH: 'Field', CLIENT_CONTACT: 'Client' };
+
+/** "Rakesh Pawar · Client", or null when nothing is known (old rows, backfilled files). */
+export const addedByText = ({ addedByName, addedByType } = {}) => {
+  const who = ADDED_BY_LABEL[addedByType];
+  return addedByName || who ? `${addedByName || '—'} · ${who || '—'}` : null;
 };
 
 /// Always false — cube tests can be added to an order at any point in its life.
@@ -82,25 +91,54 @@ export const todayDateStr = () => {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
-export const cubeTestFormIsValid = (form) => {
+/** A saved test as form values: to open the edit form, and to see what changed on save. */
+export const cubeTestToForm = (ct) => {
+  const casting = splitIsoToDateTime(ct.castingDate);
+  const to = splitIsoToDateTime(ct.toDate);
+  return {
+    castingDate: casting.date,
+    castingTime: casting.time,
+    quantity: ct.quantity || '',
+    period: ct.period || '',
+    toDate: to.date,
+    toTime: to.time,
+    files: [],
+  };
+};
+
+// No `initial` (a new test) counts as everything changed.
+const changed = (form, initial, keys) => !initial || keys.some((k) => form[k] !== initial[k]);
+const DATE_KEYS = ['castingDate', 'castingTime', 'period', 'toDate', 'toTime'];
+
+/** `initial` = cubeTestToForm(saved test) on an edit: dates left as they were aren't re-checked. */
+export const cubeTestFormIsValid = (form, initial = null) => {
   if (!form.period || !form.castingDate.trim() || !form.castingTime.trim() || !form.quantity.trim()) {
     return false;
   }
   if (form.period !== 'CUSTOM') return true;
   if (!form.toDate.trim() || !form.toTime.trim()) return false;
+  if (!changed(form, initial, DATE_KEYS)) return true;
   const casting = new Date(combineDateTime(form.castingDate, form.castingTime));
   const custom = new Date(combineDateTime(form.toDate, form.toTime));
   return custom >= casting && custom <= new Date();
 };
 
-export const buildCubeTestFormData = (form) => {
+/**
+ * On an edit (`initial` given) only the changed fields are sent: the server
+ * re-checks dates only when they arrive, so adding files to an old test never
+ * trips over its original dates, and an old 14/21-day period (no longer
+ * accepted) is kept as it is.
+ */
+export const buildCubeTestFormData = (form, initial = null) => {
   const formData = new FormData();
-  formData.append('castingDate', combineDateTime(form.castingDate, form.castingTime));
-  formData.append('quantity', form.quantity.trim());
-  formData.append('period', form.period);
-  if (form.period === 'CUSTOM') {
+  if (changed(form, initial, ['castingDate', 'castingTime'])) {
+    formData.append('castingDate', combineDateTime(form.castingDate, form.castingTime));
+  }
+  if (changed(form, initial, ['quantity'])) formData.append('quantity', form.quantity.trim());
+  if (changed(form, initial, ['period'])) formData.append('period', form.period);
+  if (form.period === 'CUSTOM' && changed(form, initial, DATE_KEYS)) {
     formData.append('customDate', combineDateTime(form.toDate, form.toTime));
   }
-  if (form.file) formData.append('file', form.file);
+  (form.files || []).forEach((f) => formData.append('files', f));
   return formData;
 };

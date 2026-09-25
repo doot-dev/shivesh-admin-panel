@@ -132,6 +132,12 @@ const orderService = {
     const response = await api.delete(`${BASE}/${orderId}/cube-test/${cubeTestId}`);
     return response.data;
   },
+
+  // Returns { data: the cube test with its remaining attachments }.
+  deleteCubeTestAttachment: async (orderId, cubeTestId, attachmentId) => {
+    const response = await api.delete(`${BASE}/${orderId}/cube-test/${cubeTestId}/attachments/${attachmentId}`);
+    return response.data;
+  },
 };
 
 export default orderService;

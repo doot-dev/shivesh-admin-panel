@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fileLink } from '../utils/fileLink';
 import { toast } from 'react-toastify';
 
 import { Icon, ICON_NAMES } from '../components/icons';
@@ -7,18 +6,19 @@ import Button from '../components/ui/Button';
 import Dropdown from '../components/ui/Dropdown';
 import Modal from '../components/ui/Modal';
 import { Table } from '../components/ui';
-import CubeTestForm, { FieldLabel } from '../components/cubeTest/CubeTestForm';
+import CubeTestForm, { CubeTestAttachments, FieldLabel } from '../components/cubeTest/CubeTestForm';
 import orderService from '../services/orderService';
 import DateRangeFilter from '../components/ui/DateRangeFilter';
-import { StatusChip } from '../components/ui/StatusChip';
+import { CountBadge, StatusChip } from '../components/ui/StatusChip';
 import { defaultWindow, shiftDays } from '../utils/dateWindow';
 import {
   CUBE_TEST_PERIOD_LABEL,
   EMPTY_CUBE_TEST_FORM,
+  addedByText,
   buildCubeTestFormData,
   cubeTestFormIsValid,
+  cubeTestToForm,
   isOrderCubeTestLocked,
-  splitIsoToDateTime,
 } from '../utils/cubeTest';
 
 
@@ -109,27 +109,24 @@ export default function CubeTestingPage() {
   };
 
   const openEdit = () => {
-    const casting = splitIsoToDateTime(selected.castingDate);
-    const to = splitIsoToDateTime(selected.toDate);
-    setEditForm({
-      castingDate: casting.date,
-      castingTime: casting.time,
-      quantity: selected.quantity || '',
-      period: selected.period || '',
-      toDate: to.date,
-      toTime: to.time,
-      file: null,
-    });
+    setEditForm(cubeTestToForm(selected));
     setEditing(true);
   };
 
-  const editFormValid = cubeTestFormIsValid(editForm);
+  // A saved file was removed from the open test: keep the modal and the row in step.
+  const applyCubeTest = (ct) => {
+    setSelected((s) => ({ ...s, ...ct }));
+    setCubeTests((prev) => prev.map((c) => (c.id === ct.id ? { ...c, ...ct } : c)));
+  };
+
+  const editInitial = selected && cubeTestToForm(selected);
+  const editFormValid = cubeTestFormIsValid(editForm, editInitial);
 
   const handleEditSave = async () => {
     if (!editFormValid) return;
     setSaving(true);
     try {
-      const formData = buildCubeTestFormData(editForm);
+      const formData = buildCubeTestFormData(editForm, editInitial);
       const res = await orderService.updateCubeTest(selected.orderCode, selected.id, formData);
       toast.success('Cube test updated');
       closeView();
@@ -173,6 +170,11 @@ export default function CubeTestingPage() {
     { key: 'quantity', header: 'Cubes' },
     { key: 'castingDate', header: 'Cast on', render: day },
     { key: 'toDate', header: 'Test date', render: day },
+    {
+      key: 'attachments',
+      header: 'Files',
+      render: (v) => (v?.length ? <CountBadge>{v.length}</CountBadge> : <span className="text-text-light">—</span>),
+    },
     {
       key: 'status',
       header: 'Status',
@@ -291,16 +293,17 @@ export default function CubeTestingPage() {
                 <div className="font-medium">{selected.toDate ? new Date(selected.toDate).toLocaleString() : '—'}</div>
               </div>
             </div>
-            {selected.fileUrl && (
-              <a
-                href={fileLink(selected.fileUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mb-4 text-sm text-primary hover:underline font-medium"
-              >
-                View report
-              </a>
+            {addedByText(selected) && (
+              <p className="-mt-1 mb-4 text-xs text-text-secondary">Logged by {addedByText(selected)}</p>
             )}
+            <div className="mb-4">
+              <FieldLabel>Result files ({selected.attachments?.length || 0})</FieldLabel>
+              {selected.attachments?.length ? (
+                <CubeTestAttachments attachments={selected.attachments} />
+              ) : (
+                <p className="text-sm text-text-secondary">No files yet. Use Edit to add them.</p>
+              )}
+            </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>
                 {deleting ? 'Removing...' : 'Delete'}
@@ -318,6 +321,9 @@ export default function CubeTestingPage() {
             onCancel={() => setEditing(false)}
             saving={saving}
             valid={editFormValid}
+            cubeTest={selected}
+            orderId={selected.orderCode}
+            onCubeTestChange={applyCubeTest}
           />
         )}
       </Modal>
