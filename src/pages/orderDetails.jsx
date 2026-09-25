@@ -36,6 +36,8 @@ import {
 import vendorService from '../services/vendorService';
 import billService from '../services/billService';
 import reportService from '../services/reportService';
+import paymentService from '../services/paymentService';
+import usePermission from '../hooks/usePermission';
 import TruckReviewActions from '../components/orders/TruckReviewActions';
 import { fileLink } from '../utils/fileLink';
 import { CUBE_TEST_PERIODS, CUBE_TEST_PERIOD_DAYS, CUBE_TEST_PERIOD_LABEL, CUBE_STATUS_BADGE } from '../utils/cubeTest';
@@ -203,6 +205,7 @@ export default function OrderDetails() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [billBanner, setBillBanner] = useState(null); // { billNo } | { error } | { pending }
   const [credit, setCredit] = useState(null);
+  const { can } = usePermission();
 
   // P1.15: the client's credit position, for the warning banner.
   const clientCode = order?.client?.clientId;
@@ -346,10 +349,17 @@ export default function OrderDetails() {
     setUpdatingStatus(true);
     setBillBanner(null);
     try {
+      // W10: cancelling needs a reason (it also cancels a draft bill).
+      let cancelReason;
+      if (statusDraft === 'CANCELLED' && order?.status !== 'CANCELLED') {
+        cancelReason = window.prompt('Reason for cancelling this order:');
+        if (!cancelReason?.trim()) return;
+      }
       const result = await dispatch(updateOrderStatus({
         orderId,
         status: statusDraft,
         deliveryStatus: deliveryStatusDraft,
+        ...(cancelReason && { cancelReason }),
       }));
       if (updateOrderStatus.fulfilled.match(result)) {
         const { bill, billError, billPending } = result.payload;
@@ -376,6 +386,24 @@ export default function OrderDetails() {
   const handleOrderReview = async (tmId, data) => {
     try { afterReview(await billService.reviewOrderTm(orderId, tmId, data)); toast.success(`Truck ${data.approvalStatus.toLowerCase()}`); }
     catch (e) { toast.error(e.response?.data?.message || 'Update failed'); }
+  };
+
+  // W23: approvers release a credit hold (optionally with one-time extra credit) or cancel.
+  const releaseHold = async (action) => {
+    const note = window.prompt(action === 'CANCEL' ? 'Reason for cancelling:' : 'Approval note:');
+    if (!note?.trim()) return;
+    let extraAmount;
+    if (action === 'RELEASE_WITH_EXTRA') {
+      extraAmount = window.prompt('Extra credit ₹ to add for this client:');
+      if (!extraAmount) return;
+    }
+    try {
+      const r = await paymentService.releaseHold(orderId, { action, note, extraAmount });
+      toast.success(r.message);
+      refreshOrder();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Could not update the hold');
+    }
   };
 
   const handleGenerateBillManually = async () => {
@@ -736,6 +764,21 @@ export default function OrderDetails() {
         </div>
       )}
 
+      {order.creditHold && (
+        <div className="mb-5 rounded-lg border p-4 bg-amber-50 border-amber-300 text-sm text-amber-900">
+          <b>On credit hold:</b> {order.creditHoldReason}. It can't be confirmed until an approver releases it.
+          {can('orders', 'approve') && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button className="px-3 py-1.5 rounded-lg bg-green-600 text-white" onClick={() => releaseHold('RELEASE')}>Release</button>
+              <button className="px-3 py-1.5 rounded-lg bg-blue-600 text-white" onClick={() => releaseHold('RELEASE_WITH_EXTRA')}>Release + add extra credit</button>
+              <button className="px-3 py-1.5 rounded-lg bg-red-600 text-white" onClick={() => releaseHold('CANCEL')}>Cancel order</button>
+            </div>
+          )}
+        </div>
+      )}
+      {order.cancelReason && order.status === 'CANCELLED' && (
+        <div className="mb-5 rounded-lg border p-3 bg-gray-50 text-sm text-gray-700">Cancelled: {order.cancelReason}</div>
+      )}
       {credit && credit.flag !== 'OK' && (
         <div className="mb-5 rounded-lg border p-4 bg-red-50 border-red-200 text-sm text-red-800">
           <b>Credit warning:</b>{' '}

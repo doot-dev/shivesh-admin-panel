@@ -417,6 +417,9 @@ export default function ProjectsDetails() {
             </button>
           </div>
 
+          <p className="text-xs text-amber-700 bg-amber-50 rounded p-2 mb-3">
+            Credit is now set per client (limit + days) on the client's Account tab. These project values are legacy and no longer used.
+          </p>
           <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-500 mb-1">Amount</p>

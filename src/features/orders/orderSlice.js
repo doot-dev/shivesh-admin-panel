@@ -65,7 +65,7 @@ export const updateOrderStatus = createAsyncThunk(
       } else {
         toast.success('Order status updated');
       }
-      return { orderId, ...data, bill: res.bill, billError: res.billError };
+      return { orderId, ...data, bill: res.bill, billError: res.billError, billPending: res.billPending };
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to update order status');
       return rejectWithValue(e.response?.data || e.message);

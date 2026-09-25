@@ -7,6 +7,8 @@ import Button from '../components/ui/Button';
 import Dropdown from '../components/ui/Dropdown';
 import { Table } from '../components/ui';
 import billService from '../services/billService';
+import Tabs from '../components/ui/Tabs';
+import { PaymentsTab, BillingLogTab } from '../components/billing/BillingTabs';
 import { saveBlob } from '../services/reportService';
 import { BILL_STATUSES, BILL_STATUS_BADGE } from '../constant/billingData';
 
@@ -25,7 +27,7 @@ const StatusBadge = ({ value }) => {
   );
 };
 
-const BillingPage = () => {
+const BillsList = () => {
   const navigate = useNavigate();
 
   const [bills, setBills] = useState([]);
@@ -95,6 +97,7 @@ const BillingPage = () => {
     { key: 'assignedTrucks', header: 'Assigned Trucks' },
     { key: 'issueDate', header: 'Invoice date', render: (v) => (v ? new Date(v).toLocaleDateString('en-IN') : '—') },
     { key: 'amount', header: 'Amount (₹)', render: (v) => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) },
+    { key: 'balance', header: 'Pending (₹)', render: (v) => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) },
     {
       key: 'status',
       header: 'Billing status',
@@ -213,5 +216,16 @@ const BillingPage = () => {
     </div>
   );
 };
+
+/** Billing: bills, payments across clients, and the audit log (Phase 2). */
+const BillingPage = () => (
+  <div className="pt-2">
+    <Tabs tabs={[
+      { label: 'Bills', content: <BillsList /> },
+      { label: 'Payments', content: <div className="p-4 md:p-6"><PaymentsTab /></div> },
+      { label: 'Log', content: <div className="p-4 md:p-6"><BillingLogTab /></div> },
+    ]} />
+  </div>
+);
 
 export default BillingPage;

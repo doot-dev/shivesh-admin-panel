@@ -4,6 +4,7 @@ import { AiFillFilePdf } from "react-icons/ai";
 import api from "../services/api";
 import reportService from "../services/reportService";
 import { fileLink } from "../utils/fileLink";
+import ClientAccountTab from "../components/clients/ClientAccountTab";
 import Tabs from "../components/ui/Tabs";
 import { Table } from "../components/ui";
 import ClientKYCModal from "../components/modals/clients/clientKycModal";
@@ -181,6 +182,7 @@ const ClientDetailsPage = () => {
     { label: "Projects", content: <ProjectsTab clientId={client.clientId} /> },
     { label: "Orders", content: <OrdersTab clientId={client.clientId} /> },
     { label: "Billing", content: <BillingTab clientId={client.clientId} /> },
+    { label: "Account", content: <ClientAccountTab clientId={client.clientId} /> },
     { label: "Analysis", content: <AnalysisTab clientId={client.clientId} /> },
   ];
 

@@ -1,338 +1,83 @@
-import { useEffect } from "react";
-import { Icon, ICON_NAMES } from "../components/icons";
-import { Table } from "../components/ui";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
+
+/**
+ * Dashboard (W28 / P2.12). Replaces the old hard-coded sample numbers with the
+ * real figures from GET /dashboard/stats: money first, then operations.
+ */
+const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+
+const Tile = ({ label, value, hint, tone = 'text-gray-900', onClick }) => (
+  <button type="button" onClick={onClick} disabled={!onClick}
+    className="text-left bg-white border rounded-xl p-4 hover:border-primary disabled:hover:border-gray-200">
+    <div className="text-xs text-gray-500">{label}</div>
+    <div className={`text-2xl font-semibold mt-1 ${tone}`}>{value}</div>
+    {hint && <div className="text-xs text-gray-500 mt-1">{hint}</div>}
+  </button>
+);
 
 const Dashboard = () => {
-  // Sample statistics
-  const stats = [
-    {
-      title: "Total Users",
-      value: "2,543",
-      change: "+12%",
-      changeType: "increase",
-      icon: ICON_NAMES.USER,
-      color: "blue",
-    },
-    {
-      title: "Total Products",
-      value: "1,234",
-      change: "+5%",
-      changeType: "increase",
-      icon: ICON_NAMES.PRODUCT,
-      color: "green",
-    },
-    {
-      title: "Active Projects",
-      value: "89",
-      change: "+23%",
-      changeType: "increase",
-      icon: ICON_NAMES.TRENDING_UP,
-      color: "purple",
-    },
-    {
-      title: "Revenue",
-      value: "₹54,321",
-      change: "+8%",
-      changeType: "increase",
-      icon: ICON_NAMES.DOLLAR_SIGN,
-      color: "yellow",
-    },
-  ];
+  const navigate = useNavigate();
+  const [s, setS] = useState(null);
+  const [err, setErr] = useState(false);
 
-  // Sample recent users
-  const recentUsers = [
-    {
-      id: 1,
-      name: "Aniket Deshmukh",
-      role: "Field technician",
-      employeeId: "EMP01",
-      status: "Active",
-      joinedDate: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Priya Sharma",
-      role: "Manager",
-      employeeId: "EMP02",
-      status: "Active",
-      joinedDate: "2024-01-14",
-    },
-    {
-      id: 3,
-      name: "Rahul Kumar",
-      role: "Developer",
-      employeeId: "EMP03",
-      status: "Inactive",
-      joinedDate: "2024-01-13",
-    },
-    {
-      id: 4,
-      name: "Sneha Patel",
-      role: "Designer",
-      employeeId: "EMP04",
-      status: "Active",
-      joinedDate: "2024-01-12",
-    },
-  ];
+  useEffect(() => {
+    api.get('/api/v1/admin/dashboard/stats').then((r) => setS(r.data.data)).catch(() => setErr(true));
+  }, []);
 
-  // Table configuration for recent users
-  const recentUsersColumns = [
-    {
-      key: "name",
-      header: "Employee",
-      className: "text-text-primary font-medium",
-      mobileLabel: true,
-      mobileSubtext: (user) => user.employeeId,
-    },
-    {
-      key: "role",
-      header: "Role",
-      hideOnMobile: true,
-    },
-    {
-      key: "status",
-      header: "Status",
-      type: "badge",
-      badgeConfig: {
-        Active: {
-          color: "var(--color-success)",
-          backgroundColor: "var(--color-success-light)",
-        },
-        Inactive: {
-          color: "var(--color-error)",
-          backgroundColor: "var(--color-error-light)",
-        },
-      },
-    },
-  ];
-
-  const recentUsersActions = [
-    {
-      icon: ICON_NAMES.EYE,
-      onClick: (user) => console.log("View user:", user),
-      variant: "ghost",
-      size: "xs",
-      textColor: "var(--color-primary)",
-      hoverBackgroundColor: "var(--color-primary-light)",
-      title: "View",
-      className: "p-1",
-    },
-    {
-      icon: ICON_NAMES.EDIT,
-      onClick: (user) => console.log("Edit user:", user),
-      variant: "ghost",
-      size: "xs",
-      textColor: "var(--color-success)",
-      hoverBackgroundColor: "var(--color-success-light)",
-      title: "Edit",
-      className: "p-1",
-    },
-    {
-      icon: ICON_NAMES.TRASH_2,
-      onClick: (user) => console.log("Delete user:", user),
-      variant: "ghost",
-      size: "xs",
-      textColor: "var(--color-error)",
-      hoverBackgroundColor: "var(--color-error-light)",
-      title: "Delete",
-      className: "p-1",
-    },
-  ];
-
-  const getColorClasses = (color) => {
-    const colors = {
-      blue: "text-primary",
-      green: "text-success",
-      purple: "text-primary",
-      yellow: "text-warning",
-    };
-    return colors[color] || colors.blue;
-  };
-
-  const getColorStyles = (color) => {
-    const colors = {
-      blue: {
-        backgroundColor: "var(--color-primary-light)",
-        color: "var(--color-primary)",
-      },
-      green: {
-        backgroundColor: "var(--color-success-light)",
-        color: "var(--color-success)",
-      },
-      purple: {
-        backgroundColor: "var(--color-primary-light)",
-        color: "var(--color-primary)",
-      },
-      yellow: {
-        backgroundColor: "var(--color-warning-light)",
-        color: "var(--color-warning)",
-      },
-    };
-    return colors[color] || colors.blue;
-  };
-
-
+  if (err) return <div className="p-6 text-sm text-gray-500">Could not load the dashboard.</div>;
+  if (!s) return <div className="p-6 text-sm text-gray-500">Loading…</div>;
+  const m = s.money;
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">
-          Welcome back! Here's what's happening with your business.
-        </p>
-      </div>
+    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+      <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Dashboard</h1>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  {stat.title}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p
-                  className={`text-sm mt-1 ${
-                    stat.changeType === "increase"
-                      ? "text-success"
-                      : "text-error"
-                  }`}
-                  style={{
-                    color:
-                      stat.changeType === "increase"
-                        ? "var(--color-success)"
-                        : "var(--color-error)",
-                  }}
-                >
-                  {stat.change} from last month
-                </p>
-              </div>
-              <div
-                className={`p-3 rounded-full ${getColorClasses(stat.color)}`}
-                style={getColorStyles(stat.color)}
-              >
-                <Icon name={stat.icon} size={24} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Users */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow">
-            <div
-              className="p-6 border-b"
-              style={{ borderColor: "var(--color-border)" }}
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-text-primary">
-                  Recent Users
-                </h2>
-                <button
-                  className="text-sm font-medium hover:opacity-75 transition-opacity"
-                  style={{ color: "var(--color-primary)" }}
-                >
-                  View All
-                </button>
-              </div>
-            </div>
-            <div className="overflow-hidden">
-              <Table
-                data={recentUsers}
-                columns={recentUsersColumns}
-                actions={recentUsersActions}
-                showPagination={false}
-                className="shadow-none border-0 rounded-none"
-              />
-            </div>
-          </div>
+      <section>
+        <h2 className="text-sm font-semibold text-gray-600 mb-2">Money</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Tile label="Billed this month" value={inr(m.billedThisMonth)} onClick={() => navigate('/billing')} />
+          <Tile label="Collected this month" value={inr(m.collectedThisMonth)} tone="text-green-700" onClick={() => navigate('/billing')} />
+          <Tile label="Outstanding" value={inr(m.outstanding)} onClick={() => navigate('/reports')} />
+          <Tile label="Overdue 60+ days" value={inr(m.overdue60)} tone={m.overdue60 ? 'text-red-700' : ''} onClick={() => navigate('/reports')} />
+          <Tile label="DSO" value={m.dso ?? '—'} hint="days of sales outstanding" />
         </div>
+      </section>
 
-        {/* Quick Actions */}
-        <div className="space-y-6">
-          {/* Quick Stats */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Stats
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Active Users</span>
-                <span className="text-sm font-medium text-gray-900">2,431</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Pending Orders</span>
-                <span className="text-sm font-medium text-gray-900">124</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
-                  Completed Projects
-                </span>
-                <span className="text-sm font-medium text-gray-900">89</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Total Revenue</span>
-                <span className="text-sm font-medium text-gray-900">
-                  $54,321
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <button
-                className="w-full px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-90"
-                style={{ backgroundColor: "var(--color-primary)" }}
-              >
-                Add New User
-              </button>
-              <button
-                className="w-full px-4 py-2 border text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-75"
-                style={{
-                  borderColor: "var(--color-border)",
-                  color: "var(--color-text-secondary)",
-                  backgroundColor: "transparent",
-                }}
-                onMouseEnter={(e) =>
-                  (e.target.style.backgroundColor =
-                    "var(--color-primary-light)")
-                }
-                onMouseLeave={(e) =>
-                  (e.target.style.backgroundColor = "transparent")
-                }
-              >
-                Generate Report
-              </button>
-              <button
-                className="w-full px-4 py-2 border text-sm font-medium rounded-lg transition-all duration-200 hover:opacity-75"
-                style={{
-                  borderColor: "var(--color-border)",
-                  color: "var(--color-text-secondary)",
-                  backgroundColor: "transparent",
-                }}
-                onMouseEnter={(e) =>
-                  (e.target.style.backgroundColor =
-                    "var(--color-primary-light)")
-                }
-                onMouseLeave={(e) =>
-                  (e.target.style.backgroundColor = "transparent")
-                }
-              >
-                View Analytics
-              </button>
-            </div>
-          </div>
+      <section>
+        <h2 className="text-sm font-semibold text-gray-600 mb-2">Needs attention</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Tile label="Orders on credit hold" value={m.creditHolds} tone={m.creditHolds ? 'text-amber-700' : ''} onClick={() => navigate('/orders')} />
+          <Tile label="Completed, awaiting challans" value={m.awaitingChallans} tone={m.awaitingChallans ? 'text-amber-700' : ''} hint="not billed yet" onClick={() => navigate('/orders?status=COMPLETED')} />
+          <Tile label="New orders" value={s.orders.new} onClick={() => navigate('/orders?status=NEW')} />
+          <Tile label="Active orders" value={s.orders.active} onClick={() => navigate('/orders')} />
         </div>
-      </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold text-gray-600 mb-2">Business</h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Tile label="Clients" value={`${s.clients.active} / ${s.clients.total}`} hint="active / total" onClick={() => navigate('/clients')} />
+          <Tile label="Projects" value={`${s.projects.active} / ${s.projects.total}`} hint="active / total" onClick={() => navigate('/projects')} />
+          <Tile label="Orders completed" value={s.orders.completed} />
+          <Tile label="Vendors" value={s.vendors.total} onClick={() => navigate('/vendors')} />
+          <Tile label="Users" value={s.users.total} />
+        </div>
+      </section>
+
+      <section className="bg-white border rounded-xl p-4">
+        <h2 className="text-sm font-semibold mb-3">Recent orders</h2>
+        <table className="min-w-full text-sm">
+          <thead><tr className="text-left text-xs text-gray-500"><th className="py-1">Order</th><th>Client</th><th>Project</th><th>Product</th><th>Status</th></tr></thead>
+          <tbody>{s.recentOrders.map((o) => (
+            <tr key={o.id} className="border-t cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/orders/${o.orderId}`)}>
+              <td className="py-1.5 font-medium">{o.orderId}</td><td>{o.client?.companyName}</td><td>{o.project?.projectName}</td>
+              <td>{o.productName} {o.productGrade}</td><td>{o.status}{o.creditHold ? ' · credit hold' : ''}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </section>
     </div>
   );
 };

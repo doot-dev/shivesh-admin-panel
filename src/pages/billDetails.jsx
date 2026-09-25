@@ -19,7 +19,7 @@ import {
   uploadBillDocument,
   uploadTmChallan,
 } from '../features/bills/billSlice';
-import { BILL_STATUSES, BILL_STATUS_BADGE, TM_APPROVAL_BADGE } from '../constant/billingData';
+import { MANUAL_BILL_STATUSES, BILL_STATUS_BADGE, TM_APPROVAL_BADGE } from '../constant/billingData';
 
 const LOCKED_STATUSES = ['PAID', 'CANCELLED'];
 
@@ -296,7 +296,7 @@ export default function BillDetails() {
     }
   };
 
-  const statusOptions = BILL_STATUSES.map((s) => ({ value: s, label: s }));
+  const statusOptions = [...new Set([bill.status, ...MANUAL_BILL_STATUSES])].map((s) => ({ value: s, label: s }));
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -395,6 +395,24 @@ export default function BillDetails() {
       </Card>
 
       {/* Bill details */}
+      {bill.payments && (
+        <Card title="Payments received" className="mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-3">
+            <Field label="Bill amount" value={`₹${Number(bill.billDetails?.amount ?? 0).toLocaleString('en-IN')}`} />
+            <Field label="Paid" value={`₹${bill.payments.paid.toLocaleString('en-IN')}`} />
+            <Field label="Pending" value={<b>₹{bill.payments.pending.toLocaleString('en-IN')}</b>} />
+          </div>
+          {bill.payments.rows.length ? (
+            <table className="min-w-full text-sm">
+              <thead><tr className="text-left text-xs text-gray-500"><th>Date</th><th>Receipt</th><th>Mode</th><th>Reference</th><th className="text-right">Amount</th></tr></thead>
+              <tbody>{bill.payments.rows.map((p) => (
+                <tr key={p.id + p.amount} className="border-t"><td>{new Date(p.receivedOn).toLocaleDateString('en-IN')}</td><td>{p.receiptNo}</td><td>{p.mode}</td><td>{p.reference}</td><td className="text-right">₹{p.amount.toLocaleString('en-IN')}</td></tr>
+              ))}</tbody>
+            </table>
+          ) : <p className="text-xs text-gray-500">No payments yet — record them on the client's Account tab.</p>}
+        </Card>
+      )}
+
       {bill.quantities && (
         <Card title="Quantities" className="mb-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
