@@ -1,22 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, ShoppingCart, Truck, CircleCheck, ReceiptText } from "lucide-react";
+import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from "lucide-react";
 import Logo from "../assets/img/shivesh-logo.png";
+import sitePhoto from "../assets/img/login/site.webp";
+import pourPhoto from "../assets/img/login/pour.webp";
+import handoverPhoto from "../assets/img/login/handover.webp";
 import { useAuth } from "../hooks/useAuth";
 
 /**
- * Sign-in. Left: the form. Right (lg and up): what the panel does, as the
- * order → truck → challan → bill journey rising in one card at a time.
- * The journey is illustrative on purpose — this page is public, so it shows no
- * real client, order or amount.
+ * Sign-in. Left: the form. Right (lg and up): a photo carousel — site, pour,
+ * handover — each captioned with what the panel does at that step. Public page,
+ * so the captions show no real client, order or amount.
  */
-const JOURNEY = [
-  { icon: ShoppingCart, title: "New order from the client app", meta: "RMC M25 · 12 CBM · tomorrow 9:00 AM", right: "Placed", offset: "ml-0" },
-  { icon: Truck, title: "Truck reached site", meta: "Field technician · live status", right: "live", offset: "ml-16" },
-  { icon: CircleCheck, title: "Challan accepted", meta: "Photo and quantity checked", right: "Accepted", offset: "ml-4" },
-  { icon: ReceiptText, title: "Bill generated automatically", meta: "For the accepted quantity only", right: "Bill", offset: "ml-20" },
+const SLIDES = [
+  { src: sitePhoto, title: "Every order, straight from the client app", text: "Confirm orders, pick the plant and assign technicians in minutes." },
+  { src: pourPhoto, title: "Trucks tracked from plant to pour", text: "Dispatched, reached, challan accepted — your team sees it live." },
+  { src: handoverPhoto, title: "Bills that close themselves", text: "Each bill follows the accepted quantity, ready for accounts." },
 ];
+const SLIDE_MS = 5000;
 
 export default function Login() {
   const [userName, setUserName] = useState("");
@@ -24,6 +26,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, loading } = useAuth();
   const navigate = useNavigate();
+  const [slide, setSlide] = useState(0);
+
+  // Auto-advance; picking a dot restarts the timer. Still for reduced motion.
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = setTimeout(() => setSlide((i) => (i + 1) % SLIDES.length), SLIDE_MS);
+    return () => clearTimeout(timer);
+  }, [slide]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -106,54 +116,30 @@ export default function Login() {
         </div>
       </section>
 
-      {/* What the panel does — large screens only */}
-      <section aria-label="What the panel does"
-        className="sv-fade relative m-5 hidden flex-1 flex-col overflow-hidden rounded-[30px] bg-primary p-14 lg:flex xl:p-16"
-        style={{
-          backgroundImage: "linear-gradient(rgba(229,236,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(229,236,255,.06) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
-        }}>
-        <div className="pointer-events-none absolute -bottom-56 -right-52 h-[520px] w-[520px] rounded-full bg-primary-second opacity-80" />
-        <div className="pointer-events-none absolute -top-24 right-16 h-64 w-64 rounded-full border border-primary-bg-alt/35" />
+      {/* Photo carousel — large screens only */}
+      <section aria-label="Shivesh at work" aria-roledescription="carousel"
+        className="sv-fade relative m-5 hidden flex-1 overflow-hidden rounded-[30px] bg-primary lg:block">
+        {SLIDES.map((s, i) => (
+          <img key={s.src} src={s.src} alt="" aria-hidden="true" decoding="async"
+            className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-[1400ms] ease-out ${i === slide ? "scale-100 opacity-100" : "scale-105 opacity-0"}`} />
+        ))}
+        {/* Keeps white text readable on any photo. */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(8,18,55,.92) 0%, rgba(8,18,55,.45) 38%, rgba(8,18,55,0) 65%)" }} />
 
-        <div className="sv-rise relative max-w-[520px]" style={{ animationDelay: ".2s" }}>
-          <h2 className="text-[34px] font-semibold leading-tight text-white xl:text-4xl">Every order, truck and bill in one place</h2>
-          <p className="mt-3 text-base leading-relaxed text-primary-light">
-            From the client&rsquo;s order to the automatic bill, your team sees each step as it happens.
-          </p>
-        </div>
-
-        <div className="relative mt-14 flex flex-col gap-5">
-          <svg width="140" height="420" viewBox="0 0 140 420" fill="none" aria-hidden="true" className="absolute left-7 top-7">
-            <path d="M10 10 C 70 60, 80 90, 70 130 S 30 220, 40 260 S 110 330, 90 400" stroke="#9bb3f4" strokeWidth="2"
-              strokeDasharray="6 8" opacity=".7" style={{ strokeDashoffset: 700, animation: "sv-draw 3s ease .4s forwards" }} />
-          </svg>
-          {JOURNEY.map(({ icon, title, meta, right, offset }, i) => {
-            const IconCmp = icon;
-            return (
-            <div key={title} className={`sv-rise ${offset}`} style={{ animationDelay: `${0.35 + i * 0.28}s` }}>
-              <div className="sv-float flex w-[400px] max-w-full items-center gap-3.5 rounded-[18px] bg-white px-4 py-4 shadow-[0_18px_40px_rgba(8,18,55,.35)]"
-                style={{ animationDelay: `${1.2 + i * 0.4}s`, animationDuration: `${6 + i * 0.5}s` }}>
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary">
-                  <IconCmp size={20} />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-sm font-semibold text-primary-second">{title}</span>
-                  <span className="text-xs text-text-secondary">{meta}</span>
-                </div>
-                {right === "live" ? (
-                  <span className="flex items-center gap-2 text-xs font-semibold text-success">
-                    <span className="sv-pulse h-2 w-2 rounded-full bg-success" />Live
-                  </span>
-                ) : (
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${right === "Accepted" ? "bg-success-light text-success" : "bg-primary-light text-primary"}`}>
-                    {right}
-                  </span>
-                )}
-              </div>
-            </div>
-            );
-          })}
+        <div className="absolute inset-x-0 bottom-0 p-12 xl:p-14">
+          <div key={slide} className="sv-rise max-w-[540px]" aria-live="polite">
+            <h2 className="text-[34px] font-semibold leading-tight text-white xl:text-4xl">{SLIDES[slide].title}</h2>
+            <p className="mt-3 text-base leading-relaxed text-primary-light">{SLIDES[slide].text}</p>
+          </div>
+          <div className="mt-8 flex gap-2">
+            {SLIDES.map((s, i) => (
+              <button key={s.src} type="button" onClick={() => setSlide(i)}
+                aria-label={`Show photo ${i + 1} of ${SLIDES.length}`} aria-current={i === slide}
+                className={`h-1.5 overflow-hidden rounded-full bg-white/30 transition-all duration-300 ${i === slide ? "w-12" : "w-5 hover:bg-white/60"}`}>
+                {i === slide && <span className="block h-full bg-white" style={{ animation: `sv-progress ${SLIDE_MS}ms linear both` }} />}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
     </div>

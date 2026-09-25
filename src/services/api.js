@@ -2,7 +2,8 @@ import axios from "axios";
 import { localStorageKeys } from "../constant/constant";
 
 const api = axios.create({
-  baseURL: "http://31.97.206.154:3001", // change to your backend URL
+  // VITE_API_URL points a dev build at a local backend; production uses the server.
+  baseURL: import.meta.env.VITE_API_URL || "http://31.97.206.154:3001",
   headers: {
     "Content-Type": "application/json",
   },

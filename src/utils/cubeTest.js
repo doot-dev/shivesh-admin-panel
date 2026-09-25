@@ -48,7 +48,7 @@ export const EMPTY_CUBE_TEST_FORM = {
 /// Retained (rather than deleted) so callers keep a single named concept to ask
 /// about, should a real lock rule ever come back.
 export const isOrderCubeTestLocked = (order) =>
-  CUBE_TEST_LOCKED_STATES.includes(order?.status) || CUBE_TEST_LOCKED_STATES.includes(order?.deliveryStatus);
+  CUBE_TEST_LOCKED_STATES.includes(order?.status);
 
 const pad2 = (n) => String(n).padStart(2, '0');
 

@@ -12,7 +12,7 @@
  *   -> { type: 'subscribe',   orderId }   join an order room
  *   -> { type: 'unsubscribe', orderId }
  *   <- { type: 'comment:new',  orderId, data }
- *   <- { type: 'order:status', orderId, data: { status, deliveryStatus } }
+ *   <- { type: 'order:status', orderId, data: { status, isActive } }
  *
  * A single connection is shared by the whole session; pages join and leave
  * individual order rooms on top of it rather than opening their own sockets.

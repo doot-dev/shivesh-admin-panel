@@ -39,6 +39,14 @@ export const deleteRole = async (roleId) => {
   return response.data;
 };
 
+// ─── Client Roles (docs/06): the client app's roles, same shapes as above ───
+
+export const getClientPermissionCatalog = async () => (await api.get("/api/v1/admin/roles/client/catalog")).data;
+export const getClientRoles = async () => (await api.get("/api/v1/admin/roles/client/all")).data;
+export const createClientRole = async (role) => (await api.post("/api/v1/admin/roles/client", role)).data;
+export const updateClientRole = async (role) => (await api.put("/api/v1/admin/roles/client", role)).data;
+export const deleteClientRole = async (id) => (await api.delete(`/api/v1/admin/roles/client?id=${id}`)).data;
+
 /** A user's role, their ALLOW/DENY exceptions, and the effective result. */
 export const getUserPermissions = async (userId) => {
   const response = await api.get(

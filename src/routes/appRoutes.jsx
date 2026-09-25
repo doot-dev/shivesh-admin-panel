@@ -39,7 +39,9 @@ export default function AppRoutes() {
           <Route path="/*" element={<Layout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<Users />} />
-            <Route path="roles" element={<RolesPage />} />
+            <Route path="roles" element={<RolesPage key="panel" />} />
+            {/* docs/06: the client app's roles — same screen, client catalog. */}
+            <Route path="client-roles" element={<RolesPage key="client" variant="client" />} />
             {/* Reachable by any signed-in user — it is what we show someone
                 who has no modules granted at all. */}
             <Route path="no-access" element={<NoAccess />} />

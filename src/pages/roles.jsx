@@ -10,6 +10,11 @@ import {
   updateRole,
   deleteRole,
   getPermissionCatalog,
+  getClientPermissionCatalog,
+  getClientRoles,
+  createClientRole,
+  updateClientRole,
+  deleteClientRole,
 } from "../services/roleService";
 
 /**
@@ -21,11 +26,37 @@ import {
  */
 const emptyDraft = { name: "", description: "", isActive: true, permissions: [] };
 
-const RolesPage = () => {
+// The same screen runs the panel's roles and the client app's roles (docs/06).
+const VARIANTS = {
+  panel: {
+    module: MODULE.ROLES,
+    title: "Roles & Permissions",
+    subtitle: "Decide what each job can see and do in the panel.",
+    api: { list: getRoles, catalog: getPermissionCatalog, create: createRole, update: updateRole, remove: deleteRole },
+    people: ["user", "users", "Users"],
+    placeholder: "e.g. Accounts, Site Supervisor",
+    lockedNote:
+      "The Super Admin role always holds every permission and cannot be edited or deleted. This is what stops the panel being locked down by mistake.",
+  },
+  client: {
+    module: MODULE.CLIENT_ROLES,
+    title: "Client Roles",
+    subtitle:
+      "What each person in a client's company can do in the client app. A change applies to everyone on that role, at every client, at once.",
+    api: { list: getClientRoles, catalog: getClientPermissionCatalog, create: createClientRole, update: updateClientRole, remove: deleteClientRole },
+    people: ["contact", "contacts", "Contacts"],
+    placeholder: "e.g. Site Engineer, Accounts",
+    lockedNote:
+      "The Owner role always holds everything and cannot be edited or deleted. Only the office can make someone an Owner, from the client's Team tab.",
+  },
+};
+
+const RolesPage = ({ variant = "panel" }) => {
+  const cfg = VARIANTS[variant];
   const { can } = usePermission();
-  const canCreate = can(MODULE.ROLES, ACTIONS.CREATE);
-  const canUpdate = can(MODULE.ROLES, ACTIONS.UPDATE);
-  const canDelete = can(MODULE.ROLES, ACTIONS.DELETE);
+  const canCreate = can(cfg.module, ACTIONS.CREATE);
+  const canUpdate = can(cfg.module, ACTIONS.UPDATE);
+  const canDelete = can(cfg.module, ACTIONS.DELETE);
 
   const [roles, setRoles] = useState([]);
   const [catalog, setCatalog] = useState([]);
@@ -40,8 +71,8 @@ const RolesPage = () => {
     setLoading(true);
     try {
       const [roleRes, catalogRes] = await Promise.all([
-        getRoles(),
-        getPermissionCatalog(),
+        cfg.api.list(),
+        cfg.api.catalog(),
       ]);
       setRoles(roleRes?.data ?? []);
       // The API sends actions as { action, key }; the matrix works with plain action names.
@@ -58,7 +89,7 @@ const RolesPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cfg]);
 
   useEffect(() => {
     load();
@@ -93,10 +124,10 @@ const RolesPage = () => {
     setSaving(true);
     try {
       if (editing?.isNew) {
-        await createRole(draft);
+        await cfg.api.create(draft);
         toast.success("Role created");
       } else {
-        await updateRole({ id: editing.id, ...draft });
+        await cfg.api.update({ id: editing.id, ...draft });
         toast.success("Role updated");
       }
       closeModal();
@@ -114,7 +145,7 @@ const RolesPage = () => {
     if (!confirmDelete) return;
     setSaving(true);
     try {
-      await deleteRole(confirmDelete.id);
+      await cfg.api.remove(confirmDelete.id);
       toast.success("Role deleted");
       setConfirmDelete(null);
       await load();
@@ -141,10 +172,10 @@ const RolesPage = () => {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
-            Roles & Permissions
+            {cfg.title}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Decide what each job can see and do in the panel.
+            {cfg.subtitle}
           </p>
         </div>
 
@@ -178,7 +209,7 @@ const RolesPage = () => {
             <thead className="bg-gray-50 text-left">
               <tr>
                 <th className="px-5 py-3 font-medium text-gray-600">Role</th>
-                <th className="px-5 py-3 font-medium text-gray-600">Users</th>
+                <th className="px-5 py-3 font-medium text-gray-600">{cfg.people[2]}</th>
                 <th className="px-5 py-3 font-medium text-gray-600">
                   Permissions
                 </th>
@@ -286,9 +317,7 @@ const RolesPage = () => {
       >
         {isLocked(editing ?? {}) && (
           <div className="mb-4 rounded-lg bg-purple-50 px-4 py-3 text-sm text-purple-700">
-            The Super Admin role always holds every permission and cannot be
-            edited or deleted. This is what stops the panel being locked down by
-            mistake.
+            {cfg.lockedNote}
           </div>
         )}
 
@@ -297,7 +326,7 @@ const RolesPage = () => {
             label="Role name"
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            placeholder="e.g. Accounts, Site Supervisor"
+            placeholder={cfg.placeholder}
             disabled={isLocked(editing ?? {})}
           />
           <Input
@@ -365,9 +394,9 @@ const RolesPage = () => {
         </p>
         {confirmDelete?.userCount > 0 && (
           <p className="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            {confirmDelete.userCount} user
-            {confirmDelete.userCount === 1 ? " is" : "s are"} currently on this
-            role.
+            {confirmDelete.userCount}{" "}
+            {confirmDelete.userCount === 1 ? `${cfg.people[0]} is` : `${cfg.people[1]} are`}{" "}
+            currently on this role.
           </p>
         )}
       </Modal>

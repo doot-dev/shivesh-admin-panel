@@ -5,7 +5,7 @@ export const initials = (name = '') =>
 
 /** Order status → StatusChip tone. */
 export const orderTone = (status) =>
-  ({ COMPLETED: 'ok', DELIVERED: 'ok', CANCELLED: 'err', IN_PROGRESS: 'warn' }[status] || 'primary');
+  ({ COMPLETED: 'ok', REACHED: 'ok', CANCELLED: 'err', DELAYED: 'warn' }[status] || 'primary');
 
 export const statusLabel = (s) =>
   s ? s.charAt(0) + s.slice(1).toLowerCase().replaceAll('_', ' ') : '—';

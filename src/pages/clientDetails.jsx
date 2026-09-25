@@ -5,6 +5,7 @@ import api from "../services/api";
 import reportService from "../services/reportService";
 import { fileLink } from "../utils/fileLink";
 import ClientAccountTab from "../components/clients/ClientAccountTab";
+import ClientTeamTab from "../components/clients/ClientTeamTab";
 import Tabs from "../components/ui/Tabs";
 import { Table } from "../components/ui";
 import ClientKYCModal from "../components/modals/clients/clientKycModal";
@@ -178,6 +179,7 @@ const ClientDetailsPage = () => {
 
   const tabs = [
     { label: "Projects", content: <ProjectsTab clientId={client.clientId} /> },
+    { label: "Team", content: <ClientTeamTab clientId={client.clientId} /> },
     { label: "Orders", content: <OrdersTab clientId={client.clientId} /> },
     { label: "Billing", content: <BillingTab clientId={client.clientId} /> },
     { label: "Account", content: <ClientAccountTab clientId={client.clientId} /> },
@@ -214,24 +216,15 @@ const ClientDetailsPage = () => {
 
   return (
     <>
-      <div className="p-4 md:p-8 bg-white min-h-screen">
-        {/* Breadcrumb */}
-        <div className="text-sm text-gray-500 mb-4">
-          <span
-            className="hover:underline cursor-pointer"
-            onClick={() => navigate("/clients")}
-          >
-            Clients
-          </span>
-          &nbsp;&gt;&nbsp;
-          <span className="text-blue-600 font-medium">Client Details</span>
-        </div>
-
+      <div className="sv-fade p-4 md:p-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-800">
-            {client.companyName || client.name || "Client Details"}
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-primary-second sm:text-[28px]">
+              {client.companyName || client.name || "Client Details"}
+            </h1>
+            {client.clientId && <p className="mt-1 text-sm text-text-secondary">{client.clientId}</p>}
+          </div>
           <div className="flex gap-3 mt-3 sm:mt-0">
             <button
               className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-800"
@@ -249,8 +242,8 @@ const ClientDetailsPage = () => {
         </div>
 
         {/* Client Details Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-[#9BB3F4] p-5 mb-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+        <div className="sv-card p-4 sm:p-6 mb-8">
+          <h2 className="text-lg font-semibold text-primary-second mb-4">
             Client Details
           </h2>
 

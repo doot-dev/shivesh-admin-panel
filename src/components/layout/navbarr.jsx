@@ -11,7 +11,7 @@ import { initials } from "../../utils/labels";
 const TITLES = {
   dashboard: "Dashboard", orders: "Orders & Tracks", testing: "Cube Testing", projects: "Projects",
   clients: "Clients", vendors: "Vendors", leads: "Leads", billing: "Billing", reports: "Reports",
-  products: "Products", subcategories: "Sub-categories", users: "Users", roles: "Roles & Permissions",
+  products: "Products", subcategories: "Sub-categories", users: "Users", roles: "Roles & Permissions", "client-roles": "Client Roles",
   settings: "Settings",
 };
 

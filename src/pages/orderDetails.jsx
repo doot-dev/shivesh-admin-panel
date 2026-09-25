@@ -50,25 +50,15 @@ import DeleteModal from '../components/modals/DeleteModal';
 import { ICON_NAMES, Icon } from '../components/icons';
 import { ChevronLeft, Check, CircleCheck, TriangleAlert, Pencil, Trash2, Ban } from 'lucide-react';
 import { statusLabel } from '../utils/labels';
+import { ORDER_TRANSITIONS, STATUS_BADGE } from '../constant/orderStatus';
 
 
-const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
-const DELIVERY_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'REACHED', 'DELIVERED', 'COMPLETED'];
 
 // Cube tests are never locked by order status — a cube result legitimately
 // arrives after the order is delivered and closed. See src/utils/cubeTest.js,
 // which is the single source of truth for this rule.
 const CUBE_TEST_LOCKED_STATES = [];
 
-
-const STATUS_BADGE = {
-  NEW:         { color: '#2563EB', backgroundColor: '#DBEAFE' },
-  CONFIRMED:   { color: '#7C3AED', backgroundColor: '#EDE9FE' },
-  IN_PROGRESS: { color: '#D97706', backgroundColor: '#FEF3C7' },
-  DELIVERED:   { color: '#0891B2', backgroundColor: '#CFFAFE' },
-  COMPLETED:   { color: '#16A34A', backgroundColor: '#D1FAE5' },
-  CANCELLED:   { color: '#DC2626', backgroundColor: '#FECACA' },
-};
 
 const APPROVAL_BADGE = {
   PENDING:  { color: '#D97706', backgroundColor: '#FEF3C7' },
@@ -166,10 +156,10 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
-/** Placed → Confirmed → In progress → Delivered → Completed, with the current step marked. */
-const FLOW = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
-const FLOW_LABEL = { NEW: 'Placed', CONFIRMED: 'Confirmed', IN_PROGRESS: 'In progress', DELIVERED: 'Delivered', COMPLETED: 'Completed' };
-const OrderStepper = ({ status }) => {
+/** Placed → Confirmed → Dispatched → Reached → Completed, with the current step marked. */
+const FLOW = ['NEW', 'CONFIRMED', 'DISPATCHED', 'REACHED', 'COMPLETED'];
+const FLOW_LABEL = { NEW: 'Placed', CONFIRMED: 'Confirmed', DISPATCHED: 'Dispatched', REACHED: 'Reached', COMPLETED: 'Completed' };
+const OrderStepper = ({ status, dispatched }) => {
   if (status === 'CANCELLED') {
     return (
       <div className="sv-card flex items-center gap-3 p-4 text-sm text-error">
@@ -177,9 +167,15 @@ const OrderStepper = ({ status }) => {
       </div>
     );
   }
-  const at = Math.max(0, FLOW.indexOf(status));
+  // Delayed sits on the step it was delayed at: before or after dispatch.
+  const at = Math.max(0, FLOW.indexOf(status === 'DELAYED' ? (dispatched ? 'DISPATCHED' : 'CONFIRMED') : status));
   return (
     <div className="sv-card px-2 py-5 sm:px-6">
+      {status === 'DELAYED' && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-warning-light px-3 py-2 text-sm font-medium text-text-primary">
+          <TriangleAlert size={16} className="text-warning" /> Delayed — the next step clears it.
+        </div>
+      )}
       <ol className="flex">
         {FLOW.map((step, i) => {
           const done = i <= at;
@@ -240,7 +236,6 @@ export default function OrderDetails() {
 
   // Status controls
   const [statusDraft, setStatusDraft] = useState('');
-  const [deliveryStatusDraft, setDeliveryStatusDraft] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [billBanner, setBillBanner] = useState(null); // { billNo } | { error } | { pending }
   const [credit, setCredit] = useState(null);
@@ -306,9 +301,8 @@ export default function OrderDetails() {
   useEffect(() => {
     if (order) {
       setStatusDraft(order.status || '');
-      setDeliveryStatusDraft(order.deliveryStatus || '');
     }
-  }, [order?.status, order?.deliveryStatus]);
+  }, [order?.status]);
 
   useEffect(() => {
     // Scroll only the comments box to its newest message — scrollIntoView would
@@ -385,7 +379,7 @@ export default function OrderDetails() {
   };
 
   // ---- Status / billing ----
-  const statusChanged = statusDraft !== (order?.status || '') || deliveryStatusDraft !== (order?.deliveryStatus || '');
+  const statusChanged = statusDraft !== (order?.status || '');
 
   const handleUpdateStatus = async () => {
     setUpdatingStatus(true);
@@ -400,7 +394,6 @@ export default function OrderDetails() {
       const result = await dispatch(updateOrderStatus({
         orderId,
         status: statusDraft,
-        deliveryStatus: deliveryStatusDraft,
         ...(cancelReason && { cancelReason }),
       }));
       if (updateOrderStatus.fulfilled.match(result)) {
@@ -707,8 +700,9 @@ export default function OrderDetails() {
     </div>
   );
 
-  const statusOptions = ORDER_STATUSES.map((s) => ({ value: s, label: s }));
-  const deliveryStatusOptions = DELIVERY_STATUSES.map((s) => ({ value: s, label: s }));
+  // Only the current status and the moves the server allows (no 409 surprises).
+  const statusOptions = [order.status, ...(ORDER_TRANSITIONS[order.status] || [])]
+    .map((s) => ({ value: s, label: statusLabel(s) }));
 
   const vendorOptions = vendors.map((v) => ({
     value: String(v.id),
@@ -735,8 +729,7 @@ export default function OrderDetails() {
   const tmDetails = order.tmDetails || [];
 
   // Once the order/delivery is marked delivered or completed, no new cube tests should be logged.
-  const cubeTestLocked =
-    CUBE_TEST_LOCKED_STATES.includes(order.status) || CUBE_TEST_LOCKED_STATES.includes(order.deliveryStatus);
+  const cubeTestLocked = CUBE_TEST_LOCKED_STATES.includes(order.status);
 
   return (
     <div className="space-y-5 p-4 sm:p-6 lg:p-8">
@@ -846,7 +839,7 @@ export default function OrderDetails() {
         </div>
       )}
 
-      <OrderStepper status={order.status} />
+      <OrderStepper status={order.status} dispatched={(order.tmDetails || []).some((t) => t.dispatchTime || t.status !== "ASSIGNED")} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {/* Left Column: Order Info + Vendor + TM Details */}
@@ -867,7 +860,7 @@ export default function OrderDetails() {
             <InfoRow label="Quantity" value={order.quantity} />
 
             {/* Status controls — always available, hits the status endpoint directly */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+            <div className="grid grid-cols-1 gap-4 pt-3">
               <div>
                 <FieldLabel>Status</FieldLabel>
                 <Dropdown
@@ -877,17 +870,6 @@ export default function OrderDetails() {
                   width="100%"
                   height="40px"
                   onChange={setStatusDraft}
-                />
-              </div>
-              <div>
-                <FieldLabel>Delivery Status</FieldLabel>
-                <Dropdown
-                  options={deliveryStatusOptions}
-                  value={deliveryStatusDraft}
-                  placeholder="Select delivery status"
-                  width="100%"
-                  height="40px"
-                  onChange={setDeliveryStatusDraft}
                 />
               </div>
             </div>

@@ -27,6 +27,7 @@ export const MODULE = {
   DASHBOARD: 'dashboard',
   USERS: 'users',
   ROLES: 'roles',
+  CLIENT_ROLES: 'clientRoles',
   PRODUCTS: 'products',
   SUBCATEGORIES: 'subcategories',
   CLIENTS: 'clients',
@@ -47,6 +48,7 @@ export const MODULES = [
   { key: MODULE.DASHBOARD, label: 'Dashboard', path: '/dashboard', actions: [ACTIONS.VIEW] },
   { key: MODULE.USERS, label: 'Users', path: '/users', actions: CRUD },
   { key: MODULE.ROLES, label: 'Roles & Permissions', path: '/roles', actions: CRUD },
+  { key: MODULE.CLIENT_ROLES, label: 'Client Roles', path: '/client-roles', actions: CRUD },
   { key: MODULE.PRODUCTS, label: 'Product', path: '/products', actions: CRUD },
   { key: MODULE.SUBCATEGORIES, label: 'Sub-category', path: '/subcategories', actions: CRUD },
   { key: MODULE.CLIENTS, label: 'Client', path: '/clients', actions: CRUD },
@@ -75,6 +77,11 @@ export const ACTION_LABELS = {
   [ACTIONS.DELETE]: 'Delete',
   [ACTIONS.EXPORT]: 'Export',
   [ACTIONS.APPROVE]: 'Approve',
+  // Client-app catalog (docs/06)
+  cancel: 'Cancel',
+  comment: 'Comment',
+  reject: 'Reject',
+  manage: 'Manage',
 };
 
 /**

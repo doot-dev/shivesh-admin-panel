@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import {
+import { UserCog,
   LayoutDashboard, Truck, FlaskConical, BriefcaseBusiness, Building2, Store, Filter,
   ReceiptText, ChartLine, Package, Layers, Users, ShieldCheck, SlidersHorizontal, LogOut, X,
 } from "lucide-react";
@@ -41,6 +41,7 @@ const GROUPS = [
   { label: "Administration", items: [
     { key: "users", icon: Users, label: "Users", path: "/users", module: MODULE.USERS },
     { key: "roles", icon: ShieldCheck, label: "Roles & Permissions", path: "/roles", module: MODULE.ROLES },
+    { key: "clientRoles", icon: UserCog, label: "Client Roles", path: "/client-roles", module: MODULE.CLIENT_ROLES },
     { key: "settings", icon: SlidersHorizontal, label: "Settings", path: "/settings", module: MODULE.SETTINGS },
   ] },
 ];

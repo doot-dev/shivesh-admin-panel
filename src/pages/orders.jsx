@@ -8,16 +8,9 @@ import { Table } from '../components/ui';
 import { statusLabel } from '../utils/labels';
 import { fetchOrders } from '../features/orders/orderSlice';
 
-const STATUS_TABS = ['All', 'NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+import { ORDER_STATUSES, STATUS_BADGE } from '../constant/orderStatus';
 
-const STATUS_BADGE = {
-  NEW:         { color: '#2563EB', backgroundColor: '#DBEAFE' },
-  CONFIRMED:   { color: '#7C3AED', backgroundColor: '#EDE9FE' },
-  IN_PROGRESS: { color: '#D97706', backgroundColor: '#FEF3C7' },
-  DELIVERED:   { color: '#0891B2', backgroundColor: '#CFFAFE' },
-  COMPLETED:   { color: '#16A34A', backgroundColor: '#D1FAE5' },
-  CANCELLED:   { color: '#DC2626', backgroundColor: '#FECACA' },
-};
+const STATUS_TABS = ['All', ...ORDER_STATUSES];
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
