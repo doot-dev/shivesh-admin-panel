@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ProductUnitFields from "./ProductUnitFields";
 import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
@@ -8,6 +9,8 @@ import { ICON_NAMES } from "../../icons";
 const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
   const [formData, setFormData] = useState({
     name: "",
+    unit: "CBM",
+    isConcrete: true,
   });
 
   const [errors, setErrors] = useState({});
@@ -82,6 +85,8 @@ const AddProductModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
             className="focus:outline-none"
           />
         </div>
+
+        <ProductUnitFields formData={formData} onChange={handleChange} disabled={loading} />
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button

@@ -382,7 +382,7 @@ export default function ProjectsDetails() {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Amount per m3</p>
+                <p className="text-sm text-gray-500 mb-1">Amount per unit</p>
                 <p className="text-base font-medium text-gray-900">
                   ₹{currentProject.commissionAmountPerM3
                     ?? "N/A"}

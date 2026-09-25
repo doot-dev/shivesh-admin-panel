@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ProductUnitFields from "./ProductUnitFields";
 import Modal from "../../ui/Modal";
 import Button from "../../ui/Button";
 import Input from "../../ui/Input";
@@ -27,6 +28,8 @@ const EditProductModal = ({
         id: product?.id ,
         name: product?.name ,
         isActive: product?.isActive,
+        unit: product?.unit || "CBM",
+        isConcrete: product?.isConcrete ?? true,
       });
       setErrors({});
     }
@@ -135,6 +138,8 @@ useEffect(() => {
             </label>
           </div>
         </div>
+
+        <ProductUnitFields formData={formData} onChange={handleChange} disabled={loading} />
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button

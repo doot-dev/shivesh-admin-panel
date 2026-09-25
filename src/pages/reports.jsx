@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import Tabs from '../components/ui/Tabs';
+import usePermission from '../hooks/usePermission';
+import { PaymentBehaviourTab, CollectionsTab, OrderPatternsTab, AccountsTaxTab } from '../components/reports/ReportTabs';
 import { toast } from 'react-toastify';
 
 import { Icon, ICON_NAMES } from '../components/icons';
@@ -63,7 +66,7 @@ function SummaryTile({ label, value, hint, accent = 'text-gray-900' }) {
  * risk maths of its own, so the panel and any other consumer can never
  * disagree about a client's band.
  */
-export default function ReportsPage() {
+function CreditRiskReport() {
   const [summary, setSummary] = useState(null);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -437,6 +440,24 @@ export default function ReportsPage() {
           </div>
         )}
       </Modal>
+    </div>
+  );
+}
+
+
+/** Reports: credit risk (existing) + Phase 1B analytics and Accounts & Tax exports. */
+export default function ReportsPage() {
+  const { can } = usePermission();
+  const tabs = [
+    { label: 'Credit risk', content: <CreditRiskReport /> },
+    { label: 'Payment behaviour', content: <div className="p-4 md:p-6"><PaymentBehaviourTab /></div> },
+    { label: 'Collections', content: <div className="p-4 md:p-6"><CollectionsTab /></div> },
+    { label: 'Order patterns', content: <div className="p-4 md:p-6"><OrderPatternsTab /></div> },
+    ...(can('reports', 'export') ? [{ label: 'Accounts & Tax', content: <div className="p-4 md:p-6"><AccountsTaxTab /></div> }] : []),
+  ];
+  return (
+    <div className="pt-4 px-4 md:px-6">
+      <Tabs tabs={tabs} />
     </div>
   );
 }

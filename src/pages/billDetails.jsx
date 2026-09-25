@@ -8,7 +8,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Dropdown from '../components/ui/Dropdown';
 import FullPageLoader from '../components/ui/FullPageLoader';
-import api from '../services/api';
+import { openFile } from '../utils/fileLink';
 import billService from '../services/billService';
 import {
   clearCurrentBill,
@@ -21,7 +21,6 @@ import {
 } from '../features/bills/billSlice';
 import { BILL_STATUSES, BILL_STATUS_BADGE, TM_APPROVAL_BADGE } from '../constant/billingData';
 
-const ORIGIN = api.defaults.baseURL;
 const LOCKED_STATUSES = ['PAID', 'CANCELLED'];
 
 const Card = ({ title, children, className = '' }) => (
@@ -72,7 +71,7 @@ const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
       toast.info('No challan uploaded for this TM yet.');
       return;
     }
-    window.open(`${ORIGIN}${tm.challanUrl}`, '_blank', 'noopener,noreferrer');
+    openFile(tm.challanUrl);
   };
 
   const handleFilePicked = (e) => {
@@ -141,7 +140,12 @@ const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
             <StatusBadge value={tm.approvalStatus} badgeMap={TM_APPROVAL_BADGE} />
           </div>
         </div>
-        {tm.approvalStatus === 'REJECTED' && <Field label="Reason" value={tm.rejectionReason} />}
+        {tm.approvalStatus === 'REJECTED' && (
+          <Field
+            label={tm.rejectedByType === 'CLIENT' ? 'Rejected by client at site' : 'Reason'}
+            value={tm.rejectionReason}
+          />
+        )}
 
         {!locked && tm.approvalStatus !== 'ACCEPTED' && !rejecting && (
           <div className="flex items-end gap-2 col-span-2">
@@ -325,7 +329,7 @@ export default function BillDetails() {
 
         {bill.documentUrl ? (
           <Button
-            onClick={() => window.open(`${ORIGIN}${bill.documentUrl}`, '_blank', 'noopener,noreferrer')}
+            onClick={() => openFile(bill.documentUrl)}
             leftIcon={ICON_NAMES.DOWNLOAD}
             variant="primary"
             size="md"
@@ -391,6 +395,26 @@ export default function BillDetails() {
       </Card>
 
       {/* Bill details */}
+      {bill.quantities && (
+        <Card title="Quantities" className="mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              ['Ordered', bill.quantities.ordered],
+              ['Delivered (trucks not rejected)', bill.quantities.delivered],
+              ['Accepted', bill.quantities.accepted],
+              ['Billed', bill.quantities.billed],
+            ].map(([label, v]) => (
+              <Field key={label} label={label} value={v} />
+            ))}
+          </div>
+          {bill.quantities.billed !== bill.quantities.accepted && bill.quantities.accepted > 0 && (
+            <p className="mt-3 text-xs text-red-600">
+              Billed quantity differs from the accepted trucks — check before sending (a credit note may be needed).
+            </p>
+          )}
+        </Card>
+      )}
+
       <Card title="Bill details" className="mb-5">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
           <Field label="Product" value={d.product} />

@@ -2,6 +2,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import { AiFillFilePdf } from "react-icons/ai";
 import api from "../services/api";
+import reportService from "../services/reportService";
+import { fileLink } from "../utils/fileLink";
 import Tabs from "../components/ui/Tabs";
 import { Table } from "../components/ui";
 import ClientKYCModal from "../components/modals/clients/clientKycModal";
@@ -14,40 +16,134 @@ import {
 } from "../features/clients/clientsSlice";
 
 /* -------------------- TAB COMPONENTS -------------------- */
+// G19 / W34: these used to render data={[]}; they now read the real APIs.
 
-const ProjectsTab = () => {
+const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN") : "—");
+
+function useList(url, params, pick = (r) => r.data || []) {
+  const [rows, setRows] = useState(null);
+  const key = JSON.stringify(params);
+  useEffect(() => {
+    if (!params) return;
+    api.get(url, { params }).then((r) => setRows(pick(r.data))).catch(() => setRows([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, key]);
+  return rows;
+}
+
+const ProjectsTab = ({ clientId }) => {
+  const navigate = useNavigate();
+  const rows = useList("/api/v1/admin/project/list", clientId && { clientId, limit: 500 }, (d) => d.data?.projects || d.data || []);
   const columns = [
+    { key: "projectId", header: "Project ID" },
     { key: "projectName", header: "Project Name" },
-    { key: "location", header: "Location" },
-    { key: "startDate", header: "Start Date" },
-    { key: "endDate", header: "End Date" },
+    { key: "siteName", header: "Site" },
+    { key: "creditAmount", header: "Credit limit", render: (v) => (v ? inr(v) : "—") },
+    { key: "creditResetPeriodDays", header: "Credit days", render: (v) => v ?? "—" },
     { key: "status", header: "Status" },
+    { key: "view", header: "", render: (_v, p) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/projects/${p.projectId}`)}>View</button> },
   ];
-
-  return <Table columns={columns} data={[]} emptyMessage="No projects found" />;
+  return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No projects found" />;
 };
 
-const OrdersTab = () => {
+const OrdersTab = ({ clientId }) => {
+  const navigate = useNavigate();
+  const rows = useList("/api/v1/admin/orders", clientId && { clientId, limit: 500 });
   const columns = [
     { key: "orderId", header: "Order ID" },
-    { key: "date", header: "Date" },
-    { key: "amount", header: "Amount" },
-    { key: "orderStatus", header: "Order Status" },
-    { key: "paymentStatus", header: "Payment Status" },
+    { key: "date", header: "Delivery date", render: (v) => v || "—" },
+    { key: "product", header: "Product", render: (_v, o) => `${o.productName} ${o.productGrade}` },
+    { key: "quantity", header: "Qty" },
+    { key: "status", header: "Order Status" },
+    { key: "bill", header: "Bill", render: (_v, o) => o.bill?.billNo || "—" },
+    { key: "view", header: "", render: (_v, o) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/orders/${o.orderId}`)}>View</button> },
   ];
-
-  return <Table columns={columns} data={[]} emptyMessage="No orders found" />;
+  return <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No orders found" />;
 };
 
-const BillingTab = () => {
+const BillingTab = ({ clientId }) => {
+  const navigate = useNavigate();
+  const rows = useList("/api/v1/admin/bills/list", clientId && { clientId, limit: 1000 });
   const columns = [
-    { key: "invoiceId", header: "Invoice ID" },
-    { key: "date", header: "Date" },
-    { key: "amount", header: "Amount" },
-    { key: "status", header: "Status" },
+    { key: "billNo", header: "Invoice ID" },
+    { key: "issueDate", header: "Date", render: fmtDate },
+    { key: "amount", header: "Amount", render: inr },
+    { key: "dueDate", header: "Due", render: fmtDate },
+    { key: "status", header: "Status", render: (v, b) => <span>{v}{b.daysOverdue > 0 && <span className="text-red-600 text-xs"> · {b.daysOverdue}d overdue</span>}</span> },
+    { key: "view", header: "", render: (_v, b) => <button className="text-xs text-primary hover:underline" onClick={() => navigate(`/billing/${b.billNo}`)}>View</button> },
   ];
+  const open = (rows || []).filter((b) => ["PENDING", "SENT", "OVERDUE"].includes(b.status)).reduce((s, b) => s + b.amount, 0);
+  return (
+    <div>
+      <p className="text-sm text-gray-700 mb-2">{(rows || []).length} bill(s) · Unpaid {inr(open)}</p>
+      <Table columns={columns} data={rows || []} loading={rows === null} emptyMessage="No invoices found" />
+    </div>
+  );
+};
 
-  return <Table columns={columns} data={[]} emptyMessage="No invoices found" />;
+const Stat = ({ label, value, tone = "" }) => (
+  <div className="bg-white border rounded-lg p-3"><div className="text-xs text-gray-500">{label}</div><div className={`text-base font-semibold ${tone}`}>{value}</div></div>
+);
+
+const AnalysisTab = ({ clientId }) => {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    if (!clientId) return;
+    reportService.getClientAnalytics(clientId).then((r) => setData(r.data)).catch(() => setData(false));
+  }, [clientId]);
+  if (data === null) return <p className="text-sm text-gray-500 py-4">Loading…</p>;
+  if (data === false) return <p className="text-sm text-gray-500 py-4">Analysis needs the Reports permission.</p>;
+  const { credit: c, payment: p, orders: o } = data;
+  const d = (v, s = "") => (v === null || v === undefined ? "—" : `${v}${s}`);
+  return (
+    <div className="space-y-5">
+      <div>
+        <h4 className="text-sm font-semibold mb-2">Credit</h4>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <Stat label="Limit" value={inr(c.limit)} />
+          <Stat label="Used" value={inr(c.used)} />
+          <Stat label="Available" value={inr(c.available)} tone={c.available < 0 ? "text-red-700" : ""} />
+          <Stat label="Overdue" value={inr(c.overdueAmount)} tone={c.overdueAmount ? "text-red-700" : ""} />
+          <Stat label="Unbilled (challans in)" value={inr(c.unbilled)} />
+          <Stat label="Status" value={c.flag.replace("_", " ")} tone={c.flag === "OK" ? "text-green-700" : "text-red-700"} />
+        </div>
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold mb-2">Payment behaviour</h4>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <Stat label="Billed" value={inr(p.billed)} />
+          <Stat label="Collected" value={inr(p.collected)} />
+          <Stat label="Avg days to pay" value={d(p.avgDaysToPay, " d")} />
+          <Stat label="Avg days late" value={d(p.avgDaysPastDue, " d")} />
+          <Stat label="On-time" value={d(p.onTimePct, "%")} />
+          <Stat label="DSO" value={d(p.dso, " d")} />
+        </div>
+        <p className="text-xs text-gray-600 mt-2">
+          Pending by age: not due {inr(p.pendingByAge.notDue)} · 1–30 {inr(p.pendingByAge.d1_30)} · 31–60 {inr(p.pendingByAge.d31_60)} · 61–90 {inr(p.pendingByAge.d61_90)} · 90+ {inr(p.pendingByAge.d90plus)}
+          {p.oldestOpenBill && ` · oldest open bill ${p.oldestOpenBill.billNo} (${p.oldestOpenBill.days} d)`}
+        </p>
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold mb-2">Order patterns</h4>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+          <Stat label="Orders" value={o.orders} />
+          <Stat label="Volume" value={o.volume} />
+          <Stat label="Avg order" value={d(o.avgOrderSize)} />
+          <Stat label="Lead time" value={d(o.avgLeadDays, " d")} />
+          <Stat label="Cancelled" value={`${o.cancelled} (${d(o.cancelRatePct, "%")})`} />
+          <Stat label="Last order" value={d(o.daysSinceLastOrder, " d ago")} tone={o.goingQuiet ? "text-amber-700" : ""} />
+        </div>
+        <p className="text-xs text-gray-600 mt-2">
+          Grades: {o.gradeMix.map((g) => `${g.name} ${g.volume}`).join(" · ") || "—"}
+          {" · "}Busiest day: {[...o.byWeekday].sort((a, b) => b.orders - a.orders)[0]?.day || "—"}
+          {" · "}Trucks rejected at site: {o.siteRejections.rejected}/{o.siteRejections.trucks}
+          {data.revenueSharePct !== null && ` · ${data.revenueSharePct}% of all billing`}
+          {o.goingQuiet && " · ⚠ going quiet"}
+        </p>
+      </div>
+    </div>
+  );
 };
 
 /* -------------------- MAIN PAGE -------------------- */
@@ -82,9 +178,10 @@ const ClientDetailsPage = () => {
     client.status === undefined ? "—" : client.status ? "ACTIVE" : "INACTIVE";
 
   const tabs = [
-    { label: "Projects", content: <ProjectsTab /> },
-    { label: "Orders", content: <OrdersTab /> },
-    { label: "Billing", content: <BillingTab /> },
+    { label: "Projects", content: <ProjectsTab clientId={client.clientId} /> },
+    { label: "Orders", content: <OrdersTab clientId={client.clientId} /> },
+    { label: "Billing", content: <BillingTab clientId={client.clientId} /> },
+    { label: "Analysis", content: <AnalysisTab clientId={client.clientId} /> },
   ];
 
   const handleKycSubmit = async (documents) => {
@@ -234,11 +331,8 @@ const KycDocumentsDetail = ({ documents }) => {
       return url;
     }
 
-    // Otherwise, treat as backend-relative path and prefix with API base URL
-    const base = api?.defaults?.baseURL?.replace(/\/+$/, "") || "";
-    const normalizedPath = url.startsWith("/") ? url : `/${url}`;
-
-    return base ? `${base}${normalizedPath}` : url;
+    // Backend-relative path: prefix with the API base and the sign-in token (P1.9).
+    return fileLink(url.startsWith("/") ? url : `/${url}`);
   };
 
   const handleOpen = (url) => {

@@ -10,16 +10,29 @@
 // rule lives in exactly one place.
 export const CUBE_TEST_LOCKED_STATES = [];
 
+// D21: new tests are 7, 15 or 28 days (or a custom date). 14 and 21 remain only
+// so old rows still show a label.
 export const CUBE_TEST_PERIODS = [
   { value: 'SEVEN_DAYS', label: '7 Days' },
-  { value: 'FOURTEEN_DAYS', label: '14 Days' },
-  { value: 'TWENTYONE_DAYS', label: '21 Days' },
+  { value: 'FIFTEEN_DAYS', label: '15 Days' },
+  { value: 'TWENTYEIGHT_DAYS', label: '28 Days' },
   { value: 'CUSTOM', label: 'Custom' },
 ];
 
-export const CUBE_TEST_PERIOD_DAYS = { SEVEN_DAYS: 7, FOURTEEN_DAYS: 14, TWENTYONE_DAYS: 21 };
+export const CUBE_TEST_PERIOD_DAYS = { SEVEN_DAYS: 7, FOURTEEN_DAYS: 14, FIFTEEN_DAYS: 15, TWENTYONE_DAYS: 21, TWENTYEIGHT_DAYS: 28 };
 
-export const CUBE_TEST_PERIOD_LABEL = CUBE_TEST_PERIODS.reduce((acc, p) => ({ ...acc, [p.value]: p.label }), {});
+export const CUBE_TEST_PERIOD_LABEL = {
+  ...CUBE_TEST_PERIODS.reduce((acc, p) => ({ ...acc, [p.value]: p.label }), {}),
+  FOURTEEN_DAYS: '14 Days (old)',
+  TWENTYONE_DAYS: '21 Days (old)',
+};
+
+/** Server-computed status (W36) → badge. */
+export const CUBE_STATUS_BADGE = {
+  SCHEDULED: { label: 'Scheduled', className: 'bg-blue-100 text-blue-700' },
+  DUE: { label: 'Result pending', className: 'bg-red-100 text-red-700' },
+  RESULT_ADDED: { label: 'Result added', className: 'bg-green-100 text-green-700' },
+};
 
 export const EMPTY_CUBE_TEST_FORM = {
   castingDate: '',

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -7,7 +6,8 @@ import { Icon, ICON_NAMES } from '../components/icons';
 import Button from '../components/ui/Button';
 import Dropdown from '../components/ui/Dropdown';
 import { Table } from '../components/ui';
-import { fetchBills } from '../features/bills/billSlice';
+import billService from '../services/billService';
+import { saveBlob } from '../services/reportService';
 import { BILL_STATUSES, BILL_STATUS_BADGE } from '../constant/billingData';
 
 const StatusBadge = ({ value }) => {
@@ -26,21 +26,52 @@ const StatusBadge = ({ value }) => {
 };
 
 const BillingPage = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { list: bills = [], total, loading } = useSelector((s) => s.bills);
+  const [bills, setBills] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [totals, setTotals] = useState({ amount: 0, quantity: 0 });
+  const [loading, setLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  const refresh = useCallback(() => {
-    dispatch(fetchBills({ limit: 200, status: statusFilter === 'All' ? undefined : statusFilter }));
-  }, [dispatch, statusFilter]);
+  // G16: every filter runs on the server — no 200-row cap, totals are exact.
+  const params = useCallback(() => ({
+    limit: 1000,
+    status: statusFilter === 'All' ? undefined : statusFilter,
+    search: searchTerm.trim() || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  }), [statusFilter, searchTerm, dateFrom, dateTo]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await billService.getBills(params());
+        setBills(res.data || []);
+        setTotal(res.total || 0);
+        setTotals(res.totals || { amount: 0, quantity: 0 });
+      } catch {
+        toast.error('Failed to load bills');
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [params]);
+
+  const exportExcel = async () => {
+    try {
+      const blob = await billService.exportBills({ dateFrom: dateFrom || undefined, dateTo: dateTo || undefined });
+      saveBlob(blob, `Shivesh_Sales-register_${dateFrom || 'FY'}_${dateTo || ''}.xlsx`);
+    } catch (e) {
+      toast.error(e.response?.status === 403 ? 'You need the Reports → Export permission' : 'Export failed');
+    }
+  };
 
   const statusOptions = [
     { value: 'All', label: 'All' },
@@ -62,10 +93,17 @@ const BillingPage = () => {
       ),
     },
     { key: 'assignedTrucks', header: 'Assigned Trucks' },
+    { key: 'issueDate', header: 'Invoice date', render: (v) => (v ? new Date(v).toLocaleDateString('en-IN') : '—') },
+    { key: 'amount', header: 'Amount (₹)', render: (v) => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) },
     {
       key: 'status',
       header: 'Billing status',
-      render: (value) => <StatusBadge value={value} />,
+      render: (value, item) => (
+        <div className="flex flex-col gap-1 items-start">
+          <StatusBadge value={value} />
+          {item.daysOverdue > 0 && <span className="text-xs text-red-600 font-medium">Overdue · {item.daysOverdue} days</span>}
+        </div>
+      ),
     },
     {
       key: 'action',
@@ -84,16 +122,6 @@ const BillingPage = () => {
   ];
 
   const rows = bills
-    .filter((b) => {
-      const s = searchTerm.trim().toLowerCase();
-      return (
-        !s ||
-        b.order?.client?.companyName?.toLowerCase().includes(s) ||
-        b.order?.orderId?.toLowerCase().includes(s) ||
-        b.billNo?.toLowerCase().includes(s) ||
-        b.order?.productName?.toLowerCase().includes(s)
-      );
-    })
     .map((b) => ({
       ...b,
       orderId: b.order?.orderId || '—',
@@ -123,7 +151,7 @@ const BillingPage = () => {
             </div>
             <input
               type="text"
-              placeholder="Search by name"
+              placeholder="Search bill, order or client"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -142,6 +170,15 @@ const BillingPage = () => {
           </div>
         </div>
 
+        <div className="flex items-center gap-2 flex-wrap">
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-2 py-2" title="Invoice date from" />
+          <span className="text-sm text-gray-500">to</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="text-sm border border-gray-300 rounded-lg px-2 py-2" title="Invoice date to" />
+          <Button onClick={exportExcel} variant="primary" size="md" className="px-4 py-2 text-sm whitespace-nowrap">
+            Export Excel
+          </Button>
+        </div>
+
         {/* <Button
           onClick={() =>
             toast.info('Bills are generated automatically when an order is marked COMPLETED.')
@@ -153,6 +190,11 @@ const BillingPage = () => {
         >
           New Bill
         </Button> */}
+      </div>
+
+      <div className="mb-3 text-sm text-gray-700">
+        {total} bill(s) · Total qty <b>{Number(totals.quantity).toLocaleString('en-IN')}</b> · Total amount{' '}
+        <b>₹{Number(totals.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</b>
       </div>
 
       {/* Table */}

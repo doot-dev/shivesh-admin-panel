@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "../components/layout/layouts";
 import Dashboard from "../pages/dashboard";
 import Users from "../pages/userss";
@@ -57,9 +57,10 @@ export default function AppRoutes() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/add" element={<AddOrderPage />} />
             <Route path="orders/:orderId" element={<OrderDetails />} />
-            <Route path="orders/all" element={<ComingSoon />} />
-            <Route path="orders/pending" element={<ComingSoon />} />
-            <Route path="orders/completed" element={<ComingSoon />} />
+            {/* P1.8: the old sub-menu links open the orders list with a status preset. */}
+            <Route path="orders/all" element={<Navigate to="/orders" replace />} />
+            <Route path="orders/pending" element={<Navigate to="/orders?status=NEW" replace />} />
+            <Route path="orders/completed" element={<Navigate to="/orders?status=COMPLETED" replace />} />
             <Route path="testing" element={<CubeTestingPage />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="billing/:billId" element={<BillDetails />} />

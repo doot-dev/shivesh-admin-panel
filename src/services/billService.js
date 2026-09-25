@@ -52,6 +52,25 @@ const billService = {
     return response.data;
   },
 
+  // W11: review trucks on the ORDER, before any bill exists.
+  uploadOrderChallan: async (orderId, tmId, file) => {
+    const formData = new FormData();
+    formData.append('challan', file);
+    const response = await api.post(`/api/v1/admin/orders/${orderId}/tm/${tmId}/challan`, formData);
+    return response.data;
+  },
+
+  reviewOrderTm: async (orderId, tmId, data) => {
+    const response = await api.put(`/api/v1/admin/orders/${orderId}/tm/${tmId}/approval`, data);
+    return response.data;
+  },
+
+  // G16: the billing list's Export — the sales register for the chosen dates.
+  exportBills: async (params = {}) => {
+    const response = await api.get(`${BASE}/export`, { params, responseType: 'blob' });
+    return response.data;
+  },
+
   uploadChallan: async (billNo, tmId, file) => {
     const formData = new FormData();
     formData.append('challan', file);

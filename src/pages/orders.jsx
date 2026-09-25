@@ -24,7 +24,8 @@ const OrdersPage = () => {
 
   const { list: orders = [], total, loading } = useSelector((s) => s.orders);
 
-  const [activeTab, setActiveTab] = useState('All');
+  // P1.8: /orders?status=NEW preselects a tab.
+  const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get('status') || 'All');
   const [searchTerm, setSearchTerm] = useState('');
 
   const refresh = useCallback(() => {

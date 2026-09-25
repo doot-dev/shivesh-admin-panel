@@ -7,6 +7,7 @@ import Input from '../components/ui/Input';
 import Dropdown from '../components/ui/Dropdown';
 import { ICON_NAMES, Icon } from '../components/icons';
 import vendorService from '../services/vendorService';
+import reportService from '../services/reportService';
 import { fetchProjects } from '../features/projects/projectSlice';
 import { fetchProjectProducts } from '../features/projects/projectProductSlice';
 import { fetchClients } from '../features/clients/clientsSlice';
@@ -261,6 +262,14 @@ const AddOrderPage = () => {
   }));
 
   const selectedProjectName = projects.find((p) => p.projectId === form.projectId)?.projectName;
+  // P1.15: warn (don't block yet — the credit hold comes in Phase 2) when the
+  // client is overdue or over their limit.
+  const [credit, setCredit] = useState(null);
+  useEffect(() => {
+    if (!form.clientId) return;
+    reportService.getClientCredit(form.clientId).then((r) => setCredit({ ...r.data, clientId: form.clientId })).catch(() => setCredit(null));
+  }, [form.clientId]);
+
   const selectedClientName = clients.find((c) => c.clientId === form.clientId)?.companyName
     || clients.find((c) => c.clientId === form.clientId)?.ownerName;
   const selectedProductLabel = productOptions.find((p) => p.value === form.productId)?.label;
@@ -280,6 +289,16 @@ const AddOrderPage = () => {
           <p className="text-sm text-gray-500 mt-0.5">Create a new order and dispatch it to a vendor or field tech</p>
         </div>
       </div>
+
+      {credit && credit.clientId === form.clientId && credit.flag !== 'OK' && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <b>Credit warning for this client:</b>{' '}
+          {credit.flag === 'OVERDUE'
+            ? `${credit.overdueBillCount} overdue bill(s) worth ₹${credit.overdueAmount.toLocaleString('en-IN')} (oldest ${credit.oldestOverdueDays} days past due).`
+            : `over limit — used ₹${credit.used.toLocaleString('en-IN')} of ₹${credit.limit.toLocaleString('en-IN')}.`}{' '}
+          Check with an approver before booking.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -343,7 +362,7 @@ const AddOrderPage = () => {
               <div>
                 <Input
                   label="Quantity"
-                  placeholder="e.g. 50 m³"
+                  placeholder="e.g. 50 (in the product's unit)"
                   value={form.quantity}
                   onChange={(e) => set('quantity', e.target.value)}
                   required
@@ -545,7 +564,7 @@ const AddOrderPage = () => {
                       />
                       <Input
                         label="Quantity"
-                        placeholder="6 m3"
+                        placeholder="e.g. 6"
                         value={row.qty}
                         onChange={(e) => patchTmRow(row.key, { qty: e.target.value })}
                       />

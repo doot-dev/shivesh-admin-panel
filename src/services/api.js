@@ -46,6 +46,19 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error("API Error:", error);
+    // W37: an order past its update window comes back 409 ORDER_LOCKED. Users
+    // with orders.approve may override with a reason — ask once, retry once.
+    const res = error.response;
+    const cfg = error.config;
+    if (res?.status === 409 && res.data?.code === "ORDER_LOCKED" && cfg && !cfg._lockRetried) {
+      const reason = window.prompt(`${res.data.message}\n\nTo change it anyway (admin / approver only), give a reason:`);
+      if (reason?.trim()) {
+        cfg._lockRetried = true;
+        if (typeof FormData !== "undefined" && cfg.data instanceof FormData) cfg.data.append("overrideReason", reason.trim());
+        else cfg.data = JSON.stringify({ ...(cfg.data ? JSON.parse(cfg.data) : {}), overrideReason: reason.trim() });
+        return api.request(cfg);
+      }
+    }
     return Promise.reject(error);
   },
 );

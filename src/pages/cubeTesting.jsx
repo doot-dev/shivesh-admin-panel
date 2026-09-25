@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { fileLink } from '../utils/fileLink';
 import { toast } from 'react-toastify';
 
 import { Icon, ICON_NAMES } from '../components/icons';
@@ -8,7 +9,6 @@ import Modal from '../components/ui/Modal';
 import { Table } from '../components/ui';
 import CubeTestForm, { FieldLabel } from '../components/cubeTest/CubeTestForm';
 import orderService from '../services/orderService';
-import api from '../services/api';
 import {
   CUBE_TEST_PERIOD_LABEL,
   EMPTY_CUBE_TEST_FORM,
@@ -18,7 +18,6 @@ import {
   splitIsoToDateTime,
 } from '../utils/cubeTest';
 
-const ORIGIN = api.defaults.baseURL;
 
 export default function CubeTestingPage() {
   const [orders, setOrders] = useState([]);
@@ -299,7 +298,7 @@ export default function CubeTestingPage() {
             </div>
             {selected.fileUrl && (
               <a
-                href={`${ORIGIN}${selected.fileUrl}`}
+                href={fileLink(selected.fileUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block mb-4 text-sm text-primary hover:underline font-medium"

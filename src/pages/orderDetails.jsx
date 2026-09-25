@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 
 import {
   addOrderComment,
@@ -33,7 +34,11 @@ import {
   maxOrderDateLabel,
 } from '../utils/orderDate';
 import vendorService from '../services/vendorService';
-import api from '../services/api';
+import billService from '../services/billService';
+import reportService from '../services/reportService';
+import TruckReviewActions from '../components/orders/TruckReviewActions';
+import { fileLink } from '../utils/fileLink';
+import { CUBE_TEST_PERIODS, CUBE_TEST_PERIOD_DAYS, CUBE_TEST_PERIOD_LABEL, CUBE_STATUS_BADGE } from '../utils/cubeTest';
 import { joinOrderRoom, leaveOrderRoom, onSocketEvent } from '../services/socket';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -42,26 +47,15 @@ import FullPageLoader from '../components/ui/FullPageLoader';
 import DeleteModal from '../components/modals/DeleteModal';
 import { ICON_NAMES, Icon } from '../components/icons';
 
-const ORIGIN = api.defaults.baseURL;
 
 const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
-const DELIVERY_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'];
+const DELIVERY_STATUSES = ['ASSIGNED', 'IN_TRANSIT', 'REACHED', 'DELIVERED', 'COMPLETED'];
 
 // Cube tests are never locked by order status — a cube result legitimately
 // arrives after the order is delivered and closed. See src/utils/cubeTest.js,
 // which is the single source of truth for this rule.
 const CUBE_TEST_LOCKED_STATES = [];
 
-const CUBE_TEST_PERIODS = [
-  { value: 'SEVEN_DAYS', label: '7 Days' },
-  { value: 'FOURTEEN_DAYS', label: '14 Days' },
-  { value: 'TWENTYONE_DAYS', label: '21 Days' },
-  { value: 'CUSTOM', label: 'Custom' },
-];
-
-const CUBE_TEST_PERIOD_DAYS = { SEVEN_DAYS: 7, FOURTEEN_DAYS: 14, TWENTYONE_DAYS: 21 };
-
-const CUBE_TEST_PERIOD_LABEL = CUBE_TEST_PERIODS.reduce((acc, p) => ({ ...acc, [p.value]: p.label }), {});
 
 const STATUS_BADGE = {
   NEW:         { color: '#2563EB', backgroundColor: '#DBEAFE' },
@@ -207,7 +201,15 @@ export default function OrderDetails() {
   const [statusDraft, setStatusDraft] = useState('');
   const [deliveryStatusDraft, setDeliveryStatusDraft] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [billBanner, setBillBanner] = useState(null); // { billNo } | { error }
+  const [billBanner, setBillBanner] = useState(null); // { billNo } | { error } | { pending }
+  const [credit, setCredit] = useState(null);
+
+  // P1.15: the client's credit position, for the warning banner.
+  const clientCode = order?.client?.clientId;
+  useEffect(() => {
+    if (!clientCode) return;
+    reportService.getClientCredit(clientCode).then((r) => setCredit(r.data)).catch(() => setCredit(null));
+  }, [clientCode]);
   const [generatingBill, setGeneratingBill] = useState(false);
 
   // Vendor row form
@@ -350,13 +352,30 @@ export default function OrderDetails() {
         deliveryStatus: deliveryStatusDraft,
       }));
       if (updateOrderStatus.fulfilled.match(result)) {
-        const { bill, billError } = result.payload;
+        const { bill, billError, billPending } = result.payload;
         if (bill) setBillBanner({ billNo: bill.billNo });
         else if (billError) setBillBanner({ error: billError });
+        else if (billPending) setBillBanner({ pending: billPending });
       }
     } finally {
       setUpdatingStatus(false);
     }
+  };
+
+  // W11: challan upload + accept/reject on the order; the bill follows by itself
+  // once every live truck is in (billIfReady on the server).
+  const afterReview = (r) => {
+    if (r?.bill) setBillBanner({ billNo: r.bill.billNo });
+    else if (r?.billPending && order?.status === 'COMPLETED') setBillBanner({ pending: r.billPending });
+    refreshOrder();
+  };
+  const handleOrderChallan = async (tmId, file) => {
+    try { afterReview(await billService.uploadOrderChallan(orderId, tmId, file)); toast.success('Challan uploaded'); }
+    catch (e) { toast.error(e.response?.data?.message || 'Upload failed'); }
+  };
+  const handleOrderReview = async (tmId, data) => {
+    try { afterReview(await billService.reviewOrderTm(orderId, tmId, data)); toast.success(`Truck ${data.approvalStatus.toLowerCase()}`); }
+    catch (e) { toast.error(e.response?.data?.message || 'Update failed'); }
   };
 
   const handleGenerateBillManually = async () => {
@@ -704,6 +723,8 @@ export default function OrderDetails() {
                 View Bill
               </Link>
             </>
+          ) : billBanner.pending ? (
+            <span className="text-sm text-amber-800">Completed — the bill will be created once challans are in: {billBanner.pending}</span>
           ) : (
             <>
               <span className="text-sm text-amber-800">{billBanner.error}</span>
@@ -712,6 +733,21 @@ export default function OrderDetails() {
               </Button>
             </>
           )}
+        </div>
+      )}
+
+      {credit && credit.flag !== 'OK' && (
+        <div className="mb-5 rounded-lg border p-4 bg-red-50 border-red-200 text-sm text-red-800">
+          <b>Credit warning:</b>{' '}
+          {credit.flag === 'OVERDUE'
+            ? `${credit.overdueBillCount} overdue bill(s), ₹${credit.overdueAmount.toLocaleString('en-IN')}, oldest ${credit.oldestOverdueDays} days past due.`
+            : `Over limit — used ₹${credit.used.toLocaleString('en-IN')} of ₹${credit.limit.toLocaleString('en-IN')}.`}
+        </div>
+      )}
+      {order.editableUntil && (
+        <div className={`mb-5 text-xs inline-block rounded-full px-3 py-1 ${new Date(order.editableUntil) < new Date() ? 'bg-gray-200 text-gray-700' : 'bg-blue-50 text-blue-700'}`}>
+          {new Date(order.editableUntil) < new Date() ? 'Locked since' : 'Editable until'}{' '}
+          {new Date(order.editableUntil).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
         </div>
       )}
 
@@ -913,9 +949,7 @@ export default function OrderDetails() {
                         <div><span className="text-gray-500">Start:</span> <span className="font-medium">{tm.batchStartTime || '—'}</span></div>
                         <div><span className="text-gray-500">End:</span> <span className="font-medium">{tm.batchEndTime || '—'}</span></div>
                       </div>
-                      {tm.rejectionReason && (
-                        <p className="mt-2 text-xs text-red-600">Rejected: {tm.rejectionReason}</p>
-                      )}
+                      <TruckReviewActions tm={tm} onUploadChallan={handleOrderChallan} onReview={handleOrderReview} />
                     </>
                   )}
                 </div>
@@ -960,8 +994,13 @@ export default function OrderDetails() {
                   ) : (
                     <>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-600">
+                        <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
                           {CUBE_TEST_PERIOD_LABEL[ct.period] || ct.period}
+                          {CUBE_STATUS_BADGE[ct.status] && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${CUBE_STATUS_BADGE[ct.status].className}`}>
+                              {CUBE_STATUS_BADGE[ct.status].label}{ct.status === 'DUE' && ct.daysPending ? ` · ${ct.daysPending}d` : ''}
+                            </span>
+                          )}
                         </span>
                         <div className="flex gap-3">
                           <button type="button" onClick={() => openEditCubeTest(ct)} className="text-xs text-primary hover:underline font-medium">
@@ -979,7 +1018,7 @@ export default function OrderDetails() {
                       </div>
                       {ct.fileUrl && (
                         <a
-                          href={`${ORIGIN}${ct.fileUrl}`}
+                          href={fileLink(ct.fileUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-block mt-2 text-xs text-primary hover:underline font-medium"

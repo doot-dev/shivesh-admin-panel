@@ -21,6 +21,37 @@ const reportService = {
     const response = await api.get(`${BASE}/credit-risk/${clientId}/bills`);
     return response.data;
   },
+
+  /** Phase 1B: one register (sales|documents|outstanding|challans|exceptions|audit|orders) as .xlsx. */
+  exportRegister: async (register, params = {}) => {
+    const response = await api.get(`${BASE}/export/${register}`, { params, responseType: 'blob' });
+    return response.data;
+  },
+
+  /** Every register in one workbook for the CA. */
+  exportCaPack: async (params = {}) => {
+    const response = await api.get(`${BASE}/ca-pack`, { params, responseType: 'blob' });
+    return response.data;
+  },
+
+  /** Every client's payment and order metrics (Reports tabs). */
+  getAnalytics: async () => (await api.get(`${BASE}/analytics`)).data,
+
+  /** One client's analysis + credit (client page Analysis tab). */
+  getClientAnalytics: async (clientId) => (await api.get(`${BASE}/clients/${clientId}/analytics`)).data,
+
+  /** Credit position for the banner on Add Order / order page (P1.15). */
+  getClientCredit: async (clientId) => (await api.get(`${BASE}/clients/${clientId}/credit`)).data,
+};
+
+/** Save a blob response as a file. */
+export const saveBlob = (blob, fileName) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
 export default reportService;

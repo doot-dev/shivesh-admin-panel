@@ -88,7 +88,7 @@ function EditCommissionModal({ isOpen, onClose, onSubmit, project, loading }) {
 
                 <Input
                     type="number"
-                    label="Amount per m3"
+                    label="Amount per unit (₹)"
                     placeholder="Enter amount"
                     value={form.commissionAmount}
                     onChange={(e) => handleChange("commissionAmount", e.target.value)}
