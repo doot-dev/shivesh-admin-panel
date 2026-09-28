@@ -11,7 +11,18 @@ export default function TruckReviewActions({ tm, disabled, onUploadChallan, onRe
   const fileRef = useRef(null);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
+  const [part, setPart] = useState(null); // { qty, reason } while editing a part rejection
   const rejected = tm.approvalStatus === 'REJECTED';
+  const kept = Math.max(0, Number(tm.qty) - (tm.rejectedQty || 0));
+
+  // Part rejection: some CBM wasted / refused at site, the rest is billed.
+  const submitPart = () => {
+    const q = part.qty === '' ? null : Number(part.qty);
+    if (q !== null && !(q > 0 && q < Number(tm.qty))) return toast.error(`Rejected qty must be more than 0 and less than ${tm.qty}.`);
+    if (q !== null && !part.reason.trim()) return toast.error('A reason is required.');
+    onReview(tm.id, { approvalStatus: tm.approvalStatus, rejectedQty: q, rejectionReason: part.reason.trim() });
+    setPart(null);
+  };
 
   const submitReject = () => {
     if (!reason.trim()) return toast.error('A rejection reason is required.');
@@ -63,6 +74,9 @@ export default function TruckReviewActions({ tm, disabled, onUploadChallan, onRe
             >
               Accept
             </button>
+            <button type="button" onClick={() => setPart({ qty: tm.rejectedQty ?? '', reason: tm.rejectedQty ? tm.rejectionReason ?? '' : '' })} className="text-amber-700 font-medium hover:underline">
+              {tm.rejectedQty ? 'Edit part reject' : 'Part reject'}
+            </button>
             <button type="button" onClick={() => setRejecting(true)} className="text-red-600 font-medium hover:underline">
               Reject (for client)
             </button>
@@ -73,6 +87,32 @@ export default function TruckReviewActions({ tm, disabled, onUploadChallan, onRe
         <p className="text-xs text-red-600">
           Rejected{tm.rejectedByType === 'CLIENT' ? ' by client at site' : tm.rejectedByType === 'USER' ? ' by office' : ''}: {tm.rejectionReason}
         </p>
+      )}
+      {!rejected && tm.rejectedQty > 0 && (
+        <p className="text-xs text-amber-700">
+          Kept {kept} of {tm.qty} · {tm.rejectedQty} rejected{tm.rejectedByType === 'CLIENT' ? ' by client at site' : tm.rejectedByType === 'USER' ? ' by office' : ''}: {tm.rejectionReason}
+        </p>
+      )}
+      {part && (
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            autoFocus
+            type="number" min="0" step="0.1"
+            value={part.qty}
+            onChange={(e) => setPart({ ...part, qty: e.target.value })}
+            placeholder="Wasted CBM"
+            className="w-28 text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white"
+          />
+          <input
+            value={part.reason}
+            onChange={(e) => setPart({ ...part, reason: e.target.value })}
+            placeholder="Reason (e.g. 1 CBM wasted, pump choke)"
+            className="flex-1 min-w-40 text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white"
+          />
+          <button type="button" onClick={submitPart} className="text-xs font-medium text-amber-700 hover:underline">Save</button>
+          <button type="button" onClick={() => setPart(null)} className="text-xs text-gray-500 hover:underline">Cancel</button>
+          <span className="w-full text-xs text-gray-500">Leave the qty empty to clear it. Billed qty = {tm.qty} − wasted.</span>
+        </div>
       )}
       {rejecting && (
         <div className="flex items-center gap-2">

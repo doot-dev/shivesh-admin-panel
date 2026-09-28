@@ -116,7 +116,7 @@ const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
       {/* TM fields */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
         <Field label="Truck No." value={tm.truckNo} />
-        <Field label="Quantity" value={tm.qty} />
+        <Field label="Quantity" value={tm.rejectedQty > 0 && tm.approvalStatus !== 'REJECTED' ? `${tm.qty} (−${tm.rejectedQty} wasted)` : tm.qty} />
         <Field label="Batch Start Time" value={tm.batchStartTime} />
         <Field label="Batch End Time" value={tm.batchEndTime} />
         <Field label="Challan No." value={tm.challanNo} />
@@ -130,6 +130,9 @@ const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
             <StatusBadge value={tm.approvalStatus} badgeMap={TM_APPROVAL_BADGE} />
           </div>
         </div>
+        {tm.rejectedQty > 0 && tm.approvalStatus !== 'REJECTED' && (
+          <Field label={tm.rejectedByType === 'CLIENT' ? 'Part rejected by client' : 'Part rejected'} value={tm.rejectionReason} />
+        )}
         {tm.approvalStatus === 'REJECTED' && (
           <Field
             label={tm.rejectedByType === 'CLIENT' ? 'Rejected by client at site' : 'Reason'}
@@ -409,6 +412,7 @@ export default function BillDetails() {
             {[
               ['Ordered', bill.quantities.ordered],
               ['Delivered (trucks not rejected)', bill.quantities.delivered],
+              ...(bill.quantities.wasted ? [['Wasted at site (part rejected)', bill.quantities.wasted]] : []),
               ['Accepted', bill.quantities.accepted],
               ['Billed', bill.quantities.billed],
             ].map(([label, v]) => (

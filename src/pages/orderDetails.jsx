@@ -378,7 +378,7 @@ export default function OrderDetails() {
     catch (e) { toast.error(e.response?.data?.message || 'Upload failed'); }
   };
   const handleOrderReview = async (tmId, data) => {
-    try { afterReview(await billService.reviewOrderTm(orderId, tmId, data)); toast.success(`Truck ${data.approvalStatus.toLowerCase()}`); }
+    try { afterReview(await billService.reviewOrderTm(orderId, tmId, data)); toast.success(data.rejectedQty !== undefined ? 'Part rejection saved' : `Truck ${data.approvalStatus.toLowerCase()}`); }
     catch (e) { toast.error(e.response?.data?.message || 'Update failed'); }
   };
 
@@ -955,7 +955,7 @@ export default function OrderDetails() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
                         <div><span className="text-gray-500">Truck:</span> <span className="font-medium">{tm.truckNo}</span></div>
-                        <div><span className="text-gray-500">Qty:</span> <span className="font-medium">{tm.qty}</span></div>
+                        <div><span className="text-gray-500">Qty:</span> <span className="font-medium">{tm.qty}</span>{tm.rejectedQty > 0 && tm.approvalStatus !== 'REJECTED' && <span className="text-amber-700"> (−{tm.rejectedQty} wasted)</span>}</div>
                         <div><span className="text-gray-500">Challan:</span> <span className="font-medium">{tm.challanNo || '—'}</span></div>
                         <div><span className="text-gray-500">Dispatch:</span> <span className="font-medium">{tm.dispatchTime || '—'}</span></div>
                         <div><span className="text-gray-500">Arrival:</span> <span className="font-medium">{tm.arrivalTime || '—'}</span></div>
