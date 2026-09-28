@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
+import LedgerStatement from './LedgerStatement';
 import paymentService from '../../services/paymentService';
 import usePermission from '../../hooks/usePermission';
 import { Modal, Button, Input } from '../ui';
@@ -33,7 +34,6 @@ const linkBtn = 'h-10 rounded-xl border border-primary-light bg-white px-3.5 tex
 export default function ClientAccountTab({ clientId }) {
   const { can } = usePermission();
   const [acc, setAcc] = useState(null);
-  const [ledger, setLedger] = useState(null);
   const [selected, setSelected] = useState([]);
   const [showPay, setShowPay] = useState(false);
   // One small form popup for credit, extra credit, revoke and reverse.
@@ -241,24 +241,8 @@ export default function ClientAccountTab({ clientId }) {
           )}
         </Box>
 
-        <Box title="Ledger" action={<button type="button" className={linkBtn} onClick={async () => setLedger((await paymentService.ledger(clientId)).data)}>{ledger ? 'Refresh' : 'Show ledger'}</button>}>
-          {ledger ? (
-            <div className="-mx-4 overflow-x-auto sm:-mx-6">
-              <table className="min-w-full text-sm">
-                <thead className="bg-background-hover text-left text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                  <tr className="[&>th]:whitespace-nowrap [&>th]:px-4 [&>th]:py-2.5"><th>Date</th><th>Ref</th><th>Detail</th><th className="text-right">Debit</th><th className="text-right">Credit</th><th className="text-right">Balance</th></tr>
-                </thead>
-                <tbody>{ledger.map((r, i) => (
-                  <tr key={i} className="border-t border-primary-light [&>td]:px-4 [&>td]:py-3">
-                    <td className="whitespace-nowrap text-text-secondary">{d(r.date)}</td><td className="whitespace-nowrap font-medium">{r.ref}</td><td className="min-w-[160px]">{r.detail}</td>
-                    <td className="text-right tabular-nums">{r.debit ? inr(r.debit) : ''}</td><td className="text-right tabular-nums">{r.credit ? inr(r.credit) : ''}</td><td className="text-right font-semibold tabular-nums">{inr(r.balance)}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          ) : <p className="text-sm text-text-secondary">Every bill and payment for this client, with a running balance.</p>}
-        </Box>
       </div>
+      <LedgerStatement clientId={clientId} />
     </div>
   );
 }
