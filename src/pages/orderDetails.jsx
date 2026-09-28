@@ -3,6 +3,7 @@ import { StatusChip } from '../components/ui/StatusChip';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import CreditBandBar from '../components/ui/CreditBandBar';
 
 import {
   addOrderComment,
@@ -744,7 +745,7 @@ export default function OrderDetails() {
       {order.creditHold && (
         <div className="rounded-2xl border border-warning/40 bg-warning-light p-4 text-sm text-text-primary">
           <p className="flex items-start gap-3"><TriangleAlert size={20} className="shrink-0 text-warning" />
-            <span><b>On credit hold:</b> {order.creditHoldReason}. It can&apos;t be confirmed until an approver releases it.</span></p>
+            <span><b>On credit hold:</b> {order.creditHoldReason}. Credit no longer blocks orders; release it to clear this note.</span></p>
           {can('orders', 'approve') && (
             <div className="mt-3 flex flex-wrap gap-2">
               <button className="h-10 rounded-xl bg-primary px-4 font-semibold text-white hover:bg-primary-second" onClick={() => releaseHold('RELEASE')}>Release</button>
@@ -757,14 +758,7 @@ export default function OrderDetails() {
       {order.cancelReason && order.status === 'CANCELLED' && (
         <div className="rounded-2xl border border-primary-light bg-white p-4 text-sm text-text-primary">Cancelled: {order.cancelReason}</div>
       )}
-      {credit && credit.flag !== 'OK' && (
-        <div className="rounded-2xl border border-error/20 bg-error-light p-4 text-sm text-error">
-          <b>Credit warning:</b>{' '}
-          {credit.flag === 'OVERDUE'
-            ? `${credit.overdueBillCount} overdue bill(s), ₹${credit.overdueAmount.toLocaleString('en-IN')}, oldest ${credit.oldestOverdueDays} days past due.`
-            : `Over limit — used ₹${credit.used.toLocaleString('en-IN')} of ₹${credit.limit.toLocaleString('en-IN')}.`}
-        </div>
-      )}
+      <CreditBandBar credit={credit} />
       {order.editableUntil && (
         <div className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${new Date(order.editableUntil) < new Date() ? 'bg-background-hover text-text-secondary' : 'bg-primary-light text-primary'}`}>
           {new Date(order.editableUntil) < new Date() ? 'Locked since' : 'Editable until'}{' '}

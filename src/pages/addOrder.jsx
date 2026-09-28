@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import CreditBandBar from '../components/ui/CreditBandBar';
 
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -262,8 +263,7 @@ const AddOrderPage = () => {
   }));
 
   const selectedProjectName = projects.find((p) => p.projectId === form.projectId)?.projectName;
-  // P1.15: warn (don't block yet — the credit hold comes in Phase 2) when the
-  // client is overdue or over their limit.
+  // Credit bar: warns only, never blocks (2026-09-28).
   const [credit, setCredit] = useState(null);
   useEffect(() => {
     if (!form.clientId) return;
@@ -290,15 +290,7 @@ const AddOrderPage = () => {
         </div>
       </div>
 
-      {credit && credit.clientId === form.clientId && credit.flag !== 'OK' && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          <b>Credit warning for this client:</b>{' '}
-          {credit.flag === 'OVERDUE'
-            ? `${credit.overdueBillCount} overdue bill(s) worth ₹${credit.overdueAmount.toLocaleString('en-IN')} (oldest ${credit.oldestOverdueDays} days past due).`
-            : `over limit — used ₹${credit.used.toLocaleString('en-IN')} of ₹${credit.limit.toLocaleString('en-IN')}.`}{' '}
-          Check with an approver before booking.
-        </div>
-      )}
+      {credit?.clientId === form.clientId && <CreditBandBar credit={credit} className="mb-4" />}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

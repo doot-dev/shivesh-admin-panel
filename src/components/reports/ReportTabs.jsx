@@ -44,7 +44,8 @@ export function PaymentBehaviourTab() {
         Sort by
         <select value={sort} onChange={(e) => setSort(e.target.value)} className="border rounded px-2 py-1">
           <option value="outstanding">Outstanding</option>
-          <option value="avgDaysPastDue">Days late</option>
+          <option value="avgDaysLate">Days late</option>
+          <option value="lateCount">Times late</option>
           <option value="dso">DSO</option>
           <option value="billed">Billed</option>
         </select>
@@ -52,7 +53,7 @@ export function PaymentBehaviourTab() {
       <table className="min-w-full bg-white border rounded-lg">
         <thead className="bg-gray-50"><tr>
           <Th>Client</Th><Th>Billed</Th><Th>Collected</Th><Th>Outstanding</Th><Th>Avg days to pay</Th>
-          <Th>Avg days late</Th><Th>On-time %</Th><Th>DSO</Th><Th>Oldest open bill</Th>
+          <Th>Avg days late</Th><Th>Times late</Th><Th>On-time %</Th><Th>DSO</Th><Th>Oldest open bill</Th>
         </tr></thead>
         <tbody>
           {rows.map((c) => (
@@ -60,7 +61,7 @@ export function PaymentBehaviourTab() {
               <Td className="font-medium">{c.companyName}</Td>
               <Td>{inr(c.payment.billed)}</Td><Td>{inr(c.payment.collected)}</Td>
               <Td className={c.payment.outstanding > 0 ? 'text-red-700 font-medium' : ''}>{inr(c.payment.outstanding)}</Td>
-              <Td>{dash(c.payment.avgDaysToPay, ' d')}</Td><Td>{dash(c.payment.avgDaysPastDue, ' d')}</Td>
+              <Td>{dash(c.payment.avgDaysToPay, ' d')}</Td><Td>{dash(c.payment.avgDaysLate, ' d')}</Td><Td>{dash(c.payment.lateCount)}</Td>
               <Td>{dash(c.payment.onTimePct, '%')}</Td><Td>{dash(c.payment.dso, ' d')}</Td>
               <Td>{c.payment.oldestOpenBill ? `${c.payment.oldestOpenBill.billNo} · ${c.payment.oldestOpenBill.days} d` : '—'}</Td>
             </tr>

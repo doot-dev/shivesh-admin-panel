@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AiFillFilePdf } from "react-icons/ai";
 import api from "../services/api";
 import reportService from "../services/reportService";
+import CreditBandBar from "../components/ui/CreditBandBar";
 import { fileLink } from "../utils/fileLink";
 import ClientAccountTab from "../components/clients/ClientAccountTab";
 import ClientTeamTab from "../components/clients/ClientTeamTab";
@@ -97,22 +98,24 @@ const AnalysisTab = ({ clientId }) => {
     <div className="space-y-5">
       <div>
         <h4 className="text-sm font-semibold mb-2">Credit</h4>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+        <CreditBandBar credit={c} className="mb-2" />
+        {c.limit !== undefined && <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
           <Stat label="Limit" value={inr(c.limit)} />
           <Stat label="Used" value={inr(c.used)} />
           <Stat label="Available" value={inr(c.available)} tone={c.available < 0 ? "text-red-700" : ""} />
           <Stat label="Overdue" value={inr(c.overdueAmount)} tone={c.overdueAmount ? "text-red-700" : ""} />
           <Stat label="Unbilled (challans in)" value={inr(c.unbilled)} />
           <Stat label="Status" value={c.flag.replace("_", " ")} tone={c.flag === "OK" ? "text-green-700" : "text-red-700"} />
-        </div>
+        </div>}
       </div>
       <div>
         <h4 className="text-sm font-semibold mb-2">Payment behaviour</h4>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
           <Stat label="Billed" value={inr(p.billed)} />
           <Stat label="Collected" value={inr(p.collected)} />
           <Stat label="Avg days to pay" value={d(p.avgDaysToPay, " d")} />
-          <Stat label="Avg days late" value={d(p.avgDaysPastDue, " d")} />
+          <Stat label="Avg days late (late ones)" value={d(p.avgDaysLate, " d")} tone={p.avgDaysLate ? "text-red-700" : ""} />
+          <Stat label="Times paid late" value={`${p.lateCount ?? "—"}${p.maxDaysLate ? ` · max ${p.maxDaysLate} d` : ""}`} />
           <Stat label="On-time" value={d(p.onTimePct, "%")} />
           <Stat label="DSO" value={d(p.dso, " d")} />
         </div>
