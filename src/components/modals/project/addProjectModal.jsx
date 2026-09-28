@@ -115,6 +115,25 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
       headerIcon={ICON_NAMES.PROJECT}
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
+        <label
+          className="block text-sm font-medium mb-2"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          Client
+        </label>
+        {/* Client */}
+        <Dropdown
+          options={clients.map((c) => ({
+            value: c.clientId || c._id || c.id,
+            label: c.companyName || c.name,
+          }))}
+          value={formData.clientId}
+          placeholder="Select Client"
+          width="100%"
+          height="40px"
+          onChange={(val) => handleInputChange("clientId", val)}
+        />
+
         {/* Project Name */}
         <Input
           type="text"
@@ -124,6 +143,24 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
           onChange={(e) => handleInputChange("projectName", e.target.value)}
         />
 
+        {/* Site name */}
+        <Input
+          type="text"
+          label="Site Name"
+          placeholder="Site Name"
+          value={formData.siteName}
+          onChange={(e) => handleInputChange("siteName", e.target.value)}
+        />
+        {/* Address */}
+        <Input
+          type="text"
+          label="Address"
+          placeholder="Site address"
+          value={formData.projectLocation}
+          onChange={(e) => handleInputChange("projectLocation", e.target.value)}
+        />
+
+        {/* Other details: pin on the map */}
         {/* Search icon toggle */}
         <div className="flex items-center gap-2">
           <Button
@@ -164,42 +201,6 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
           <Input label="Latitude" value={formData.latitude} readOnly />
           <Input label="Longitude" value={formData.longitude} readOnly />
         </div>
-
-        {/* Project Location for submission (not map search) */}
-        <Input
-          type="text"
-          label="Project Location"
-          placeholder="Project Location"
-          value={formData.projectLocation}
-          onChange={(e) => handleInputChange("projectLocation", e.target.value)}
-        />
-
-        {/* Site name */}
-        <Input
-          type="text"
-          label="Site Name"
-          placeholder="Site Name"
-          value={formData.siteName}
-          onChange={(e) => handleInputChange("siteName", e.target.value)}
-        />
-        <label
-          className="block text-sm font-medium mb-2"
-          style={{ color: "var(--color-text-primary)" }}
-        >
-          Client
-        </label>
-        {/* Client */}
-        <Dropdown
-          options={clients.map((c) => ({
-            value: c.clientId || c._id || c.id,
-            label: c.companyName || c.name,
-          }))}
-          value={formData.clientId}
-          placeholder="Select Client"
-          width="100%"
-          height="40px"
-          onChange={(val) => handleInputChange("clientId", val)}
-        />
 
         <div className="flex gap-3 pt-4">
           <Button type="button" onClick={handleClose} className="flex-1">
