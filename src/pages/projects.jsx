@@ -94,7 +94,7 @@ const ProjectsPage = () => {
   };
   const actions = [
     {
-      text: "Delete",
+      text: "Delete", perm: "projects.delete",
       onClick: handleDelete,
       textColor: "var(--color-error)",
     },
@@ -170,6 +170,7 @@ const ProjectsPage = () => {
 
         <Button
           onClick={() => setShowAddModal(true)}
+          perm="projects.create"
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
           size="md"

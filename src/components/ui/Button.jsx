@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from '../icons';
+import usePermission from '../../hooks/usePermission';
 
 const Button = ({
   children,
@@ -35,9 +36,13 @@ const Button = ({
   hoverBackgroundColor,
   hoverTextColor,
   hoverBorderColor,
-  
+
+  // "module.action" the user must hold, else the button is not shown at all.
+  perm,
+
   ...props
 }) => {
+  const { canKey } = usePermission();
   // Size classes
   const sizeClasses = {
     xs: 'px-2 py-1 text-xs',
@@ -101,6 +106,8 @@ const Button = ({
   if (hoverBackgroundColor) hoverStyles['--hover-bg'] = hoverBackgroundColor;
   if (hoverTextColor) hoverStyles['--hover-text'] = hoverTextColor;
   if (hoverBorderColor) hoverStyles['--hover-border'] = hoverBorderColor;
+
+  if (perm && !canKey(perm)) return null;
 
   return (
     <button

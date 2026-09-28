@@ -17,6 +17,7 @@ const blank = { name: "", phone: "", designation: "", roleId: "", allProjects: t
 const field = "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none";
 
 export default function ClientTeamTab({ clientId }) {
+  const { canKey } = usePermission();
   const { can } = usePermission();
   const canEdit = can(MODULE.CLIENTS, ACTIONS.UPDATE);
   const [rows, setRows] = useState(null);
@@ -118,11 +119,11 @@ export default function ClientTeamTab({ clientId }) {
           header: "",
           render: (_v, c) => (
             <div className="flex justify-end gap-2 whitespace-nowrap">
-              <button type="button" onClick={() => openEdit(c)} className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Edit</button>
-              <button type="button" onClick={() => toggleActive(c)} className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+              {canKey('clientTeam.update') && (<button type="button" onClick={() => openEdit(c)} className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Edit</button>)}
+              {canKey('clientTeam.update') && (<button type="button" onClick={() => toggleActive(c)} className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
                 {c.isActive ? "Deactivate" : "Activate"}
-              </button>
-              <button type="button" onClick={() => setConfirm(c)} className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Remove</button>
+              </button>)}
+              {canKey('clientTeam.delete') && (<button type="button" onClick={() => setConfirm(c)} className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Remove</button>)}
             </div>
           ),
         }]
@@ -137,7 +138,7 @@ export default function ClientTeamTab({ clientId }) {
           change roles under <span className="font-medium">Client Roles</span>.
         </p>
         {canEdit && (
-          <Button variant="primary" onClick={() => setForm({ ...blank, roleId: String(roles.find((r) => !r.isSystem)?.id ?? "") })}>
+          <Button variant="primary" perm="clientTeam.create" onClick={() => setForm({ ...blank, roleId: String(roles.find((r) => !r.isSystem)?.id ?? "") })}>
             Add contact
           </Button>
         )}

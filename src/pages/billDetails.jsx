@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import usePermission from "../hooks/usePermission";
 import { StatusChip } from '../components/ui/StatusChip';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -50,6 +51,7 @@ const Field = ({ label, value, action }) => (
 const StatusBadge = ({ value }) => <StatusChip status={value} />;
 
 const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
+  const { canKey } = usePermission();
   const fileInputRef = useRef(null);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
@@ -92,7 +94,7 @@ const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
           >
             View challan
           </button>
-          <button
+          {canKey('billing.update') && (<button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1 text-xs font-medium hover:underline"
@@ -100,7 +102,7 @@ const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
           >
             <Icon name={ICON_NAMES.PLUS} size={14} color="var(--color-primary)" />
             {tm.challanUrl ? 'Replace challan' : 'Add challan'}
-          </button>
+          </button>)}
           <input
             ref={fileInputRef}
             type="file"
@@ -137,20 +139,20 @@ const TmCard = ({ tm, locked, onUploadChallan, onAccept, onReject }) => {
 
         {!locked && tm.approvalStatus !== 'ACCEPTED' && !rejecting && (
           <div className="flex items-end gap-2 col-span-2">
-            <button
+            {canKey('billing.approve') && (<button
               type="button"
               onClick={() => onAccept(tm.id)}
               className="text-xs font-medium text-green-700 hover:underline"
             >
               Accept
-            </button>
-            <button
+            </button>)}
+            {canKey('billing.approve') && (<button
               type="button"
               onClick={() => setRejecting(true)}
               className="text-xs font-medium text-red-600 hover:underline"
             >
               Reject
-            </button>
+            </button>)}
           </div>
         )}
       </div>
@@ -327,7 +329,7 @@ export default function BillDetails() {
           </Button>
         ) : (
           <Button
-            onClick={() => docInputRef.current?.click()}
+            onClick={() => docInputRef.current?.click()} perm="billing.update"
             leftIcon={ICON_NAMES.UPLOAD}
             variant="primary"
             size="md"
@@ -341,7 +343,7 @@ export default function BillDetails() {
 
         {!locked && (
           <Button
-            onClick={handleDelete}
+            onClick={handleDelete} perm="billing.delete"
             variant="danger"
             size="md"
             disabled={deleting}

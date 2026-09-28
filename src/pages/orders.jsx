@@ -129,6 +129,7 @@ const OrdersPage = () => {
 
         <Button
           onClick={() => navigate('/orders/add')}
+          perm="orders.create"
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
           size="md"

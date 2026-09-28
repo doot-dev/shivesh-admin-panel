@@ -173,7 +173,7 @@ const LeadsPage = () => {
 
   const actions = [
     {
-      text: "Delete",
+      text: "Delete", perm: "leads.delete",
       onClick: handleDeleteLead,
       textColor: "var(--color-error)",
       hoverBackgroundColor: "var(--color-error-light)",
@@ -206,6 +206,7 @@ const LeadsPage = () => {
 
           <Button
             onClick={handleAddLead}
+            perm="leads.create"
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
             size="md"

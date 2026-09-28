@@ -139,14 +139,14 @@ const Subcategories = () => {
 
   const actions = [
     {
-      text: "Edit",
+      text: "Edit", perm: "subcategories.update",
       onClick: handleEdit,
       textColor: "var(--color-success)",
       hoverBackgroundColor: "var(--color-success-light)",
       title: "Edit",
     },
     {
-      text: "Delete",
+      text: "Delete", perm: "subcategories.delete",
       onClick: handleDelete,
       textColor: "var(--color-error)",
       hoverBackgroundColor: "var(--color-error-light)",
@@ -201,6 +201,7 @@ const Subcategories = () => {
 
           <Button
             onClick={handleAdd}
+            perm="subcategories.create"
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
             size="md"

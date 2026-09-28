@@ -156,12 +156,12 @@ const ProductSubcategory = () => {
 
   const actions = [
     {
-      text: "Edit", onClick: handleEdit, textColor: "var(--color-success)",
+      text: "Edit", perm: "products.update", onClick: handleEdit, textColor: "var(--color-success)",
       hoverBackgroundColor: "var(--color-success-light)",
       title: "Edit",
     },
     {
-      text: "Delete", onClick: handleDeleteGrade, textColor: "var(--color-error)",
+      text: "Delete", perm: "products.delete", onClick: handleDeleteGrade, textColor: "var(--color-error)",
       hoverBackgroundColor: "var(--color-error-light)",
       title: "Delete",
     },
@@ -194,7 +194,7 @@ const ProductSubcategory = () => {
             className="w-full pl-10 pr-4 py-2 md:h-[50px] rounded-lg focus:outline-none"
           />
         </div>
-        <Button onClick={handleAdd}>Add Grade</Button>
+        <Button onClick={handleAdd} perm="products.update">Add Grade</Button>
       </div>
 
       <Table

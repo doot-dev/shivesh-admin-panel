@@ -29,6 +29,12 @@ export function usePermission() {
       return held.has(permKey(moduleKey, action));
     };
 
+    /** Same, from a "module.action" key, e.g. "projects.update". */
+    const canKey = (key) => {
+      const [m, a] = String(key).split('.');
+      return can(m, a);
+    };
+
     /** True if the user holds ANY of the given [module, action] pairs. */
     const canAny = (...pairs) =>
       pairs.flat().some((pair) =>
@@ -54,6 +60,7 @@ export function usePermission() {
       isSuperAdmin,
       permissions: held,
       can,
+      canKey,
       canAny,
       canViewModule,
       allowedModules,

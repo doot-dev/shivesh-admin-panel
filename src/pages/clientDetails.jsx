@@ -4,6 +4,7 @@ import { AiFillFilePdf } from "react-icons/ai";
 import api from "../services/api";
 import reportService from "../services/reportService";
 import CreditBandBar from "../components/ui/CreditBandBar";
+import usePermission from "../hooks/usePermission";
 import { fileLink } from "../utils/fileLink";
 import ClientAccountTab from "../components/clients/ClientAccountTab";
 import ClientTeamTab from "../components/clients/ClientTeamTab";
@@ -149,6 +150,7 @@ const AnalysisTab = ({ clientId }) => {
 /* -------------------- MAIN PAGE -------------------- */
 
 const ClientDetailsPage = () => {
+  const { canKey } = usePermission();
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -179,12 +181,12 @@ const ClientDetailsPage = () => {
 
   const tabs = [
     { label: "Projects", content: <ProjectsTab clientId={client.clientId} /> },
-    { label: "Team", content: <ClientTeamTab clientId={client.clientId} /> },
+    canKey('clientTeam.view') && { label: "Team", content: <ClientTeamTab clientId={client.clientId} /> },
     { label: "Orders", content: <OrdersTab clientId={client.clientId} /> },
     { label: "Billing", content: <BillingTab clientId={client.clientId} /> },
-    { label: "Account", content: <ClientAccountTab clientId={client.clientId} /> },
-    { label: "Analysis", content: <AnalysisTab clientId={client.clientId} /> },
-  ];
+    canKey('payments.view') && { label: "Account", content: <ClientAccountTab clientId={client.clientId} /> },
+    canKey('reports.view') && { label: "Analysis", content: <AnalysisTab clientId={client.clientId} /> },
+  ].filter(Boolean);
 
   const handleKycSubmit = async (documents) => {
     if (!id) {
@@ -226,18 +228,18 @@ const ClientDetailsPage = () => {
             {client.clientId && <p className="mt-1 text-sm text-text-secondary">{client.clientId}</p>}
           </div>
           <div className="flex gap-3 mt-3 sm:mt-0">
-            <button
+            {canKey('clients.update') && <button
               className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-800"
               onClick={() => setIsEditModalOpen(true)}
             >
               Edit
-            </button>
-            <button
+            </button>}
+            {canKey('clientKyc.create') && <button
               onClick={() => setIsKycOpen(true)}
               className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-800"
             >
               KYC
-            </button>
+            </button>}
           </div>
         </div>
 
@@ -267,7 +269,7 @@ const ClientDetailsPage = () => {
                 label="KYC Status"
                 value={client.kycStatus || "Pending"}
               />
-              <KycDocumentsDetail documents={client.kycDocuments} />
+              {canKey('clientKyc.view') && <KycDocumentsDetail documents={client.kycDocuments} />}
             </div>
           )}
         </div>

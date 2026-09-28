@@ -249,12 +249,12 @@ const Vendors = () => {
       textColor: "var(--color-primary)",
     },
     {
-      text: "Edit",
+      text: "Edit", perm: "vendors.update",
       onClick: handleEdit,
       textColor: "var(--color-success)",
     },
     {
-      text: "Delete",
+      text: "Delete", perm: "vendors.delete",
       onClick: handleDelete,
       textColor: "var(--color-error)",
     },
@@ -288,6 +288,7 @@ const Vendors = () => {
 
           <Button
             onClick={handleAddVendor}
+            perm="vendors.create"
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
             size="md"

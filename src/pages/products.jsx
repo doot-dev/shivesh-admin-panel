@@ -219,14 +219,14 @@ const Products = () => {
       hoverBackgroundColor: "var(--color-primary-light)",
     },
     {
-      text: "Edit",
+      text: "Edit", perm: "products.update",
       onClick: handleEdit,
       textColor: "var(--color-success)",
       hoverBackgroundColor: "var(--color-success-light)",
       title: "Edit",
     },
     {
-      text: "Delete",
+      text: "Delete", perm: "products.delete",
       onClick: handleDelete,
       textColor: "var(--color-error)",
       hoverBackgroundColor: "var(--color-error-light)",
@@ -291,6 +291,7 @@ const Products = () => {
 
           <Button
             onClick={handleAddProduct}
+            perm="products.create"
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
             size="md"

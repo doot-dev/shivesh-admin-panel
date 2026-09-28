@@ -19,8 +19,21 @@ const ProtectedRoute = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const { user, sessionChecked } = useSelector((state) => state.auth);
-  const { canViewModule, hasAnyAccess, landingPath } = usePermission();
+  const { can, canViewModule, hasAnyAccess, landingPath } = usePermission();
   const requested = useRef(false);
+
+  // Role changes made while this tab was open apply when it is next focused.
+  // ponytail: at most once a minute; a push over the socket if that is too slow.
+  useEffect(() => {
+    let last = Date.now();
+    const onFocus = () => {
+      if (!user || Date.now() - last < 60_000) return;
+      last = Date.now();
+      dispatch(refreshSession());
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [user, dispatch]);
 
   useEffect(() => {
     // Only once per page load, and only if we think we have a session at all.
@@ -61,6 +74,10 @@ const ProtectedRoute = () => {
   // handling rather than being treated as forbidden.
   if (owningModule && !canViewModule(owningModule.key)) {
     return <Navigate to={landingPath} replace />;
+  }
+  // A create page (e.g. /orders/add) also needs the module's create permission.
+  if (owningModule && location.pathname.endsWith("/add") && !can(owningModule.key, "create")) {
+    return <Navigate to={owningModule.path ?? landingPath} replace />;
   }
 
   return <Outlet />;

@@ -269,12 +269,12 @@ const VendorDetail = () => {
 
   const handlerActions = [
     {
-      text: "Edit",
+      text: "Edit", perm: "vendorPlants.update",
       onClick: handleEditHandler,
       textColor: "var(--color-primary)",
     },
     {
-      text: "Delete",
+      text: "Delete", perm: "vendorPlants.delete",
       onClick: handleDeleteLocation,
       textColor: "var(--color-error)",
     },
@@ -297,6 +297,7 @@ const VendorDetail = () => {
         <h1 className="text-2xl font-semibold text-gray-900">{vendor.name}</h1>
         <Button
           onClick={handleEditVendor}
+          perm="vendors.update"
           leftIcon={ICON_NAMES.EDIT}
           variant="secondary"
           className="bg-transparent"
@@ -444,6 +445,7 @@ const HandlerTableSection = ({
         </div>
         <Button
           onClick={onAddHandler}
+          perm="vendorPlants.create"
           leftIcon={ICON_NAMES.PLUS}
           variant="primary"
           height={48}

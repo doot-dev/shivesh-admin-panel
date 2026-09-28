@@ -180,7 +180,7 @@ const ClientPage = () => {
     },
 
     {
-      text: "Delete",
+      text: "Delete", perm: "clients.delete",
       onClick: handleDelete,
       textColor: "var(--color-error)",
     },
@@ -214,6 +214,7 @@ const ClientPage = () => {
 
           <Button
             onClick={handleAddClient}
+            perm="clients.create"
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
             size="md"

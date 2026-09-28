@@ -203,6 +203,7 @@ export default function CubeTestingPage() {
           variant="success"
           leftIcon={ICON_NAMES.PLUS}
           onClick={openAddModal}
+          perm="cubeTests.create"
           className="px-4 py-2 md:px-6 md:py-3 text-sm whitespace-nowrap"
         >
           Add Cube Test
@@ -305,10 +306,10 @@ export default function CubeTestingPage() {
               )}
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>
+              <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting} perm="cubeTests.delete">
                 {deleting ? 'Removing...' : 'Delete'}
               </Button>
-              <Button type="button" variant="success" onClick={openEdit}>Edit</Button>
+              <Button type="button" variant="success" onClick={openEdit} perm="cubeTests.update">Edit</Button>
             </div>
           </div>
         )}

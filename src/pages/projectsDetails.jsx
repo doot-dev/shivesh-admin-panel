@@ -22,6 +22,7 @@ import { FaEdit } from "react-icons/fa";
 import { FiEdit2 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import ProjectTechniciansCard from "../components/projects/ProjectTechniciansCard";
+import usePermission from "../hooks/usePermission";
 
 export default function ProjectsDetails() {
   const { id } = useParams();
@@ -30,6 +31,7 @@ export default function ProjectsDetails() {
 
   /* ---------------- Redux ---------------- */
 
+  const { canKey } = usePermission();
   const { currentProject, loading, error } = useSelector(
     (state) => state.project
   );
@@ -141,17 +143,17 @@ export default function ProjectsDetails() {
 
   const actions = [
     {
-      text: "Vendors",
+      text: "Vendors", perm: "projectProducts.update",
       onClick: openVendors,
       textColor: "var(--color-success)"
     },
     {
-      text: "Edit",
+      text: "Edit", perm: "projectProducts.update",
       onClick: handleEdit,
       textColor: "var(--color-primary)",
     },
     {
-      text: "Delete",
+      text: "Delete", perm: "projectProducts.delete",
       onClick: handleDelete,
       textColor: "var(--color-error)",
     },
@@ -245,6 +247,7 @@ export default function ProjectsDetails() {
 
         <Button
           onClick={() => setIsEditMode(true)}
+          perm="projects.update"
           leftIcon={ICON_NAMES.EDIT}
           variant="secondary"
         >
@@ -296,16 +299,17 @@ export default function ProjectsDetails() {
         </div>
       </div>
 
-      <div className="mb-6">
+      {canKey('projectTeam.view') && <div className="mb-6">
         <ProjectTechniciansCard
           projectId={currentProject?.projectId}
           technicians={currentProject?.technicians}
           onSaved={() => dispatch(fetchProjectById(id))}
         />
-      </div>
+      </div>}
 
       {/* ---------------- Product Section ---------------- */}
 
+      {canKey('projectProducts.view') && (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -314,6 +318,7 @@ export default function ProjectsDetails() {
 
           <Button
             onClick={() => setShowAddProductModal(true)}
+            perm="projectProducts.create"
             leftIcon={ICON_NAMES.PLUS}
             variant="primary"
           >
@@ -331,10 +336,12 @@ export default function ProjectsDetails() {
           />
         </div>
       </div>
+      )}
 
       {/* ---------------- Commission Details ---------------- */}
       {/* Credit is set per client (limit + days) on the client's Account tab. */}
 
+      {canKey('projectCommission.view') && (
       <div className="grid grid-cols-1 gap-6 mt-8">
 
         {/* Commission Details Card */}
@@ -354,6 +361,7 @@ export default function ProjectsDetails() {
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label> */}
 
+              {canKey('projectCommission.update') && (
               <button
                 className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
                 onClick={() => setShowCommissionModal(true)}
@@ -361,6 +369,7 @@ export default function ProjectsDetails() {
                 <span><FiEdit2 className="text-lg" /></span>
                 <span>Edit</span>
               </button>
+              )}
             </div>
           </div>
 
@@ -395,6 +404,7 @@ export default function ProjectsDetails() {
         </div>
 
       </div>
+      )}
 
       {/* ---------------- Modals ---------------- */}
 

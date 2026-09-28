@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import usePermission from "../../../hooks/usePermission";
 import { Icon, ICON_NAMES } from "../../icons";
 import Input from "../../ui/Input";
 import vendorService from "../../../services/vendorService";
@@ -15,6 +16,7 @@ const HandlerSection = ({
   onHandlerFieldChange = () => {},
   onApplyEdit = () => {},
 }) => {
+  const { canKey } = usePermission();
   // useEffect(async () => {
   //   try {
   //     const res = await vendorService.getHandlersforLocation(29);
@@ -118,7 +120,7 @@ const HandlerSection = ({
           ) : (
             <>
               {/* ✏️ Edit */}
-              {isEditMode && (
+              {isEditMode && canKey('vendorPlants.update') && (
                 <button
                   type="button"
                   onClick={() => handleEditHandler(handler, index)}
@@ -130,14 +132,14 @@ const HandlerSection = ({
               )}
 
               {/* 🗑️ Delete */}
-              <button
+              {canKey('vendorPlants.delete') && (<button
                 type="button"
                 onClick={() => handleRemoveHandler(index)} // ✅ pass index
                 className="text-red-500 hover:text-red-700 p-1 rounded"
                 title="Delete handler"
               >
                 <Icon name={ICON_NAMES.TRASH_2} size={18} />
-              </button>
+              </button>)}
             </>
           )}
         </div>
@@ -192,14 +194,14 @@ const HandlerSection = ({
               className="col-span-4"
             />
             <div className="col-span-2 flex justify-end">
-              <button
+              {canKey('vendorPlants.create') && (<button
                 type="button"
                 onClick={handleAddHandler}
                 className="text-gray-400 hover:text-gray-600"
                 title="Add handler"
               >
                 <Icon name={ICON_NAMES.PLUS} size={18} />
-              </button>
+              </button>)}
             </div>
           </div>
         </div>

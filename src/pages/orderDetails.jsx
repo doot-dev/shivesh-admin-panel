@@ -197,7 +197,7 @@ export default function OrderDetails() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [billBanner, setBillBanner] = useState(null); // { billNo } | { error } | { pending }
   const [credit, setCredit] = useState(null);
-  const { can } = usePermission();
+  const { can, canKey } = usePermission();
 
   // P1.15: the client's credit position, for the warning banner.
   const clientCode = order?.client?.clientId;
@@ -700,14 +700,14 @@ export default function OrderDetails() {
           </div>
         ) : (
           <div className="flex w-full gap-2 sm:w-auto">
-            <button type="button" onClick={handleEnterEdit}
+            {canKey('orders.update') && (<button type="button" onClick={handleEnterEdit}
               className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-primary-light bg-white px-4 text-sm font-semibold text-primary transition-colors hover:bg-background-hover sm:flex-none">
               <Pencil size={16} />Edit
-            </button>
-            <button type="button" onClick={() => setShowDeleteModal(true)}
+            </button>)}
+            {canKey('orders.delete') && (<button type="button" onClick={() => setShowDeleteModal(true)}
               className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-error-light bg-white px-4 text-sm font-semibold text-error transition-colors hover:bg-error-light sm:flex-none">
               <Trash2 size={16} />Delete
-            </button>
+            </button>)}
           </div>
         )}
       </div>
@@ -734,7 +734,7 @@ export default function OrderDetails() {
           ) : (
             <>
               <span className="flex items-start gap-3 text-sm text-text-primary"><TriangleAlert size={20} className="shrink-0 text-warning" />{billBanner.error}</span>
-              <Button type="button" variant="primary" onClick={handleGenerateBillManually} disabled={generatingBill}>
+              <Button type="button" variant="primary" onClick={handleGenerateBillManually} perm="billing.create" disabled={generatingBill}>
                 {generatingBill ? 'Generating...' : 'Generate bill manually'}
               </Button>
             </>
@@ -802,7 +802,7 @@ export default function OrderDetails() {
             </div>
             {statusChanged && (
               <div className="pt-3 flex justify-end">
-                <Button type="button" variant="primary" onClick={handleUpdateStatus} disabled={updatingStatus}>
+                <Button type="button" variant="primary" onClick={handleUpdateStatus} perm="orders.update" disabled={updatingStatus}>
                   {updatingStatus ? 'Updating...' : 'Update Status'}
                 </Button>
               </div>
@@ -855,7 +855,7 @@ export default function OrderDetails() {
             title={`Vendor Details (${orderVendors.length})`}
             action={
               vendorFormKey === null && (
-                <Button type="button" variant="success" onClick={openAddVendor}>
+                <Button type="button" variant="success" onClick={openAddVendor} perm="orders.update">
                   + Add Vendor
                 </Button>
               )
@@ -885,12 +885,12 @@ export default function OrderDetails() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-600">{v.vendor?.companyName}</span>
                         <div className="flex gap-3">
-                          <button type="button" onClick={() => openEditVendor(v)} className="text-xs text-primary hover:underline font-medium">
+                          {canKey('orders.update') && (<button type="button" onClick={() => openEditVendor(v)} className="text-xs text-primary hover:underline font-medium">
                             Edit
-                          </button>
-                          <button type="button" onClick={() => handleDeleteVendor(v.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                          </button>)}
+                          {canKey('orders.update') && (<button type="button" onClick={() => handleDeleteVendor(v.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
                             Remove
-                          </button>
+                          </button>)}
                         </div>
                       </div>
                       <InfoRow label="Handler" value={v.vendorHandler?.name} />
@@ -924,7 +924,7 @@ export default function OrderDetails() {
             title={`TM Details (${tmDetails.length})`}
             action={
               tmFormKey === null && (
-                <Button type="button" variant="success" onClick={openAddTm}>
+                <Button type="button" variant="success" onClick={openAddTm} perm="orders.update">
                   + Add TM
                 </Button>
               )
@@ -944,12 +944,12 @@ export default function OrderDetails() {
                         <span className="text-sm font-medium text-gray-600">{tm.tmNumber}</span>
                         <div className="flex items-center gap-3">
                           {tm.approvalStatus && <StatusBadge value={tm.approvalStatus} badgeMap={APPROVAL_BADGE} />}
-                          <button type="button" onClick={() => openEditTm(tm)} className="text-xs text-primary hover:underline font-medium">
+                          {canKey('orders.update') && (<button type="button" onClick={() => openEditTm(tm)} className="text-xs text-primary hover:underline font-medium">
                             Edit
-                          </button>
-                          <button type="button" onClick={() => handleDeleteTm(tm.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                          </button>)}
+                          {canKey('orders.delete') && (<button type="button" onClick={() => handleDeleteTm(tm.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
                             Remove
-                          </button>
+                          </button>)}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
@@ -979,7 +979,7 @@ export default function OrderDetails() {
             title={`Cube Tests (${cubeTests.length})`}
             action={
               cubeTestFormKey === null && !cubeTestLocked && (
-                <Button type="button" variant="success" onClick={openAddCubeTest}>
+                <Button type="button" variant="success" onClick={openAddCubeTest} perm="cubeTests.create">
                   + Add Cube Test
                 </Button>
               )
@@ -1018,12 +1018,12 @@ export default function OrderDetails() {
                           )}
                         </span>
                         <div className="flex gap-3">
-                          <button type="button" onClick={() => openEditCubeTest(ct)} className="text-xs text-primary hover:underline font-medium">
+                          {canKey('cubeTests.update') && (<button type="button" onClick={() => openEditCubeTest(ct)} className="text-xs text-primary hover:underline font-medium">
                             Edit
-                          </button>
-                          <button type="button" onClick={() => handleDeleteCubeTest(ct.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                          </button>)}
+                          {canKey('cubeTests.delete') && (<button type="button" onClick={() => handleDeleteCubeTest(ct.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
                             Remove
-                          </button>
+                          </button>)}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
@@ -1068,7 +1068,7 @@ export default function OrderDetails() {
             title={`Contact person (${orderTechnicians.length})`}
             action={
               techFormKey === null && (
-                <Button type="button" variant="success" onClick={openAddTech}>
+                <Button type="button" variant="success" onClick={openAddTech} perm="orders.update">
                   + Add
                 </Button>
               )
@@ -1103,12 +1103,12 @@ export default function OrderDetails() {
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-600">{t.name || t.user?.name}</span>
                         <div className="flex gap-3">
-                          <button type="button" onClick={() => openEditTech(t)} className="text-xs text-primary hover:underline font-medium">
+                          {canKey('orders.update') && (<button type="button" onClick={() => openEditTech(t)} className="text-xs text-primary hover:underline font-medium">
                             Edit
-                          </button>
-                          <button type="button" onClick={() => handleDeleteTech(t.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
+                          </button>)}
+                          {canKey('orders.update') && (<button type="button" onClick={() => handleDeleteTech(t.id)} className="text-xs text-red-600 hover:text-red-700 font-medium">
                             Remove
-                          </button>
+                          </button>)}
                         </div>
                       </div>
                       <InfoRow label="Employee ID" value={t.employeeId || t.user?.employeeId} />

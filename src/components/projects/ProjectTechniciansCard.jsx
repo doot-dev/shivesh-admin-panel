@@ -8,7 +8,7 @@ import usePermission from "../../hooks/usePermission";
 // Field technicians on a project (2026-09-28): each one sees every order of
 // the project in the field app and gets a push when a new order is placed.
 export default function ProjectTechniciansCard({ projectId, technicians = [], onSaved }) {
-  const { can } = usePermission();
+  const { canKey } = usePermission();
   const current = technicians.map((t) => t.user);
   const [editing, setEditing] = useState(false);
   const [all, setAll] = useState([]);
@@ -45,7 +45,7 @@ export default function ProjectTechniciansCard({ projectId, technicians = [], on
           <h2 className="text-lg font-semibold text-gray-900">Field technicians</h2>
           <p className="text-sm text-gray-500">They see every order of this project and get a push on each new one.</p>
         </div>
-        {can("projects", "update") && !editing && <Button variant="primary" onClick={() => setEditing(true)}>Edit</Button>}
+        {canKey("projectTeam.update") && !editing && <Button variant="primary" onClick={() => setEditing(true)}>Edit</Button>}
       </div>
 
       {!editing && (current.length ? (

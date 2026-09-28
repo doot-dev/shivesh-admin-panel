@@ -114,7 +114,7 @@ export default function ClientAccountTab({ clientId }) {
             </p>
           )}
           <div className="mt-1 flex flex-wrap gap-2">
-            {can('clients', 'update') && <button type="button" className={linkBtn} onClick={editCredit}>Edit limit &amp; days</button>}
+            {can('clientCredit', 'update') && <button type="button" className={linkBtn} onClick={editCredit}>Edit limit &amp; days</button>}
             {can('orders', 'approve') && <button type="button" className={linkBtn} onClick={addExtra}>+ Add extra credit</button>}
           </div>
         </div>

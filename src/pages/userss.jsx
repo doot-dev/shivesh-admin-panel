@@ -175,8 +175,8 @@ const Users = () => {
   ];
 
   const actions = [
-    { text: "Edit", onClick: handleEdit, textColor: "var(--color-success)" },
-    { text: "Delete", onClick: handleDelete, textColor: "var(--color-error)" },
+    { text: "Edit", perm: "users.update", onClick: handleEdit, textColor: "var(--color-success)" },
+    { text: "Delete", perm: "users.delete", onClick: handleDelete, textColor: "var(--color-error)" },
   ];
 
   // -----------------------------
@@ -240,6 +240,7 @@ const Users = () => {
           <Can module={MODULE.USERS} action={ACTIONS.CREATE}>
             <Button
               onClick={() => setModalState((p) => ({ ...p, add: true }))}
+              perm="users.create"
               leftIcon={ICON_NAMES.PLUS}
               variant="primary"
               size="md"

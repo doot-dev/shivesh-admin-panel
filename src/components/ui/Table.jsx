@@ -1,4 +1,5 @@
 import { useState } from "react";
+import usePermission from "../../hooks/usePermission";
 import { Icon, ICON_NAMES } from "../icons";
 import Button from "./Button";
 import Dropdown from "./Dropdown";
@@ -32,11 +33,14 @@ const Table = ({
   onItemPerPageChange = () => {},
   onPageChange = () => {},
 }) => {
+  // Row actions may carry `perm: "module.action"`; the ones the user lacks are dropped.
+  const { canKey } = usePermission();
+  const permitted = (actionsProp || []).filter((a) => !a?.perm || canKey(a.perm));
   // A "View" action becomes the row itself: tap or click anywhere on the row
   // to open it, and the separate View link is dropped. Edit/Delete stay.
-  const viewAction = !onRowClickProp && (actionsProp || []).find((a) => /^view$/i.test(String(a?.text ?? a?.title ?? "").trim()));
+  const viewAction = !onRowClickProp && permitted.find((a) => /^view$/i.test(String(a?.text ?? a?.title ?? "").trim()));
   const onRowClick = onRowClickProp ?? (viewAction ? (item) => viewAction.onClick(item) : undefined);
-  const actions = viewAction ? actionsProp.filter((a) => a !== viewAction) : actionsProp;
+  const actions = viewAction ? permitted.filter((a) => a !== viewAction) : permitted;
   const rowKeyDown = (item) => (e) => {
     if (onRowClick && (e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {
       e.preventDefault();
