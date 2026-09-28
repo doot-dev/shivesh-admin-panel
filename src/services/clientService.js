@@ -48,11 +48,15 @@ const clientService = {
             console.log("Uploading KYC documents for client ID:", clientId, documents);
             formData.append("clientId", clientId);
 
-            Object.entries(documents).forEach(([key, file]) => {
+            // Keys are the document types; the server stores them in upload order.
+            const types = [];
+            Object.entries(documents).forEach(([type, file]) => {
                 if (file) {
                     formData.append('kycDocuments', file);
+                    types.push(type);
                 }
             });
+            formData.append('types', JSON.stringify(types));
 
             const response = await api.post(
                 `/api/v1/admin/client/upload-kyc`,

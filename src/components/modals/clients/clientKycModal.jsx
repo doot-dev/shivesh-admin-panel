@@ -3,13 +3,15 @@ import { ICON_NAMES } from "../../icons";
 import { Modal } from "../../ui";
 import { useState } from "react";
 
-const ClientKYCModal = ({ isOpen, onClose, onSubmit, hasGST = false }) => {
+// KYC (2026-09-28): the GST certificate is required (unless one is already on
+// file); PAN and the utility bill are optional. No Aadhaar.
+const ClientKYCModal = ({ isOpen, onClose, onSubmit, gstOnFile = false }) => {
 
-    const [aadharFile, setAadharFile] = useState(null);
     const [panFile, setPanFile] = useState(null);
     const [lightBillFile, setLightBillFile] = useState(null);
     const [gstCertificateFile, setGstCertificateFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const canSubmit = !submitting && (gstOnFile ? Boolean(gstCertificateFile || panFile || lightBillFile) : Boolean(gstCertificateFile));
 
     const handleFileChange = (setter) => (file) => {
         if (file.size <= 10 * 1024 * 1024) { // 10 MB limit
@@ -21,30 +23,14 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit, hasGST = false }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!aadharFile || !panFile || !lightBillFile) {
-            alert('Please upload all required documents');
-            return;
-        }
-        if (hasGST && !gstCertificateFile) {
-            alert('Please upload the GST certificate');
-            return;
-        }
-        const formData = {
-            aadhar: aadharFile,
-            pan: panFile,
-            lightBill: lightBillFile,
-            ...(hasGST && gstCertificateFile
-                ? { gstCertificate: gstCertificateFile }
-                : {}),
-        };
-        console.log("Submitting KYC documents", formData);
+        if (!canSubmit) return;
+        // Keys are the KYC document types the server stores.
+        const formData = { gst: gstCertificateFile, pan: panFile, utility: lightBillFile };
         let shouldClose = true;
         try {
             setSubmitting(true);
             if (onSubmit) {
                 const result = await onSubmit(formData);
-                console.log("KYC submit result", result);
                 shouldClose = result !== false;
             }
         } catch (error) {
@@ -61,7 +47,6 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit, hasGST = false }) => {
     };
 
     const resetForm = () => {
-        setAadharFile(null);
         setPanFile(null);
         setLightBillFile(null);
         setGstCertificateFile(null);
@@ -81,18 +66,17 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit, hasGST = false }) => {
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Aadhar Card Upload */}
                     <FileUploadField
-                        label="Aadhar Card"
+                        label={gstOnFile ? "GST Certificate (on file — upload to add another)" : "GST Certificate *"}
                         accept=".png,.jpg,.jpeg,.pdf"
-                        file={aadharFile}
-                        onChange={handleFileChange(setAadharFile)}
-                        onRemove={() => setAadharFile(null)}
+                        file={gstCertificateFile}
+                        onChange={handleFileChange(setGstCertificateFile)}
+                        onRemove={() => setGstCertificateFile(null)}
                     />
 
                     {/* PAN Card Upload */}
                     <FileUploadField
-                        label="PAN Card"
+                        label="PAN Card (optional)"
                         accept=".png,.jpg,.jpeg,.pdf"
                         file={panFile}
                         onChange={handleFileChange(setPanFile)}
@@ -101,22 +85,12 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit, hasGST = false }) => {
 
                     {/* Light Bill Upload */}
                     <FileUploadField
-                        label="Light/Utility Bill"
+                        label="Light/Utility Bill (optional)"
                         accept=".png,.jpg,.jpeg,.pdf"
                         file={lightBillFile}
                         onChange={handleFileChange(setLightBillFile)}
                         onRemove={() => setLightBillFile(null)}
                     />
-
-                    {hasGST && (
-                        <FileUploadField
-                            label="GST Certificate (PDF)"
-                            accept=".pdf"
-                            file={gstCertificateFile}
-                            onChange={handleFileChange(setGstCertificateFile)}
-                            onRemove={() => setGstCertificateFile(null)}
-                        />
-                    )}
 
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-4">
@@ -132,19 +106,9 @@ const ClientKYCModal = ({ isOpen, onClose, onSubmit, hasGST = false }) => {
                         </button>
                         <button
                             type="submit"
-                            disabled={
-                                submitting ||
-                                !aadharFile ||
-                                !panFile ||
-                                !lightBillFile ||
-                                (hasGST && !gstCertificateFile)
-                            }
+                            disabled={!canSubmit}
                             className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${
-                                aadharFile &&
-                                panFile &&
-                                lightBillFile &&
-                                (!hasGST || gstCertificateFile) &&
-                                !submitting
+                                canSubmit
                                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                 }`}

@@ -281,7 +281,7 @@ const ClientDetailsPage = () => {
         isOpen={isKycOpen}
         onClose={() => setIsKycOpen(false)}
         onSubmit={handleKycSubmit}
-        hasGST={!!client.hasGST}
+        gstOnFile={(client.kycDocuments || []).some((d) => d.type === 'gst')}
       />
 
       <ClientDetailModal

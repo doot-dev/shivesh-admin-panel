@@ -11,8 +11,6 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
     phone: "",
     email: "",
     address: "",
-    hasGST: false,
-    ownerAadhaar: "",
     ownerPan: "",
     gstNumber: "",
   });
@@ -32,8 +30,6 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
       phone: clientData.contactNumber || clientData.phone || "",
       email: clientData.email || "",
       address: clientData.address || clientData.registeredAddress || "",
-      hasGST: !!clientData.hasGST,
-      ownerAadhaar: clientData.ownerAadhaar || "",
       ownerPan: clientData.ownerPan || "",
       gstNumber: clientData.gstNumber || "",
     });
@@ -51,8 +47,6 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         phone: "",
         email: "",
         address: "",
-        hasGST: false,
-        ownerAadhaar: "",
         ownerPan: "",
         gstNumber: "",
       });
@@ -90,8 +84,7 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
       "phone",
       "email",
       "address",
-      "ownerAadhaar",
-      "ownerPan",
+      "gstNumber",
     ];
 
     // Required field validation
@@ -114,9 +107,12 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
       newErrors.phone = "Please enter a valid 10-digit phone number";
     }
 
-    // GST validation
-    if (formData.hasGST && !formData.gstNumber?.trim()) {
-      newErrors.gstNumber = "Please fill the field";
+    // Every client has a GSTIN (2026-09-28); PAN is optional.
+    if (formData.gstNumber?.trim() && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(formData.gstNumber.trim())) {
+      newErrors.gstNumber = "Enter a valid 15-character GSTIN";
+    }
+    if (formData.ownerPan?.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.ownerPan.trim())) {
+      newErrors.ownerPan = "Enter a valid PAN, e.g. ABCDE1234F";
     }
 
     setErrors(newErrors);
@@ -155,10 +151,6 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           address: formData.address,
           clientId: clientIdentifier,
         };
-
-        if (!formData.hasGST) {
-          delete updatePayload.gstNumber;
-        }
 
         const submitResult = await onSubmit(updatePayload, "edit");
         if (submitResult?.success === false) {
@@ -199,8 +191,6 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
       phone: "",
       email: "",
       address: "",
-      hasGST: false,
-      ownerAadhaar: "",
       ownerPan: "",
       gstNumber: "",
     });
@@ -225,33 +215,6 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
         </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <label className="block text-sm font-medium text-gray-700">
-            Does client have a GST No? <span className="text-red-500">*</span>
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleInputChange("hasGST", !formData.hasGST)}
-              className={`relative flex h-7 w-14 items-center rounded-full border transition-colors ${
-                formData.hasGST
-                  ? "border-primary bg-primary"
-                  : "border-gray-300 bg-gray-200"
-              }`}
-              aria-pressed={formData.hasGST}
-            >
-              <span
-                className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  formData.hasGST ? "translate-x-7" : "translate-x-1"
-                }`}
-              />
-              <span className="sr-only">Toggle GST availability</span>
-            </button>
-            <span className="text-sm font-medium text-gray-700">
-              {formData.hasGST ? "Yes" : "No"}
-            </span>
-          </div>
-        </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Client company name <span className="text-red-500">*</span>
@@ -336,29 +299,13 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
             <p className="mt-1 text-sm text-red-500">{errors.address}</p>
           )}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Owner Aadhar Card No. <span className="text-red-500">*</span>
-          </label>
-          <Input
-            type="text"
-            required
-            placeholder="Enter aadhar card no."
-            value={formData.ownerAadhaar}
-            onChange={(e) => handleInputChange("ownerAadhaar", e.target.value)}
-            error={!!errors.ownerAadhaar}
-            errorMessage={errors.ownerAadhaar}
-            className="w-full"
-          />
-        </div>
         <div className="flex mt-2 gap-2">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Owner PAN No. <span className="text-red-500">*</span>
+              Owner PAN No. <span className="text-gray-400">(optional)</span>
             </label>
             <Input
               type="text"
-              required
               placeholder="Enter owner PAN No."
               value={formData.ownerPan}
               onChange={(e) => handleInputChange("ownerPan", e.target.value)}
@@ -369,7 +316,7 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
           </div>
         </div>
 
-        {formData.hasGST && (
+
           <div className="mt-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               GST No. <span className="text-red-500">*</span>
@@ -377,15 +324,15 @@ const ClientDetailModal = ({ isOpen, onClose, vendor, onSubmit }) => {
             <Input
               type="text"
               required
-              placeholder="Enter GST No."
+              placeholder="e.g. 27ABCDE1234F1Z5"
               value={formData.gstNumber}
-              onChange={(e) => handleInputChange("gstNumber", e.target.value)}
+              onChange={(e) => handleInputChange("gstNumber", e.target.value.toUpperCase())}
               error={!!errors.gstNumber}
               errorMessage={errors.gstNumber}
               className="w-full"
             />
           </div>
-        )}
+
 
         <div className="flex gap-3 pt-4">
           <Button

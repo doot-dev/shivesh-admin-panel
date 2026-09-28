@@ -61,15 +61,10 @@ const ClientPage = () => {
         ownerName: clientData.ownerName,
         contactNumber: clientData.phone,
         email: clientData.email,
-        hasGST: clientData.hasGST,
-        ownerPan: clientData.ownerPan,
-        ownerAadhaar: clientData.ownerAadhaar,
+        gstNumber: clientData.gstNumber.trim(),
+        ownerPan: clientData.ownerPan || undefined,
         address: clientData.address,
       };
-
-      if (clientData.hasGST) {
-        payload.gstNumber = clientData.gstNumber;
-      }
 
       const resultAction = await dispatch(createClient(payload));
       console.log("resultAction", resultAction);
@@ -94,10 +89,6 @@ const ClientPage = () => {
         ...restClientData,
         clientId: identifier,
       };
-
-      if (!payload.hasGST) {
-        delete payload.gstNumber;
-      }
 
       const resultAction = await dispatch(updateClient(payload));
       if (updateClient.fulfilled.match(resultAction)) {
