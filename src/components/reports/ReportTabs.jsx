@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import reportService, { saveBlob } from '../../services/reportService';
+import { Bars, ChartCard, Donut, Histogram, Kpis, RAMP_RED, RankBars, SERIES, STATUS, inrShort } from './Charts';
 
 /**
  * Phase 1B Reports tabs (docs/workflow-crosscheck/08-client-analytics.md):
  * Payment behaviour · Collections · Order patterns · Accounts & Tax exports.
- * All numbers come from the server (GET /reports/analytics) — v1 uses tables and
- * CSS bars; no chart library.
+ * All numbers come from the server (GET /reports/analytics). Charts first (big,
+ * labelled, see Charts.jsx), detail tables below.
  */
 const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+/** "2026-07" → "Jul 26". */
+const monthLabel = (ym) => { const [y, m] = ym.split('-').map(Number); return `${new Date(y, m - 1, 1).toLocaleString('en-IN', { month: 'short' })} ${String(y).slice(2)}`; };
 const dash = (v, suffix = '') => (v === null || v === undefined ? '—' : `${v}${suffix}`);
 
 function useAnalytics() {
@@ -38,8 +41,38 @@ export function PaymentBehaviourTab() {
   const [sort, setSort] = useState('outstanding');
   if (!data) return <Loading error={error} />;
   const rows = [...data.clients].filter((c) => c.payment.billed > 0).sort((a, b) => (b.payment[sort] ?? -1) - (a.payment[sort] ?? -1));
+  const t = data.totals.payment;
+  const paying = data.clients.filter((c) => c.payment.billed > 0);
+  const late = paying.filter((c) => c.payment.avgDaysLate != null);
+  const topLate = [...late].sort((a, b) => b.payment.avgDaysLate - a.payment.avgDaysLate).slice(0, 8)
+    .map((c) => ({ name: c.companyName, value: c.payment.avgDaysLate }));
+  const modes = Object.entries(t.payments?.modes ?? {}).map(([name, value]) => ({ name: name.replace('_', ' '), value }));
   return (
-    <div className="overflow-x-auto">
+    <div className="space-y-6">
+      <Kpis items={[
+        ['Avg days to pay', dash(t.avgDaysToPay, ' d')],
+        ['Avg days late', dash(t.avgDaysLate, ' d'), t.avgDaysLate ? 'text-red-700' : ''],
+        ['Paid bills on time', dash(t.onTimePct, '%')],
+        ['Times paid late', dash(t.lateCount)],
+      ]} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title="Who pays late" subtitle="Average days past the due date, late bills only (e.g. 25-day credit paid on day 45 = 20 days)">
+          <RankBars data={topLate} format={(v) => `${v} d`} color={SERIES[1]} />
+        </ChartCard>
+        <ChartCard title="Clients by average days late" subtitle="How many clients fall in each band">
+          <Histogram values={late.map((c) => c.payment.avgDaysLate)} edges={[1, 8, 16, 31, 61, Infinity]} what="Clients" />
+        </ChartCard>
+        <ChartCard title="On time vs late" subtitle="Paid bills on time, against bills paid late or still open past due">
+          <Donut format={(v) => v} centerLabel="Bills" data={[
+            { name: 'Paid on time', value: t.onTimeCount ?? 0, color: STATUS.good },
+            { name: 'Late', value: t.lateCount ?? 0, color: STATUS.critical },
+          ]} />
+        </ChartCard>
+        <ChartCard title="How clients pay" subtitle="Payments by mode">
+          <Donut data={modes} centerLabel="Payments" />
+        </ChartCard>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white p-4">
       <div className="flex gap-2 items-center mb-3 text-sm">
         Sort by
         <select value={sort} onChange={(e) => setSort(e.target.value)} className="border rounded px-2 py-1">
@@ -68,7 +101,7 @@ export function PaymentBehaviourTab() {
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-gray-500 mt-2">Approximate until payment records arrive in Phase 2 — a bill counts as paid on its paid date.</p>
+      </div>
     </div>
   );
 }
@@ -77,37 +110,26 @@ export function CollectionsTab() {
   const { data, error } = useAnalytics();
   if (!data) return <Loading error={error} />;
   const p = data.totals.payment;
-  const max = Math.max(1, ...p.trend.map((m) => Math.max(m.billed, m.collected)));
   const ages = [['Not due', p.pendingByAge.notDue], ['1–30', p.pendingByAge.d1_30], ['31–60', p.pendingByAge.d31_60], ['61–90', p.pendingByAge.d61_90], ['90+', p.pendingByAge.d90plus]];
-  const ageMax = Math.max(1, ...ages.map((a) => a[1]));
   const overdue = (c) => c.payment.pendingByAge.d90plus + c.payment.pendingByAge.d61_90 + c.payment.pendingByAge.d31_60 + c.payment.pendingByAge.d1_30;
   const top = data.clients.filter((c) => overdue(c) > 0).sort((a, b) => overdue(b) - overdue(a)).slice(0, 10);
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[['Billed', inr(p.billed)], ['Collected', inr(p.collected)], ['Outstanding', inr(p.outstanding)], ['DSO', dash(p.dso, ' days')]].map(([l, v]) => (
-          <div key={l} className="bg-white border rounded-lg p-3"><div className="text-xs text-gray-500">{l}</div><div className="text-lg font-semibold">{v}</div></div>
-        ))}
-      </div>
-      <div className="bg-white border rounded-lg p-4">
-        <h4 className="text-sm font-semibold mb-3">Billed vs collected — last 12 months</h4>
-        {p.trend.map((m) => (
-          <div key={m.month} className="grid grid-cols-[70px_1fr_110px] gap-2 items-center mb-1 text-xs">
-            <span>{m.month}</span>
-            <div className="space-y-0.5"><Bar value={m.billed} max={max} /><Bar value={m.collected} max={max} color="bg-green-500" /></div>
-            <span className="text-right">{inr(m.billed)} / {inr(m.collected)}</span>
-          </div>
-        ))}
-        <p className="text-xs text-gray-500 mt-2">Blue = billed, green = collected.</p>
-      </div>
-      <div className="bg-white border rounded-lg p-4">
-        <h4 className="text-sm font-semibold mb-3">Pending by age (days past due)</h4>
-        {ages.map(([l, v]) => (
-          <div key={l} className="grid grid-cols-[70px_1fr_110px] gap-2 items-center mb-1 text-xs"><span>{l}</span><Bar value={v} max={ageMax} color="bg-red-500" /><span className="text-right">{inr(v)}</span></div>
-        ))}
+      <Kpis items={[['Billed', inr(p.billed)], ['Collected', inr(p.collected)], ['Outstanding', inr(p.outstanding), p.outstanding ? 'text-red-700' : ''], ['DSO', dash(p.dso, ' days')]]} />
+      <ChartCard title="Billed vs collected" subtitle="Last 12 months">
+        <Bars data={p.trend.map((m) => ({ ...m, label: monthLabel(m.month) }))} xKey="label" format={inrShort}
+          series={[{ key: 'billed', name: 'Billed', color: SERIES[0] }, { key: 'collected', name: 'Collected', color: SERIES[2] }]} height={380} />
+      </ChartCard>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title="Pending by age" subtitle="Days past the due date — darker is older">
+          <Donut format={inrShort} centerLabel="Pending" data={ages.map(([name, value], i) => ({ name, value, color: i === 0 ? STATUS.good : RAMP_RED[i] }))} />
+        </ChartCard>
+        <ChartCard title="Most overdue clients" subtitle="Everything past due, top 8">
+          <RankBars format={inrShort} color={RAMP_RED[3]} data={top.slice(0, 8).map((c) => ({ name: c.companyName, value: overdue(c) }))} />
+        </ChartCard>
       </div>
       <div className="bg-white border rounded-lg p-4 overflow-x-auto">
-        <h4 className="text-sm font-semibold mb-3">Most overdue clients (top 10)</h4>
+        <h4 className="text-sm font-semibold mb-3">Overdue by age, per client (top 10)</h4>
         <table className="min-w-full"><thead><tr><Th>Client</Th><Th>1–30</Th><Th>31–60</Th><Th>61–90</Th><Th>90+</Th></tr></thead>
           <tbody>{top.map((c) => (<tr key={c.clientId} className="border-t"><Td>{c.companyName}</Td><Td>{inr(c.payment.pendingByAge.d1_30)}</Td><Td>{inr(c.payment.pendingByAge.d31_60)}</Td><Td>{inr(c.payment.pendingByAge.d61_90)}</Td><Td className={c.payment.pendingByAge.d90plus ? 'text-red-700' : ''}>{inr(c.payment.pendingByAge.d90plus)}</Td></tr>))}
             {!top.length && <tr><Td>No client is overdue.</Td></tr>}</tbody>
@@ -121,27 +143,30 @@ export function OrderPatternsTab() {
   const { data, error } = useAnalytics();
   if (!data) return <Loading error={error} />;
   const o = data.totals.orders;
-  const vmax = Math.max(1, ...o.trend.map((m) => m.volume));
   const quiet = data.clients.filter((c) => c.orders.goingQuiet);
   const byVolume = [...data.clients].sort((a, b) => b.orders.volume - a.orders.volume).slice(0, 10);
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[['Orders', o.orders], ['Volume', o.volume], ['Avg order', dash(o.avgOrderSize)], ['Cancel rate', dash(o.cancelRatePct, '%')], ['Trucks rejected at site', `${o.siteRejections.rejected} / ${o.siteRejections.trucks}`]].map(([l, v]) => (
-          <div key={l} className="bg-white border rounded-lg p-3"><div className="text-xs text-gray-500">{l}</div><div className="text-lg font-semibold">{v}</div></div>
-        ))}
-      </div>
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white border rounded-lg p-4">
-          <h4 className="text-sm font-semibold mb-3">Volume per month</h4>
-          {o.trend.map((m) => (<div key={m.month} className="grid grid-cols-[70px_1fr_80px] gap-2 items-center mb-1 text-xs"><span>{m.month}</span><Bar value={m.volume} max={vmax} /><span className="text-right">{m.volume}</span></div>))}
-        </div>
-        <div className="bg-white border rounded-lg p-4">
-          <h4 className="text-sm font-semibold mb-3">Grade / product mix</h4>
-          {o.gradeMix.slice(0, 12).map((g) => (<div key={g.name} className="grid grid-cols-[140px_1fr_60px] gap-2 items-center mb-1 text-xs"><span className="truncate">{g.name}</span><Bar value={g.volume} max={o.gradeMix[0]?.volume} color="bg-purple-500" /><span className="text-right">{g.volume}</span></div>))}
-          <h4 className="text-sm font-semibold mt-4 mb-2">Site rejection reasons</h4>
-          {Object.entries(o.siteRejections.reasons).length ? Object.entries(o.siteRejections.reasons).map(([r, n]) => <div key={r} className="text-xs">{r}: <b>{n}</b></div>) : <p className="text-xs text-gray-500">None yet</p>}
-        </div>
+      <Kpis items={[['Orders', o.orders], ['Volume', o.volume], ['Avg order', dash(o.avgOrderSize)], ['Cancel rate', dash(o.cancelRatePct, '%')]]} />
+      <ChartCard title="Volume per month" subtitle="Last 12 months">
+        <Bars data={o.trend.map((m) => ({ ...m, label: monthLabel(m.month) }))} xKey="label" series={[{ key: 'volume', name: 'Volume', color: SERIES[0] }]} height={360} />
+      </ChartCard>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title="Grade / product mix" subtitle="Share of volume; smaller grades folded into Other">
+          <Donut centerLabel="Volume" data={[
+            ...o.gradeMix.slice(0, 7).map((g) => ({ name: g.name, value: g.volume })),
+            ...(o.gradeMix.length > 7 ? [{ name: 'Other', value: o.gradeMix.slice(7).reduce((x, g) => x + g.volume, 0), color: STATUS.neutral }] : []),
+          ]} />
+        </ChartCard>
+        <ChartCard title="Busiest days" subtitle="Orders by weekday">
+          <Bars data={o.byWeekday} xKey="day" series={[{ key: 'orders', name: 'Orders', color: SERIES[6] }]} height={340} />
+        </ChartCard>
+        <ChartCard title="Top clients by volume">
+          <RankBars data={[...data.clients].sort((x, y) => y.orders.volume - x.orders.volume).slice(0, 8).map((c) => ({ name: c.companyName, value: c.orders.volume }))} />
+        </ChartCard>
+        <ChartCard title="Site rejections" subtitle={`${o.siteRejections.rejected} of ${o.siteRejections.trucks} trucks rejected at site`}>
+          <Donut centerLabel="Rejected" data={Object.entries(o.siteRejections.reasons).map(([name, value]) => ({ name, value }))} />
+        </ChartCard>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white border rounded-lg p-4 overflow-x-auto">

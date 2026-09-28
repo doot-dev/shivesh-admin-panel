@@ -14,6 +14,7 @@ import { saveBlob } from '../services/reportService';
 import DateRangeFilter from '../components/ui/DateRangeFilter';
 import { defaultWindow } from '../utils/dateWindow';
 import { statusLabel } from '../utils/labels';
+import { ChartCard, Donut, Kpis, RankBars, SERIES, STATUS, inr, inrShort } from '../components/reports/Charts';
 import { BILL_STATUSES, BILL_STATUS_BADGE } from '../constant/billingData';
 
 const StatusBadge = ({ value }) => <StatusChip status={value} />;
@@ -112,6 +113,13 @@ const BillsList = () => {
       quantity: b.quantity ?? '—',
       assignedTrucks: b.assignedTrucks ?? 0,
     }));
+  // Charts use the whole date window (the list loads up to 1000 bills).
+  const STATUS_COLOR = { PAID: STATUS.good, PARTIALLY_PAID: STATUS.warning, OVERDUE: STATUS.critical, CANCELLED: STATUS.neutral };
+  const sumBy = (key) => Object.entries(bills.reduce((m, b) => ({ ...m, [key(b)]: (m[key(b)] || 0) + Number(b.amount || 0) }), {}));
+  const byStatus = sumBy((b) => b.status).map(([st, value], i) => ({ name: statusLabel(st), value, color: STATUS_COLOR[st] ?? SERIES[i % 2 ? 6 : 0] }));
+  const topClients = sumBy((b) => b.order?.client?.companyName || '—').sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value }));
+  const unpaid = bills.filter((b) => !['PAID', 'CANCELLED'].includes(b.status)).reduce((x, b) => x + Number(b.balance ?? b.amount ?? 0), 0);
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       {/* Header */}
@@ -175,9 +183,21 @@ const BillsList = () => {
         </Button> */}
       </div>
 
-      <div className="mb-3 text-sm text-gray-700">
-        {total} bill(s) · Total qty <b>{Number(totals.quantity).toLocaleString('en-IN')}</b> · Total amount{' '}
-        <b>₹{Number(totals.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</b>
+      <div className="mb-6 space-y-6">
+        <Kpis items={[
+          ['Bills', total],
+          ['Quantity', Number(totals.quantity).toLocaleString('en-IN')],
+          ['Billed', inr(totals.amount)],
+          ['Still to collect', inr(unpaid), unpaid ? 'text-red-700' : ''],
+        ]} />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ChartCard title="Bills by status" subtitle="Amount in the selected dates">
+            <Donut format={inrShort} centerLabel="Billed" data={byStatus} />
+          </ChartCard>
+          <ChartCard title="Top clients" subtitle="Billed in the selected dates">
+            <RankBars format={inrShort} data={topClients} />
+          </ChartCard>
+        </div>
       </div>
 
       {/* Table */}
