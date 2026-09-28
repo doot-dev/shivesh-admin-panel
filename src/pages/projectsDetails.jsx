@@ -21,6 +21,7 @@ import { BiEdit } from "react-icons/bi";
 import { FaEdit } from "react-icons/fa";
 import { FiEdit2 } from "react-icons/fi";
 import { toast } from "react-toastify";
+import ProjectTechniciansCard from "../components/projects/ProjectTechniciansCard";
 
 export default function ProjectsDetails() {
   const { id } = useParams();
@@ -293,6 +294,14 @@ export default function ProjectsDetails() {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <ProjectTechniciansCard
+          projectId={currentProject?.projectId}
+          technicians={currentProject?.technicians}
+          onSaved={() => dispatch(fetchProjectById(id))}
+        />
       </div>
 
       {/* ---------------- Product Section ---------------- */}

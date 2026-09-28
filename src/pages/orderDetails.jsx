@@ -527,7 +527,7 @@ export default function OrderDetails() {
   };
 
   const handleDeleteTech = async (orderTechnicianId) => {
-    if (!window.confirm('Remove this technician from the order?')) return;
+    if (!window.confirm('Remove this contact person from the order?')) return;
     const result = await dispatch(deleteOrderTechnician({ orderId, orderTechnicianId }));
     if (deleteOrderTechnician.fulfilled.match(result)) refreshOrder();
   };
@@ -1063,9 +1063,9 @@ export default function OrderDetails() {
         {/* Right Column: Field Tech + Comments */}
         <div className="space-y-5">
 
-          {/* Field Tech */}
+          {/* Contact person (a field tech the client can call) */}
           <SectionCard
-            title={`Field Technicians (${orderTechnicians.length})`}
+            title={`Contact person (${orderTechnicians.length})`}
             action={
               techFormKey === null && (
                 <Button type="button" variant="success" onClick={openAddTech}>
@@ -1082,7 +1082,7 @@ export default function OrderDetails() {
                 <div key={t.id} className="rounded-2xl border border-primary-light bg-background-hover p-4">
                   {techFormKey === t.id ? (
                     <div>
-                      <FieldLabel>Technician</FieldLabel>
+                      <FieldLabel>Contact person</FieldLabel>
                       <Dropdown
                         options={techOptions}
                         value={techForm.userId}
@@ -1119,7 +1119,7 @@ export default function OrderDetails() {
               ))}
               {techFormKey === 'new' && (
                 <div className="rounded-2xl border border-primary-light bg-background-hover p-4">
-                  <FieldLabel>Technician</FieldLabel>
+                  <FieldLabel>Contact person</FieldLabel>
                   <Dropdown
                     options={techOptions}
                     value={techForm.userId}

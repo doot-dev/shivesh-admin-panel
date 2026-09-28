@@ -41,7 +41,7 @@ const OrdersPage = () => {
     { key: 'clientName', header: 'Client' },
     { key: 'product', header: 'Product' },
     { key: 'quantity', header: 'Quantity' },
-    { key: 'assignedToName', header: 'Field Tech' },
+    { key: 'assignedToName', header: 'Contact person' },
     { key: 'date', header: 'Date' },
     {
       key: 'status',
@@ -76,7 +76,7 @@ const OrdersPage = () => {
       clientName: o.client?.companyName || '—',
       product: `${o.productName || ''}${o.productGrade ? ` (${o.productGrade})` : ''}`,
       // Technicians come as a list; the old single assignedTo field is gone.
-      assignedToName: (o.technicians || []).map((t) => t.user?.name).filter(Boolean).join(', ') || o.assignedTo?.name || 'Unassigned',
+      assignedToName: (o.technicians || []).map((t) => t.user?.name).filter(Boolean).join(', ') || o.assignedTo?.name || '—',
       date: o.date || '—',
     }));
 

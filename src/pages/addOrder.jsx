@@ -13,7 +13,7 @@ import { fetchProjects } from '../features/projects/projectSlice';
 import { fetchProjectProducts } from '../features/projects/projectProductSlice';
 import { fetchClients } from '../features/clients/clientsSlice';
 import { fetchVendors } from '../features/vendors/vendorSlice';
-import { createOrder, fetchFieldTechs } from '../features/orders/orderSlice';
+import { createOrder } from '../features/orders/orderSlice';
 import {
   MAX_ORDER_MONTHS_AHEAD,
   getOrderDateError,
@@ -46,7 +46,6 @@ const makeVendorRow = () => ({
   loadingHandlers: false,
 });
 
-const makeTechRow = () => ({ key: nextRowKey(), userId: '' });
 
 const makeTmRow = () => ({
   key: nextRowKey(),
@@ -68,12 +67,10 @@ const AddOrderPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [vendorRows, setVendorRows] = useState([]);
-  const [techRows, setTechRows] = useState([]);
   const [tmRows, setTmRows] = useState([]);
 
   const { list: projects = [] } = useSelector((s) => s.project);
   const { list: clients = [] } = useSelector((s) => s.client);
-  const { fieldTechs = [] } = useSelector((s) => s.orders);
   const { list: vendors = [] } = useSelector((s) => s.vendor);
   const { prodList: projectProducts = [], loading: loadingProjectProducts } = useSelector((s) => s.projectProduct);
 
@@ -81,7 +78,6 @@ const AddOrderPage = () => {
     dispatch(fetchProjects());
     dispatch(fetchClients());
     dispatch(fetchVendors());
-    dispatch(fetchFieldTechs());
   }, [dispatch]);
 
   const set = (field, value) => {
@@ -139,23 +135,6 @@ const AddOrderPage = () => {
   const addVendorRow = () => setVendorRows((rows) => [...rows, makeVendorRow()]);
   const removeVendorRow = (key) => setVendorRows((rows) => rows.filter((r) => r.key !== key));
 
-  // Technician rows
-  const addTechRow = () => setTechRows((rows) => [...rows, makeTechRow()]);
-  const removeTechRow = (key) => setTechRows((rows) => rows.filter((r) => r.key !== key));
-  const handleTechChange = (key, userId) =>
-    setTechRows((rows) => rows.map((r) => (r.key === key ? { ...r, userId } : r)));
-
-  const techOptionsFor = (row) => [
-    { value: '', label: 'Select technician' },
-    ...fieldTechs
-      .filter(
-        (t) =>
-          String(t.id) === row.userId ||
-          !techRows.some((r) => r.key !== row.key && r.userId === String(t.id))
-      )
-      .map((t) => ({ value: String(t.id), label: `${t.name} (${t.employeeId})` })),
-  ];
-
   // TM rows
   const addTmRow = () => setTmRows((rows) => [...rows, makeTmRow()]);
   const removeTmRow = (key) => setTmRows((rows) => rows.filter((r) => r.key !== key));
@@ -194,10 +173,6 @@ const AddOrderPage = () => {
           ...(r.vendorHandlerId ? { vendorHandlerId: parseInt(r.vendorHandlerId) } : {}),
         }));
 
-      const techniciansPayload = techRows
-        .filter((r) => r.userId)
-        .map((r) => ({ userId: parseInt(r.userId) }));
-
       const tmDetailsPayload = tmRows
         .filter((r) => r.truckNo.trim() && r.qty.trim())
         .map((r) => ({
@@ -220,7 +195,6 @@ const AddOrderPage = () => {
         date: form.date,
         time: form.time,
         vendors: vendorsPayload,
-        technicians: techniciansPayload,
         tmDetails: tmDetailsPayload,
       }));
 
@@ -365,48 +339,6 @@ const AddOrderPage = () => {
             </div>
           </SectionCard>
 
-          {/* Field Technicians */}
-          <SectionCard
-            icon={ICON_NAMES.USER}
-            title="Field Technicians"
-            subtitle="Assign one or more field technicians to handle this order"
-            action={
-              <Button type="button" variant="success" onClick={addTechRow}>
-                + Add
-              </Button>
-            }
-          >
-            {techRows.length === 0 ? (
-              <p className="text-sm text-gray-400 py-2">No technicians added. Use "Add" to assign one.</p>
-            ) : (
-              <div className="space-y-3">
-                {techRows.map((row, i) => (
-                  <div key={row.key} className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
-                        Technician {i + 1}
-                      </label>
-                      <Dropdown
-                        options={techOptionsFor(row)}
-                        value={row.userId}
-                        placeholder="Select technician"
-                        width="100%"
-                        height="40px"
-                        onChange={(v) => handleTechChange(row.key, v)}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeTechRow(row.key)}
-                      className="mb-2.5 text-xs text-red-600 hover:text-red-700 font-medium whitespace-nowrap"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
 
           {/* Vendor & Logistics */}
           <SectionCard
@@ -633,7 +565,7 @@ const AddOrderPage = () => {
                 <SummaryRow label="Client" value={selectedClientName} />
                 <SummaryRow label="Product" value={selectedProductLabel} />
                 <SummaryRow label="Quantity" value={form.quantity} />
-                <SummaryRow label="Technicians" value={techRows.filter((r) => r.userId).length || 'None'} />
+                <SummaryRow label="Technicians" value="The project's FTs" />
                 <SummaryRow label="Vendors" value={vendorRows.filter((r) => r.vendorId).length || 'None'} />
                 <SummaryRow label="TM Details" value={tmRows.length || 'None'} />
                 <SummaryRow label="Date" value={form.date} />
