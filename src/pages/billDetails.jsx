@@ -439,6 +439,21 @@ export default function BillDetails() {
           <Field label="Rate" value={d.rate} />
           <Field label="Amount" value={d.amount} />
         </div>
+        {d.extras?.length > 0 && (
+          <div className="mt-5 rounded-xl border border-gray-200">
+            <table className="w-full text-sm">
+              <thead><tr className="bg-gray-50 text-left text-xs text-gray-500"><th className="px-3 py-2">Line</th><th className="px-3 py-2 text-right">Amount (₹)</th></tr></thead>
+              <tbody>
+                <tr className="border-t"><td className="px-3 py-2">{d.product} {d.grade} · {d.quantity} × {d.rate}</td><td className="px-3 py-2 text-right">{Number(d.concreteAmount).toLocaleString('en-IN')}</td></tr>
+                {d.extras.map((x) => (
+                  <tr key={x.name + x.amount} className="border-t"><td className="px-3 py-2">{x.name}</td><td className="px-3 py-2 text-right">{Number(x.amount).toLocaleString('en-IN')}</td></tr>
+                ))}
+                <tr className="border-t font-semibold"><td className="px-3 py-2">Total</td><td className="px-3 py-2 text-right">{Number(d.amount).toLocaleString('en-IN')}</td></tr>
+              </tbody>
+            </table>
+            <p className="px-3 py-2 text-xs text-gray-500">Extras are managed on the order page (removing one needs the Order · Extra services delete permission).</p>
+          </div>
+        )}
       </Card>
 
       {/* Field Technician details */}

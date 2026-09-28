@@ -22,6 +22,7 @@ import { FaEdit } from "react-icons/fa";
 import { FiEdit2 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import ProjectTechniciansCard from "../components/projects/ProjectTechniciansCard";
+import ProjectRatesCard from "../components/projects/ProjectRatesCard";
 import usePermission from "../hooks/usePermission";
 
 export default function ProjectsDetails() {
@@ -298,6 +299,10 @@ export default function ProjectsDetails() {
           </div>
         </div>
       </div>
+
+      {currentProject && <div className="mb-6">
+        <ProjectRatesCard project={currentProject} onSaved={() => dispatch(fetchProjectById(id))} />
+      </div>}
 
       {canKey('projectTeam.view') && <div className="mb-6">
         <ProjectTechniciansCard

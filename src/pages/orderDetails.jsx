@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import CreditBandBar from '../components/ui/CreditBandBar';
+import OrderExtrasCard from '../components/orders/OrderExtrasCard';
 
 import {
   addOrderComment,
@@ -1062,6 +1063,8 @@ export default function OrderDetails() {
 
         {/* Right Column: Field Tech + Comments */}
         <div className="space-y-5">
+
+          <OrderExtrasCard order={order} bill={order.bill} onChanged={refreshOrder} />
 
           {/* Contact person (a field tech the client can call) */}
           <SectionCard

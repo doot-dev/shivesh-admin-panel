@@ -98,19 +98,24 @@ export default function ClientAccountTab({ clientId }) {
       {/* Credit */}
       <section className="sv-card grid grid-cols-1 gap-6 p-5 sm:p-6 lg:grid-cols-12">
         <div className="flex flex-col gap-3 lg:col-span-5">
-          <span className="text-sm font-medium text-text-secondary">Available credit</span>
-          <span className={`text-3xl font-bold tabular-nums tracking-tight sm:text-[40px] ${c.available < 0 ? 'text-error' : 'text-primary-second'}`}>{inr(c.available)}</span>
+          {/* Credit used is the headline (2026-09-29): red = used, grey = still free. */}
+          <span className="text-sm font-medium text-text-secondary">Credit used</span>
+          <span className="text-3xl font-bold tabular-nums tracking-tight text-error sm:text-[40px]">{inr(c.used)}</span>
           {c.limit ? (
             <>
-              <div className="h-3 overflow-hidden rounded-full bg-primary-light">
-                <div className={`sv-grow-x h-full rounded-full ${usedPct >= 100 ? 'bg-error' : 'bg-primary'}`} style={{ width: `${Math.max(usedPct, 2)}%`, animationDelay: '.3s' }} />
+              <div className="flex h-4 overflow-hidden rounded-full bg-gray-200" role="img" aria-label={`${inr(c.used)} used, ${inr(Math.max(0, c.available))} free of ${inr(c.limit)}`}>
+                <div className="sv-grow-x h-full bg-error" style={{ width: `${Math.min(100, Math.max(usedPct, 2))}%`, animationDelay: '.3s' }} />
               </div>
-              <span className="text-sm text-text-primary"><b className="font-semibold">{inr(c.used)}</b> used of {inr(c.limit)} limit</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-error" /><b className="font-semibold">{inr(c.used)}</b> used</span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-gray-300" /><b className="font-semibold">{inr(Math.max(0, c.available))}</b> still available</span>
+              </div>
+              <span className="text-sm text-text-secondary"><b className="font-semibold text-text-primary">{inr(Math.max(0, c.available))}</b> left of the <b className="font-semibold text-text-primary">{inr(c.limit)}</b> total credit ({Math.round(usedPct)}% used)</span>
             </>
           ) : <span className="text-sm text-text-secondary">No credit limit set yet.</span>}
           {c.flag !== 'OK' && (
             <p className="rounded-xl bg-error-light px-3 py-2 text-[13px] font-medium text-error">
-              {c.flag === 'OVERDUE' ? 'Overdue — new orders are held for approval.' : 'Over limit — new orders are held for approval.'}
+              {c.flag === 'OVERDUE' ? 'Overdue — check with accounts before confirming new orders.' : 'Over the limit — check with accounts before confirming new orders.'}
             </p>
           )}
           <div className="mt-1 flex flex-wrap gap-2">
