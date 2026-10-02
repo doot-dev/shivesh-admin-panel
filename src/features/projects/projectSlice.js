@@ -88,24 +88,6 @@ export const updateProjectCredit = createAsyncThunk(
     }
   },
 );
-export const updateProjectCommission = createAsyncThunk(
-  "projects/updateProjectCommission",
-  async (commissionData, { rejectWithValue }) => {
-    try {
-      const response =
-        await projectService.updateProjectCommission(commissionData);
-      console.log("response of update project commission", response);
-      return {
-        data: response.data,
-        message: response.message,
-      };
-    } catch (error) {
-      console.error("Error in updateProjectCommission thunk:", error);
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  },
-);
-
 const projectSlice = createSlice({
   name: "projects",
   initialState: {
@@ -213,23 +195,6 @@ const projectSlice = createSlice({
         }
       })
       .addCase(updateProjectCredit.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error.message;
-      })
-      .addCase(updateProjectCommission.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updateProjectCommission.fulfilled, (state, action) => {
-        state.loading = false;
-        if (state.currentProject) {
-          state.currentProject = {
-            ...state.currentProject,
-            ...action.payload.data,
-          };
-        }
-      })
-      .addCase(updateProjectCommission.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
       });

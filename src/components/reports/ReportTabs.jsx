@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
 import reportService, { saveBlob } from '../../services/reportService';
 import { Bars, ChartCard, Donut, Histogram, Kpis, RAMP_RED, RankBars, SERIES, STATUS, inrShort } from './Charts';
 
@@ -225,6 +226,77 @@ export function AccountsTaxTab() {
         ))}
       </div>
       <p className="text-xs text-gray-500">The Exceptions sheet should be empty before the pack goes to the CA.</p>
+    </div>
+  );
+}
+
+/** Commission due per person across projects (2026-10-02): billed qty × rate, payouts, balance. */
+export function CommissionTab() {
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [rows, setRows] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const params = { from: from || undefined, to: to || undefined };
+
+  useEffect(() => {
+    reportService.getCommissions({ from: from || undefined, to: to || undefined })
+      .then((r) => setRows(r.data.rows))
+      .catch((e) => setError(e.response?.status === 403 ? 'You need the Project · Commission view permission' : 'Could not load commission'));
+  }, [from, to]);
+
+  const download = async () => {
+    setBusy(true);
+    try { saveBlob(await reportService.exportRegister('commissions', params), `Shivesh_Commission_${from || to ? `${from || 'start'}_to_${to || 'today'}` : 'this-FY'}.xlsx`); }
+    catch (e) { toast.error(e.response?.status === 403 ? 'You need the Reports → Export permission' : 'Export failed'); }
+    finally { setBusy(false); }
+  };
+
+  if (!rows) return <Loading error={error} />;
+  const sum = (k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2 items-center text-sm">
+        Bill date
+        <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border rounded px-2 py-1" />
+        to
+        <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border rounded px-2 py-1" />
+        <span className="text-xs text-gray-500">(blank = this financial year)</span>
+        <button type="button" disabled={busy} onClick={download} className="ml-auto px-3 py-1.5 rounded-lg bg-primary text-white text-sm disabled:opacity-50">
+          {busy ? 'Building…' : 'Download XLSX'}
+        </button>
+      </div>
+      <Kpis items={[
+        ['Commission in period', inr(sum('periodAmount'))],
+        ['Paid in period', inr(sum('periodPaid'))],
+        ['Balance due (all time)', inr(sum('balance')), sum('balance') > 0 ? 'text-amber-700' : undefined],
+        ['People', rows.length],
+      ]} />
+      {rows.length === 0 ? <p className="text-sm text-gray-500">No commission people on any project.</p> : (
+        <div className="overflow-x-auto border rounded-lg bg-white">
+          <table className="w-full">
+            <thead className="bg-gray-50"><tr>
+              <Th>Project</Th><Th>Client</Th><Th>Person</Th><Th>Rate / m³</Th><Th>Billed qty</Th><Th>Commission</Th><Th>Paid (period)</Th><Th>Earned (all time)</Th><Th>Paid (all time)</Th><Th>Balance due</Th>
+            </tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t">
+                  <Td><Link className="text-primary hover:underline" to={`/projects/${r.projectId}`}>{r.projectName}</Link></Td>
+                  <Td>{r.client}</Td>
+                  <Td>{r.name}{r.mobile ? <span className="text-xs text-gray-500"> · {r.mobile}</span> : null}</Td>
+                  <Td>{inr(r.ratePerM3)}</Td>
+                  <Td>{r.periodQty}</Td>
+                  <Td className="font-medium">{inr(r.periodAmount)}</Td>
+                  <Td>{inr(r.periodPaid)}</Td>
+                  <Td>{inr(r.earned)}</Td>
+                  <Td>{inr(r.paid)}</Td>
+                  <Td className={r.balance > 0 ? 'font-semibold text-amber-700' : ''}>{inr(r.balance)}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

@@ -37,6 +37,9 @@ const reportService = {
   /** Every client's payment and order metrics (Reports tabs). */
   getAnalytics: async () => (await api.get(`${BASE}/analytics`)).data,
 
+  /** Commission due per person across projects (2026-10-02). */
+  getCommissions: async (params = {}) => (await api.get(`${BASE}/commissions`, { params })).data,
+
   /** One client's analysis + credit (client page Analysis tab). */
   getClientAnalytics: async (clientId) => (await api.get(`${BASE}/clients/${clientId}/analytics`)).data,
 

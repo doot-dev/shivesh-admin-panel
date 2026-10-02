@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import { addProjectDetails, fetchProjectById, updateProject, updateProjectCommission } from "../features/projects/projectSlice";
+import { addProjectDetails, fetchProjectById, updateProject } from "../features/projects/projectSlice";
 import { fetchClients } from "../features/clients/clientsSlice";
 import { fetchProducts } from "../features/product/productSlice";
 
@@ -15,14 +15,13 @@ import { createProjectProduct, deleteProjectProduct, fetchProjectProductById, fe
 import { Table } from "../components/ui";
 import EditProjectProductModal from "../components/modals/project/editProjectProductModal";
 import ProjectVendorModal from "../components/modals/project/projectVendorModal";
-import EditCommissionModal from "../components/modals/project/editCommissionModal";
 import DeleteProjectProduct from "../components/modals/project/deleteProjectProduct";
 import { BiEdit } from "react-icons/bi";
 import { FaEdit } from "react-icons/fa";
-import { FiEdit2 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import ProjectTechniciansCard from "../components/projects/ProjectTechniciansCard";
 import ProjectRatesCard from "../components/projects/ProjectRatesCard";
+import ProjectCommissionsCard from "../components/projects/ProjectCommissionsCard";
 import usePermission from "../hooks/usePermission";
 
 export default function ProjectsDetails() {
@@ -59,7 +58,6 @@ export default function ProjectsDetails() {
   const [selectedDeleteProduct, setSelectedDeleteProduct] = useState(null);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [showCommissionModal, setShowCommissionModal] = useState(false);
 
   const openVendors = (product) => {
     setSelectedProduct(product);
@@ -202,19 +200,6 @@ export default function ProjectsDetails() {
     }
   };
 
-  const handleUpdateCommission = async (commissionData) => {
-    try {
-      const res = await dispatch(
-        updateProjectCommission({ projectId: id, ...commissionData })
-      ).unwrap();
-
-      setShowCommissionModal(false);
-
-      toast.success(res.message || "Commission updated");
-    } catch (err) {
-      toast.error("Failed to update commission");
-    }
-  };
   const handleDeleteProjectProduct = async (product) => {
     if (!product?.id) return;
 
@@ -343,72 +328,12 @@ export default function ProjectsDetails() {
       </div>
       )}
 
-      {/* ---------------- Commission Details ---------------- */}
+      {/* ---------------- Commission (many people, 2026-10-02) ---------------- */}
       {/* Credit is set per client (limit + days) on the client's Account tab. */}
-
       {canKey('projectCommission.view') && (
-      <div className="grid grid-cols-1 gap-6 mt-8">
-
-        {/* Commission Details Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Commission Details
-            </h2>
-            <div className="flex items-center gap-3">
-              {/* Toggle Switch */}
-              {/* <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  defaultChecked
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label> */}
-
-              {canKey('projectCommission.update') && (
-              <button
-                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-                onClick={() => setShowCommissionModal(true)}
-              >
-                <span><FiEdit2 className="text-lg" /></span>
-                <span>Edit</span>
-              </button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Person name</p>
-                <p className="text-base font-medium text-gray-900">
-                  {currentProject.commissionPersonName
-                    || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Amount per unit</p>
-                <p className="text-base font-medium text-gray-900">
-                  ₹{currentProject.commissionAmountPerM3
-                    ?? "N/A"}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Person Phone No.</p>
-                <p className="text-base font-medium text-gray-900">
-                  {currentProject.commissionPersonMobile
-                    || "N/A"}
-                </p>
-              </div>
-            </div>
-
-          </div>
+        <div className="mt-8">
+          <ProjectCommissionsCard projectId={id} />
         </div>
-
-      </div>
       )}
 
       {/* ---------------- Modals ---------------- */}
@@ -440,14 +365,6 @@ export default function ProjectsDetails() {
         onClose={() => setShowVendorModal(false)}
         product={selectedProduct}
         projectId={id}
-      />
-
-      <EditCommissionModal
-        isOpen={showCommissionModal}
-        onClose={() => setShowCommissionModal(false)}
-        onSubmit={handleUpdateCommission}
-        project={currentProject}
-        loading={loading}
       />
 
       <DeleteProjectProduct

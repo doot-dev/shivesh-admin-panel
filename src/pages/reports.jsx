@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { StatusChip } from '../components/ui/StatusChip';
 import Tabs from '../components/ui/Tabs';
 import usePermission from '../hooks/usePermission';
-import { PaymentBehaviourTab, CollectionsTab, OrderPatternsTab, AccountsTaxTab } from '../components/reports/ReportTabs';
+import { PaymentBehaviourTab, CollectionsTab, OrderPatternsTab, AccountsTaxTab, CommissionTab } from '../components/reports/ReportTabs';
 import { toast } from 'react-toastify';
 
 import { Icon, ICON_NAMES } from '../components/icons';
@@ -446,6 +446,7 @@ export default function ReportsPage() {
     { label: 'Payment behaviour', content: <div className="p-4 md:p-6"><PaymentBehaviourTab /></div> },
     { label: 'Collections', content: <div className="p-4 md:p-6"><CollectionsTab /></div> },
     { label: 'Order patterns', content: <div className="p-4 md:p-6"><OrderPatternsTab /></div> },
+    ...(can('projectCommission', 'view') ? [{ label: 'Commission', content: <div className="p-4 md:p-6"><CommissionTab /></div> }] : []),
     ...(can('reports', 'export') ? [{ label: 'Accounts & Tax', content: <div className="p-4 md:p-6"><AccountsTaxTab /></div> }] : []),
   ];
   return (

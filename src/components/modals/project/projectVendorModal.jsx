@@ -389,12 +389,17 @@ function ProjectVendorModal({ isOpen, onClose, product, projectId }) {
                                     {/* Custom Price – full width */}
                                     <div className="flex flex-col gap-1 sm:col-span-2">
                                         <Input
-                                            type="number"
+                                            type="text"
+                                            inputMode="decimal"
                                             label="Custom Price"
                                             placeholder="Enter custom price"
                                             value={form.customPrice}
-                                            onChange={(e) => handleFormChange("customPrice", e.target.value)}
-                                            min="0"
+                                            // Text, not number: a scroll over a number input changed the price.
+                                            // Digits and one decimal point (2 places) only; any amount.
+                                            onChange={(e) => {
+                                                const v = e.target.value.replace(/,/g, "");
+                                                if (/^\d*(\.\d{0,2})?$/.test(v)) handleFormChange("customPrice", v);
+                                            }}
                                         />
                                         {formErrors.customPrice && (
                                             <p className="text-xs text-red-500">{formErrors.customPrice}</p>

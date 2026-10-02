@@ -65,18 +65,6 @@ const projectService = {
       throw error;
     }
   },
-  updateProjectCommission: async (commissionData) => {
-    try {
-      const response = await api.put(
-        `/api/v1/admin/project/commission`,
-        commissionData,
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error updating project commission:", error);
-      throw error;
-    }
-  },
 };
 
 export default projectService;

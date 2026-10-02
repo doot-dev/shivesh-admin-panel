@@ -85,6 +85,10 @@ const initialState = {
   error: null,
 };
 
+// Create/update return the raw row (`id`); the list endpoint calls it
+// `productVendorId`. Without this, editing a just-saved row sent no id and got a 422.
+const asRow = (v) => (v && v.id && !v.productVendorId ? (({ id, ...rest }) => ({ productVendorId: id, ...rest }))(v) : v);
+
 const projectProductVendorSlice = createSlice({
   name: "projectProductVendor",
   initialState,
@@ -117,7 +121,7 @@ const projectProductVendorSlice = createSlice({
       .addCase(createProjectProductVendor.fulfilled, (state, action) => {
         state.createLoading = false;
 
-        const newVendor = action.payload?.data || action.payload;
+        const newVendor = asRow(action.payload?.data || action.payload);
         if (newVendor) {
           state.list.unshift(newVendor);
         }
@@ -135,10 +139,10 @@ const projectProductVendorSlice = createSlice({
       .addCase(updateProjectProductVendor.fulfilled, (state, action) => {
         state.updateLoading = false;
 
-        const updatedVendor = action.payload?.data || action.payload;
+        const updatedVendor = asRow(action.payload?.data || action.payload);
 
         const index = state.list.findIndex(
-          (item) => item.vendorId === updatedVendor.vendorId,
+          (item) => item.productVendorId === updatedVendor?.productVendorId,
         );
 
         if (index !== -1) {
@@ -160,7 +164,8 @@ const projectProductVendorSlice = createSlice({
 
         const { vendorId } = action.meta.arg;
 
-        state.list = state.list.filter((item) => item.vendorId !== vendorId);
+        // The modal sends the row id (productVendorId) as `vendorId`.
+        state.list = state.list.filter((item) => item.productVendorId !== vendorId);
       })
       .addCase(deleteProjectProductVendor.rejected, (state, action) => {
         state.deleteLoading = false;

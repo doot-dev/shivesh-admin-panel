@@ -778,10 +778,15 @@ export default function OrderDetails() {
             <InfoRow label="Order ID" value={order.orderId} />
             <InfoRow label="Project" value={order.project?.projectName} />
             <InfoRow label="Client" value={order.client?.companyName} />
-            {order.placedBy && (
+            {order.placedBy ? (
               <InfoRow
-                label="Placed by"
-                value={`${order.placedBy.name}${order.placedBy.role?.name ? ` (${order.placedBy.role.name})` : ''}${order.placedBy.phone ? ` · ${order.placedBy.phone}` : ''}`}
+                label="Added by"
+                value={`${order.placedBy.name}${order.placedBy.role?.name ? ` (${order.placedBy.role.name}, client)` : ' (client)'}${order.placedBy.phone ? ` · ${order.placedBy.phone}` : ''}`}
+              />
+            ) : order.createdByName && (
+              <InfoRow
+                label="Added by"
+                value={`${order.createdByName} (${{ USER: 'office', FIELD_TECH: 'field technician', CLIENT: 'client' }[order.createdByType] || 'office'})`}
               />
             )}
             <InfoRow label="Product" value={`${order.productName || ''} ${order.productGrade ? `(${order.productGrade})` : ''}`} />

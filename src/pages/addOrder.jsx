@@ -83,14 +83,13 @@ const AddOrderPage = () => {
   const set = (field, value) => {
     setForm((p) => ({ ...p, [field]: value }));
     if (errors[field]) setErrors((p) => ({ ...p, [field]: '' }));
+  };
 
-    // Auto-fill clientId when project changes
-    if (field === 'projectId') {
-      const proj = projects.find((p) => p.projectId === value);
-      if (proj?.client?.clientId) {
-        setForm((p) => ({ ...p, projectId: value, clientId: proj.client.clientId }));
-      }
-    }
+  // Client first, then one of its projects: a new client clears the project and product.
+  const handleClientChange = (clientId) => {
+    if (clientId === form.clientId) return;
+    set('clientId', clientId);
+    setForm((p) => ({ ...p, projectId: '', productId: '' }));
   };
 
   const handleProjectChange = (projectId) => {
@@ -206,7 +205,7 @@ const AddOrderPage = () => {
     }
   };
 
-  const projectOptions = projects.map((p) => ({
+  const projectOptions = projects.filter((p) => form.clientId && p.client?.clientId === form.clientId).map((p) => ({
     value: p.projectId,
     label: p.projectName,
   }));
@@ -269,23 +268,8 @@ const AddOrderPage = () => {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Order Details */}
-          <SectionCard icon={ICON_NAMES.ORDERS} title="Order Details" subtitle="Project, client and product for this order">
+          <SectionCard icon={ICON_NAMES.ORDERS} title="Order Details" subtitle="Client, project and product for this order">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
-                  Project <span style={{ color: 'var(--color-error)' }}>*</span>
-                </label>
-                <Dropdown
-                  options={projectOptions}
-                  value={form.projectId}
-                  placeholder="Select project"
-                  width="100%"
-                  height="40px"
-                  onChange={handleProjectChange}
-                />
-                {errors.projectId && <p className="mt-1 text-xs text-red-500">{errors.projectId}</p>}
-              </div>
-
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
                   Client <span style={{ color: 'var(--color-error)' }}>*</span>
@@ -296,9 +280,26 @@ const AddOrderPage = () => {
                   placeholder="Select client"
                   width="100%"
                   height="40px"
-                  onChange={(v) => set('clientId', v)}
+                  onChange={handleClientChange}
                 />
                 {errors.clientId && <p className="mt-1 text-xs text-red-500">{errors.clientId}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>
+                  Project <span style={{ color: 'var(--color-error)' }}>*</span>
+                </label>
+                <Dropdown
+                  key={form.clientId}
+                  options={projectOptions}
+                  value={form.projectId}
+                  placeholder={!form.clientId ? 'Select client first' : projectOptions.length ? 'Select project' : 'No active projects for this client'}
+                  width="100%"
+                  height="40px"
+                  disabled={!form.clientId}
+                  onChange={handleProjectChange}
+                />
+                {errors.projectId && <p className="mt-1 text-xs text-red-500">{errors.projectId}</p>}
               </div>
             </div>
 
@@ -561,8 +562,8 @@ const AddOrderPage = () => {
 
             <div className="p-6">
               <div className="space-y-3">
-                <SummaryRow label="Project" value={selectedProjectName} />
                 <SummaryRow label="Client" value={selectedClientName} />
+                <SummaryRow label="Project" value={selectedProjectName} />
                 <SummaryRow label="Product" value={selectedProductLabel} />
                 <SummaryRow label="Quantity" value={form.quantity} />
                 <SummaryRow label="Technicians" value="The project's FTs" />

@@ -15,6 +15,7 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
     projectLocation: "",
     siteName: "",
     clientId: "",
+    maxQty: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -54,6 +55,7 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
       projectLocation: "",
       siteName: "",
       clientId: "",
+      maxQty: "",
     });
     setErrors({});
     setSubmitting(false);
@@ -158,6 +160,15 @@ const AddProjectModal = ({ isOpen, onClose, onSubmit, clients = [] }) => {
           placeholder="Site address"
           value={formData.projectLocation}
           onChange={(e) => handleInputChange("projectLocation", e.target.value)}
+        />
+        {/* Agreed project volume, display only (2026-10-02) */}
+        <Input
+          type="text"
+          inputMode="decimal"
+          label="Max quantity (CBM, optional)"
+          placeholder="e.g. 1200"
+          value={formData.maxQty}
+          onChange={(e) => /^\d*(\.\d{0,2})?$/.test(e.target.value) && handleInputChange("maxQty", e.target.value)}
         />
 
         {/* Other details: pin on the map */}
